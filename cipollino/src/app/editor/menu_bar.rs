@@ -17,6 +17,19 @@ impl Editor {
                     }
                 });
 
+                ui.menu_button("Edit", |ui| {
+                    if ui.add_enabled(
+                        self.state.actions.can_undo(),
+                        egui::Button::new("Undo").shortcut_text(ui.ctx().format_shortcut(&systems.prefs.get::<UndoKeybind>()))).clicked() {
+                        self.state.actions.undo(&mut self.state.project, &mut self.state.client);
+                    }
+                    if ui.add_enabled(
+                        self.state.actions.can_redo(),
+                        egui::Button::new("Redo").shortcut_text(ui.ctx().format_shortcut(&systems.prefs.get::<RedoKeybind>()))).clicked() {
+                        self.state.actions.redo(&mut self.state.project, &mut self.state.client);
+                    }
+                });
+
                 if self.state.client.is_collab() {
                     ui.menu_button("Collab", |ui| {
                         if ui.button("Disconnect").clicked() {
@@ -34,19 +47,8 @@ impl Editor {
                             }
                         }
                     });
-                    ui.menu_button("Edit", |ui| {
-                        if ui.add_enabled(
-                            self.state.actions.can_undo(),
-                            egui::Button::new("Undo").shortcut_text(ui.ctx().format_shortcut(&systems.prefs.get::<UndoKeybind>()))).clicked() {
-                            self.state.actions.undo(&mut self.state.project, &mut self.state.client);
-                        }
-                        if ui.add_enabled(
-                            self.state.actions.can_redo(),
-                            egui::Button::new("Redo").shortcut_text(ui.ctx().format_shortcut(&systems.prefs.get::<RedoKeybind>()))).clicked() {
-                            self.state.actions.redo(&mut self.state.project, &mut self.state.client);
-                        }
-                    });
                 });
+
             });
         });
     }
