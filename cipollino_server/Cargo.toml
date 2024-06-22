@@ -1,0 +1,16 @@
+
+[package]
+name = "cipollino_server"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+cipollino_project = {path = "../cipollino_project", features = ["server", "desktop"]}
+clap = {version = "4.5.4", features = ["derive"]}
+tokio-tungstenite = "0.21.0"
+tokio = {version = "1.37.0", features = ["full"]}
+futures = "0.3.30"
+
+rmp = "0.8.14"
+rmp-serde = "1.3.0"
+rmpv = "=1.3.0"

@@ -1,0 +1,19 @@
+
+[package]
+name = "cipollino_project"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+desktop = []
+server = ["dep:tokio", "dep:tokio-tungstenite", "dep:futures"]
+
+[dependencies]
+ewebsock = "0.5.0"
+
+bson = "=2.11.0"
+serde = {version = "1.0.202", features = ["derive"]}
+
+tokio-tungstenite = {version = "0.21.0", optional = true}
+tokio = {version = "1.37.0", features = ["full"], optional = true}
+futures = {version = "0.3.30", optional = true}

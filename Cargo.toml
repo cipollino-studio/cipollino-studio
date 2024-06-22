@@ -1,0 +1,7 @@
+[workspace]
+
+members = [
+    "cipollino_project",
+    "cipollino",
+    "cipollino_server"
+]
