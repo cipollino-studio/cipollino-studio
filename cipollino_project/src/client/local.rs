@@ -2,6 +2,7 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 
+use crate::crdt::fractional_index::FractionalIndex;
 use crate::project::folder::Folder;
 use crate::project::obj::{Obj, ObjPtr};
 use crate::{project::Project, serialization::project_file::ProjectFile};
@@ -74,7 +75,7 @@ impl ProjectClient {
             project_file,
         };
 
-        let root_folder = Folder::obj_deserialize(&mut project, &serializer.project_file.get_obj_data(root_folder_ptr).ok()?, &mut serializer)?;
+        let root_folder = Folder::obj_deserialize(&mut project, &serializer.project_file.get_obj_data(root_folder_ptr).ok()?, &mut serializer, FractionalIndex::half())?;
         project.folders.objs.insert(ObjPtr::from_key(root_folder_key), root_folder);
         project.root_folder = ObjPtr::from_key(root_folder_key);
         

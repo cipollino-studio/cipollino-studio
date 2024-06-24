@@ -3,7 +3,7 @@ use std::{fmt::Debug, ops::Deref};
 
 use super::time;
 
-#[derive(serde::Serialize, serde::Deserialize, Clone)]
+// #[derive(Clone)]
 pub struct Register<T> {
     pub(crate) value: T,
     client_id: u64,
@@ -58,16 +58,17 @@ impl<T> Register<T> {
         }) 
     }
 
-    pub(crate) fn apply(&mut self, update: RegisterUpdate<T>) {
+    pub(crate) fn apply(&mut self, update: RegisterUpdate<T>) -> bool {
         if update.time < self.last_write_time {
-            return;
+            return false;
         }
         if update.time == self.last_write_time && self.last_write_client_id < update.client_id {
-            return;
+            return false;
         }
         self.value = update.value;
         self.last_write_client_id = update.client_id;
         self.last_write_time = update.time;
+        true
     }
 
     pub fn value(&self) -> &T {

@@ -1,5 +1,6 @@
 
 pub mod keybind;
+pub mod dnd;
 
 pub fn clickable_label<T>(ui: &mut egui::Ui, msg: T) -> egui::Response where T: Into<egui::WidgetText> {
     ui.add(egui::Label::new(msg).selectable(false).sense(egui::Sense::click()))

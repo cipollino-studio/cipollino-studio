@@ -5,6 +5,7 @@ use std::hash::Hash;
 use std::ops::Deref;
 
 use crate::crdt::fractional_index::FractionalIndex;
+use crate::crdt::register::Register;
 use crate::serialization::{ObjSerialize, Serializer};
 
 use super::Project;
@@ -16,8 +17,8 @@ pub trait Obj: Sized + ObjSerialize {
     fn obj_list(project: &Project) -> &ObjList<Self>;
     fn obj_list_mut(project: &mut Project) -> &mut ObjList<Self>;
 
-    fn parent(&self) -> Self::Parent;
-    fn parent_mut(&mut self) -> &mut Self::Parent;
+    fn parent(&self) -> &Register<(Self::Parent, FractionalIndex)>;
+    fn parent_mut(&mut self) -> &mut Register<(Self::Parent, FractionalIndex)>;
 
     fn list_in_parent(project: &Project, parent: Self::Parent) -> Option<&ChildList<Self>>;
     fn list_in_parent_mut(project: &mut Project, parent: Self::Parent) -> Option<&mut ChildList<Self>>;
@@ -77,7 +78,7 @@ impl<T: Obj> ObjSerialize for ObjPtr<T> {
         bson::Bson::Document(fields)
     }
 
-    fn obj_deserialize(_project: &mut Project, data: &bson::Bson, serializer: &mut Serializer) -> Option<Self> {
+    fn obj_deserialize(_project: &mut Project, data: &bson::Bson, serializer: &mut Serializer, _idx: FractionalIndex) -> Option<Self> {
         let doc = data.as_document()?;
         let key = doc.get("key")?.as_i64()?;
         let ptr = doc.get("ptr")?.as_i64()?;
@@ -200,7 +201,11 @@ impl<T: Obj> ChildList<T> {
         })
     }
 
-    pub fn insert(&mut self, idx: FractionalIndex, ptr: ObjPtr<T>) {
+    pub(crate) fn remove(&mut self, ptr: ObjPtr<T>) {
+        self.objs.retain(|(_idx, other)| *other != ptr);
+    }
+
+    pub(crate) fn insert(&mut self, idx: FractionalIndex, ptr: ObjPtr<T>) {
         let arr_idx = self.objs.binary_search_by(|other_idx| other_idx.0.cmp(&idx)).expect_err("LSEQ keys must be unique.");
         self.objs.insert(arr_idx, (idx, ptr));
     }
@@ -228,18 +233,19 @@ impl<T: Obj> ObjSerialize for ChildList<T> {
         bson::Bson::Array(self.objs.iter().map(|(_idx, ptr)| ptr.obj_serialize(project, serializer)).collect())
     }
 
-    fn obj_deserialize(project: &mut Project, data: &bson::Bson, serializer: &mut Serializer) -> Option<Self> {
-        let ptrs = data.as_array()?.iter().filter_map(|ptr_data| ObjPtr::obj_deserialize(project, ptr_data, serializer)).collect::<Vec<ObjPtr<T>>>();
+    fn obj_deserialize(project: &mut Project, data: &bson::Bson, serializer: &mut Serializer, idx: FractionalIndex) -> Option<Self> {
+
+        let ptrs = data.as_array()?.iter().filter_map(|ptr_data| ObjPtr::obj_deserialize(project, ptr_data, serializer, idx.clone())).collect::<Vec<ObjPtr<T>>>();
         let idxs = FractionalIndex::range(ptrs.len());
 
         let mut idx_ptr_list: Vec<_> = idxs.into_iter().zip(ptrs.into_iter()).collect();
 
-        idx_ptr_list.retain(|(_idx, ptr)| {
+        idx_ptr_list.retain(|(idx, ptr)| {
             let Some(ptr_in_file) = serializer.obj_ptrs.get(&ptr.key) else { return false; };
             let ptr_in_file = *ptr_in_file;
 
             let Some(data) = serializer.project_file.get_obj_data(ptr_in_file).ok() else { return false; };
-            let Some(obj) = T::obj_deserialize(project, &data, serializer) else { return false; };
+            let Some(obj) = T::obj_deserialize(project, &data, serializer, idx.clone()) else { return false; };
 
             T::obj_list_mut(project).objs.insert(*ptr, obj);
 

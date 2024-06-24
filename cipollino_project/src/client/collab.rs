@@ -98,9 +98,9 @@ impl Collab {
     fn handle_collab_msg(&mut self, msg: Message, project: &mut Project) -> Option<()> {
         match msg {
             Message::KeyGrant { first, last } => self.handle_key_grant(first, last),
-            Message::AddFolder { ptr, name, parent, idx } => {
-                project.add_with_frac_idx(ptr, parent, idx, Folder {
-                    parent,
+            Message::AddFolder { ptr, name, parent } => {
+                project.add(ptr, Folder {
+                    parent: Register::from_update(parent, self.client_id),
                     name: Register::from_update(name, self.client_id),
                     folders: ChildList::new(),
                 });
@@ -108,6 +108,20 @@ impl Collab {
             Message::SetFolderName { ptr, name_update } => {
                 let folder = project.folders.get_mut(ptr)?;
                 folder.name.apply(name_update);
+            },
+            Message::TransferFolder {ptr, parent_update} => {
+                project.folders.get(parent_update.value.0)?;
+
+                if Folder::is_inside(project, ptr, parent_update.value.0) {
+                    return None;
+                }
+
+                let folder = project.folders.get_mut(ptr)?;
+                let old_parent = folder.parent.0;
+                if folder.parent.apply(parent_update.clone()) {
+                    project.folders.get_mut(old_parent)?.folders.remove(ptr); 
+                    project.folders.get_mut(parent_update.value.0)?.folders.insert(parent_update.value.1.clone(), ptr);
+                }
             },
             
             Message::Welcome(_) => {},
@@ -140,18 +154,18 @@ impl Collab {
 
 impl ProjectClient {
 
-    fn add_folders_from_welcome_data(project: &mut Project, folder_data: WelcomeFolderData, parent_folder: ObjPtr<Folder>) -> ObjPtr<Folder> {
+    fn add_folders_from_welcome_data(project: &mut Project, client_id: u64, folder_data: WelcomeFolderData) -> ObjPtr<Folder> {
         let mut children = Vec::new();
-        for (idx, child) in folder_data.children {
-            children.push((idx, Self::add_folders_from_welcome_data(project, child, folder_data.ptr)));
+        for child in folder_data.children {
+            children.push((child.parent.1.clone(), Self::add_folders_from_welcome_data(project, client_id, child)));
         }
 
         project.folders.objs.insert(folder_data.ptr, Folder {
-            parent: parent_folder,
+            parent: Register::from_update(folder_data.parent, client_id),
             folders: ChildList {
                 objs: children 
             },
-            name: folder_data.name,
+            name: Register::from_update(folder_data.name, client_id),
         });
         folder_data.ptr 
     }
@@ -159,7 +173,7 @@ impl ProjectClient {
     pub fn collab(socket: Socket, welcome_data: WelcomeData) -> (ProjectClient, Project) {
         let mut project = Project::empty(welcome_data.fps, welcome_data.sample_rate);
 
-        project.root_folder = Self::add_folders_from_welcome_data(&mut project, welcome_data.root_folder_data, ObjPtr::null());
+        project.root_folder = Self::add_folders_from_welcome_data(&mut project, welcome_data.client_id, welcome_data.root_folder_data);
 
         let client = ProjectClient::Collab(Collab {
             socket,

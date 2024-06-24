@@ -125,8 +125,9 @@ impl ProjectServer {
         let folder = self.project.folders.get(folder_ptr).unwrap();
         WelcomeFolderData {
             ptr: folder_ptr, 
-            children: folder.folders.objs.iter().map(|(idx, ptr)| (idx.clone(), self.get_folder_data(*ptr))).collect(),
-            name: folder.name.clone(),
+            parent: folder.parent.to_update(),
+            children: folder.folders.objs.iter().map(|(_idx, ptr)| self.get_folder_data(*ptr)).collect(),
+            name: folder.name.to_update(),
         }
     }
 
@@ -152,10 +153,10 @@ impl ProjectServer {
                     });
                 }
             },
-            Message::AddFolder { ptr, name, parent, idx } => {
+            Message::AddFolder { ptr, name, parent } => {
 
-                self.project.add_with_frac_idx(ptr, parent, idx.clone(), Folder {
-                    parent,
+                self.project.add(ptr, Folder {
+                    parent: Register::from_update(parent.clone(), 0),
                     name: Register::from_update(name.clone(), 0),
                     folders: ChildList::new(),
                 });
@@ -164,7 +165,6 @@ impl ProjectServer {
                     ptr,
                     name,
                     parent,
-                    idx
                 }, Some(client_id));
 
             },
@@ -172,6 +172,35 @@ impl ProjectServer {
                 let folder = self.project.folders.get_mut(ptr)?;
                 folder.name.apply(name_update.clone());
                 self.broadcast(Message::SetFolderName { ptr, name_update }, Some(client_id));
+            },
+            Message::TransferFolder { ptr, parent_update } => {
+
+                // Ensure the new folder exists
+                self.project.folders.get(parent_update.value.0)?;
+
+                if Folder::is_inside(&self.project, ptr, parent_update.value.0) {
+                    // A cycle was detected - revert their transfer
+                    let folder = self.project.folders.get_mut(ptr)?;
+                    let update = folder.parent.set(folder.parent.value.clone())?;
+                    // Broadcast just to be safe - ensure everyone has the same time/client_id for the parent register
+                    self.broadcast(Message::TransferFolder {
+                        ptr,
+                        parent_update: update
+                    }, None); 
+                    return Some(());
+                }
+
+                let folder = self.project.folders.get_mut(ptr)?;
+                let old_parent = folder.parent.0;
+                if folder.parent.apply(parent_update.clone()) {
+                    self.project.folders.get_mut(old_parent)?.folders.remove(ptr); 
+                    self.project.folders.get_mut(parent_update.value.0)?.folders.insert(parent_update.value.1.clone(), ptr);
+                }
+
+                self.broadcast(Message::TransferFolder {
+                    ptr,
+                    parent_update,
+                }, Some(client_id));
             },
 
             Message::Welcome(_) => {},

@@ -1,11 +1,12 @@
-use crate::{crdt::{fractional_index::FractionalIndex, register::{Register, RegisterUpdate}}, project::{folder::Folder, obj::ObjPtr}};
+use crate::{crdt::{fractional_index::FractionalIndex, register::RegisterUpdate}, project::{folder::Folder, obj::ObjPtr}};
 
 
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
 pub struct WelcomeFolderData {
+    pub parent: RegisterUpdate<(ObjPtr<Folder>, FractionalIndex)>,
     pub ptr: ObjPtr<Folder>,
-    pub name: Register<String>,
-    pub children: Vec<(FractionalIndex, WelcomeFolderData)>
+    pub name: RegisterUpdate<String>,
+    pub children: Vec<WelcomeFolderData>
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
@@ -28,12 +29,15 @@ pub enum Message {
     },
     AddFolder {
         ptr: ObjPtr<Folder>,
-        idx: FractionalIndex,
         name: RegisterUpdate<String>,
-        parent: ObjPtr<Folder> 
+        parent: RegisterUpdate<(ObjPtr<Folder>, FractionalIndex)> 
     },
     SetFolderName {
         ptr: ObjPtr<Folder>,
         name_update: RegisterUpdate<String> 
+    },
+    TransferFolder {
+        ptr: ObjPtr<Folder>,
+        parent_update: RegisterUpdate<(ObjPtr<Folder>, FractionalIndex)>
     }
 }

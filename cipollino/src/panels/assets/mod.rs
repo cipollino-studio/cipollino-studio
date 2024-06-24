@@ -1,7 +1,7 @@
 
-use cipollino_project::project::{action::Action, folder::Folder, obj::{ObjList, ObjPtr, ObjRef}};
+use cipollino_project::project::{folder::Folder, obj::{ObjPtr, ObjRef}};
 
-use crate::app::{editor::EditorState, AppSystems};
+use crate::{app::{editor::EditorState, AppSystems}, util::ui::dnd::{dnd_drop_zone_reset_colors, dnd_drop_zone_setup_colors, draggable_widget}};
 
 use super::Panel;
 
@@ -10,8 +10,15 @@ pub struct Assets {
 
 }
 
+#[derive(Clone, Copy)]
+enum AssetPtr {
+    Folder(ObjPtr<Folder>)
+}
+
 enum AssetCommand {
-    RenameFolder(ObjPtr<Folder>, String) 
+    // RenameFolder(ObjPtr<Folder>, String),
+
+    Transfer(AssetPtr, ObjPtr<Folder>) 
 }
 
 impl Panel for Assets {
@@ -26,17 +33,29 @@ impl Panel for Assets {
             });
         });
 
-        let mut commands = Vec::new();
+        let colors = dnd_drop_zone_setup_colors(ui);
 
-        ui.label(format!("{}", state.project.fps));
-        self.folder_contents(ui, state.project.root_folder(), &state.project.folders, &mut commands);
+        let mut commands = Vec::new();
+        egui::ScrollArea::both().show(ui, |ui| {
+            self.render_folder_contents(ui, state, &state.project.root_folder(), &mut commands); 
+            let (_, root_payload) = ui.dnd_drop_zone::<AssetPtr, ()>(egui::Frame::default(), |ui| {
+                let available_size = ui.available_size();
+                ui.allocate_exact_size(available_size.max(egui::vec2(available_size.x, 30.0)), egui::Sense::hover());
+            });
+            if let Some(root_payload) = root_payload {
+                let asset = root_payload.as_ref().clone();
+                commands.push(AssetCommand::Transfer(asset, state.project.root_folder().ptr()))
+            }
+        });
+
+        dnd_drop_zone_reset_colors(ui, colors);
 
         for command in commands {
-            let mut action = Action::new();
+            // let mut action = Action::new();
             match command {
-                AssetCommand::RenameFolder(folder, name) => state.client.set_folder_name(&mut state.project, folder, name, &mut action),
+                AssetCommand::Transfer(AssetPtr::Folder(folder), new_parent) => state.client.transfer_folder(&mut state.project, folder, new_parent)
             };
-            state.actions.push_action(action);
+            // state.actions.push_action(action);
         }
     }
 
@@ -44,16 +63,55 @@ impl Panel for Assets {
 
 impl Assets {
 
-    fn folder_contents(&self, ui: &mut egui::Ui, folder: ObjRef<Folder>, folder_list: &ObjList<Folder>, commands: &mut Vec<AssetCommand>) {
-        ui.push_id(folder.ptr(), |ui| {
-            if ui.collapsing(&*folder.name, |ui| {
-                for child_folder in folder.folders.iter_ref(folder_list) {
-                    self.folder_contents(ui, child_folder, folder_list, commands);
-                }
-            }).header_response.clicked() {
-                commands.push(AssetCommand::RenameFolder(folder.ptr(), "Test".to_owned()))
-            }
+    fn render_folder_contents(&mut self, ui: &mut egui::Ui, state: &EditorState, folder: &ObjRef<Folder>, commands: &mut Vec<AssetCommand>) -> Option<bool> {
+        let mut inner_hovered = false;
+
+        for subfolder in folder.folders.iter_ref(&state.project.folders) {
+            ui.push_id(subfolder.ptr(), |ui| {
+                inner_hovered |= self.render_subfolder(ui, state, &subfolder, &subfolder.name, commands).unwrap_or(false);
+            });
+        }
+
+        Some(inner_hovered)
+    }
+
+    fn render_subfolder(&mut self, ui: &mut egui::Ui, state: &EditorState, folder: &ObjRef<Folder>, folder_name: &str, commands: &mut Vec<AssetCommand>) -> Option<bool> {
+
+        let mut frame = egui::Frame::default().begin(ui);
+        let mut inner_hovered = false;
+        let folder_resp = draggable_widget(&mut frame.content_ui, AssetPtr::Folder(folder.ptr()), |ui, _| {
+            let resp = ui.collapsing(folder_name, |ui| {
+                inner_hovered |= self.render_folder_contents(ui, state, folder, commands).unwrap_or(false); 
+            }).header_response;
+            (resp.clone(), resp)
         });
+        let response = frame.allocate_space(ui);
+
+        let is_anything_being_dragged = egui::DragAndDrop::has_any_payload(ui.ctx());
+        let can_accept_what_is_being_dragged = egui::DragAndDrop::has_payload_of_type::<AssetPtr>(ui.ctx());
+
+        let (stroke, hovered) = if is_anything_being_dragged
+            && can_accept_what_is_being_dragged
+            && response.contains_pointer()
+            && !inner_hovered {
+            (ui.visuals().widgets.active.bg_stroke, true)
+        } else {
+            (ui.visuals().widgets.inactive.bg_stroke, false)
+        };
+
+        frame.frame.fill = egui::Color32::TRANSPARENT;
+        frame.frame.stroke = stroke;
+
+        frame.paint(ui);
+
+        if !inner_hovered {
+            if let Some(payload) = response.dnd_release_payload::<AssetPtr>() {
+                let asset_ptr = payload.as_ref().clone();
+                commands.push(AssetCommand::Transfer(asset_ptr, folder.ptr()));
+            }
+        }
+
+        Some(hovered || inner_hovered)
     }
 
 }

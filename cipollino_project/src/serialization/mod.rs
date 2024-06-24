@@ -3,7 +3,7 @@ use std::collections::HashMap;
 
 use project_file::ProjectFile;
 
-use crate::{crdt::register::Register, project::Project};
+use crate::{crdt::{fractional_index::FractionalIndex, register::Register}, project::Project};
 
 pub mod project_file;
 
@@ -29,7 +29,7 @@ impl Serializer {
 pub trait ObjSerialize: Sized {
 
     fn obj_serialize(&self, project: &Project, serializer: &mut Serializer) -> bson::Bson; 
-    fn obj_deserialize(project: &mut Project, data: &bson::Bson, serializer: &mut Serializer) -> Option<Self>;
+    fn obj_deserialize(project: &mut Project, data: &bson::Bson, serializer: &mut Serializer, idx: FractionalIndex) -> Option<Self>;
 
 }
 
@@ -39,7 +39,7 @@ impl ObjSerialize for String {
         bson::Bson::String(self.clone())
     }
 
-    fn obj_deserialize(_project: &mut Project, data: &bson::Bson, _serializer: &mut Serializer) -> Option<Self> {
+    fn obj_deserialize(_project: &mut Project, data: &bson::Bson, _serializer: &mut Serializer, _idx: FractionalIndex) -> Option<Self> {
         Some(data.as_str()?.to_owned()) 
     }
 
@@ -51,8 +51,8 @@ impl<T: ObjSerialize> ObjSerialize for Register<T> {
         self.value.obj_serialize(project, serialization)
     }
 
-    fn obj_deserialize(project: &mut Project, data: &bson::Bson, serializer: &mut Serializer) -> Option<Self> {
-        Some(Self::new(T::obj_deserialize(project, data, serializer)?, 0))
+    fn obj_deserialize(project: &mut Project, data: &bson::Bson, serializer: &mut Serializer, idx: FractionalIndex) -> Option<Self> {
+        Some(Self::new(T::obj_deserialize(project, data, serializer, idx)?, 0))
     }
 
 }
