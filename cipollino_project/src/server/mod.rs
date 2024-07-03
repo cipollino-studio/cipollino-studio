@@ -2,7 +2,7 @@
 
 use std::{collections::HashMap, sync::{Arc, Mutex}};
 
-use crate::{crdt::register::Register, project::{folder::Folder, obj::{ChildList, ObjPtr}, Project}, protocol::{Message, WelcomeData, WelcomeFolderData}};
+use crate::{crdt::register::Register, project::{folder::Folder, obj::{ChildList, ObjPtr}, Project}, protocol::{Message, WelcomeData, WelcomeFolderData}, serialization::Serializer};
 
 use futures::{channel::mpsc::UnboundedSender, future, pin_mut, StreamExt};
 use tokio::net::{TcpListener, TcpStream};
@@ -22,6 +22,7 @@ impl Client {
 pub struct ProjectServer { 
     pub project: Project,
     curr_key: u64,
+    serializer: Serializer,
 
     clients: HashMap<u64, Client>,
     curr_client_id: u64
@@ -72,18 +73,19 @@ impl ProjectServer {
 
     }
 
-    pub async fn start(addr: String, project: Project, curr_key: u64) {
+    pub async fn start(addr: String, project: Project, curr_key: u64, serializer: Serializer) {
         let listener = TcpListener::bind(&addr).await.unwrap();
-        let server = Arc::new(Mutex::new(Self::new(project, curr_key)));
+        let server = Arc::new(Mutex::new(Self::new(project, curr_key, serializer)));
         while let Ok((stream, _addr)) = listener.accept().await {
             tokio::spawn(Self::handle_connection(stream, server.clone()));
         }
     }
 
-    fn new(project: Project, curr_key: u64) -> Self {
+    fn new(project: Project, curr_key: u64, serializer: Serializer) -> Self {
         Self {
             project,
             curr_key,
+            serializer,
             curr_client_id: 1,
             clients: HashMap::new()
         } 
@@ -171,6 +173,7 @@ impl ProjectServer {
             Message::SetFolderName { ptr, name_update } => {
                 let folder = self.project.folders.get_mut(ptr)?;
                 folder.name.apply(name_update.clone());
+                self.serializer.set_obj_data(&self.project, ptr);
                 self.broadcast(Message::SetFolderName { ptr, name_update }, Some(client_id));
             },
             Message::TransferFolder { ptr, parent_update } => {
@@ -196,6 +199,10 @@ impl ProjectServer {
                     self.project.folders.get_mut(old_parent)?.folders.remove(ptr); 
                     self.project.folders.get_mut(parent_update.value.0)?.folders.insert(parent_update.value.1.clone(), ptr);
                 }
+
+                self.serializer.set_obj_data(&self.project, ptr);
+                self.serializer.set_obj_data(&self.project, old_parent);
+                self.serializer.set_obj_data(&self.project, parent_update.value.0);
 
                 self.broadcast(Message::TransferFolder {
                     ptr,

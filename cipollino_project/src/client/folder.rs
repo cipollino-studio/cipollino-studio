@@ -19,8 +19,8 @@ impl ProjectClient {
 
         match self {
             ProjectClient::Local(local) => {
-                local.set_obj_data(project, ptr);
-                local.set_obj_data(project, parent);
+                local.serializer.set_obj_data(project, ptr);
+                local.serializer.set_obj_data(project, parent);
                 local.update_root_obj(project);
             },
             ProjectClient::Collab(collab) => {
@@ -41,7 +41,7 @@ impl ProjectClient {
 
         match self {
             ProjectClient::Local(local) => {
-                local.set_obj_data(project, folder_ptr);
+                local.serializer.set_obj_data(project, folder_ptr);
             },
             ProjectClient::Collab(collab) => {
                 collab.socket.send(Message::SetFolderName {
@@ -57,11 +57,11 @@ impl ProjectClient {
     pub fn set_folder_name(&mut self, project: &mut Project, folder_ptr: ObjPtr<Folder>, name: String, action: &mut Action) -> Option<()> {
         let old_name = project.folders.get(folder_ptr)?.name.value.clone(); 
         self.set_folder_name_no_action(project, folder_ptr, name.clone());
-        action.add_act(ObjAction::SetFolderName(folder_ptr, old_name, name));
+        action.add_act(ObjAction::SetFolderName(folder_ptr, old_name));
         Some(())
     }
 
-    pub fn transfer_folder(&mut self, project: &mut Project, folder_ptr: ObjPtr<Folder>, new_parent: ObjPtr<Folder>) -> Option<()> {
+    pub fn transfer_folder_no_action(&mut self, project: &mut Project, folder_ptr: ObjPtr<Folder>, new_parent: ObjPtr<Folder>) -> Option<()> {
         if Folder::is_inside(project, folder_ptr, new_parent) {
             return None;
         }
@@ -80,9 +80,9 @@ impl ProjectClient {
 
         match self {
             ProjectClient::Local(local) => {
-                local.set_obj_data(project, folder_ptr);
-                local.set_obj_data(project, old_parent);
-                local.set_obj_data(project, new_parent);
+                local.serializer.set_obj_data(project, folder_ptr);
+                local.serializer.set_obj_data(project, old_parent);
+                local.serializer.set_obj_data(project, new_parent);
             },
             ProjectClient::Collab(collab) => {
                 collab.socket.send(Message::TransferFolder {
@@ -92,6 +92,13 @@ impl ProjectClient {
             },
         };
 
+        Some(())
+    }
+
+    pub fn transfer_folder(&mut self, project: &mut Project, folder_ptr: ObjPtr<Folder>, new_parent: ObjPtr<Folder>, action: &mut Action) -> Option<()> {
+        let old_parent = project.folders.get(folder_ptr)?.parent.value.0; 
+        self.transfer_folder_no_action(project, folder_ptr, new_parent);
+        action.add_act(ObjAction::TransferFolder(folder_ptr, old_parent));
         Some(())
     }
 

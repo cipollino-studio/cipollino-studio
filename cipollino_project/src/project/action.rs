@@ -4,21 +4,40 @@ use crate::client::ProjectClient;
 use super::{folder::Folder, obj::ObjPtr, Project};
 
 pub enum ObjAction {
-    SetFolderName(ObjPtr<Folder>, String, String) 
+    SetFolderName(ObjPtr<Folder>, String),
+    TransferFolder(ObjPtr<Folder>, ObjPtr<Folder>)
 }
 
 impl ObjAction {
 
-    pub fn redo(&self, project: &mut Project, client: &mut ProjectClient) {
+    pub fn redo(&self, project: &mut Project, client: &mut ProjectClient) -> Option<ObjAction> {
         match self {
-            ObjAction::SetFolderName(folder, _old_name, new_name) => client.set_folder_name_no_action(project, *folder, new_name.clone()),
-        };
+            ObjAction::SetFolderName(folder, new_name) => {
+                let old_name = project.folders.get(*folder)?.name.value().clone();
+                client.set_folder_name_no_action(project, *folder, new_name.clone())?;
+                Some(ObjAction::SetFolderName(*folder, old_name))
+            },
+            ObjAction::TransferFolder(folder, new_parent) => {
+                let old_parent = project.folders.get(*folder)?.parent.value().0;
+                client.transfer_folder_no_action(project, *folder, *new_parent);
+                Some(ObjAction::TransferFolder(*folder, old_parent))
+            },
+        }
     }
 
-    pub fn undo(&self, project: &mut Project, client: &mut ProjectClient) {
+    pub fn undo(&self, project: &mut Project, client: &mut ProjectClient) -> Option<ObjAction> {
         match self {
-            ObjAction::SetFolderName(folder, old_name, _new_name) => client.set_folder_name_no_action(project, *folder, old_name.clone()),
-        };
+            ObjAction::SetFolderName(folder, old_name) => {
+                let new_name = project.folders.get(*folder)?.name.value().clone();
+                client.set_folder_name_no_action(project, *folder, old_name.clone())?;
+                Some(ObjAction::SetFolderName(*folder, new_name))
+            },
+            ObjAction::TransferFolder(folder, old_parent) => {
+                let new_parent = project.folders.get(*folder)?.parent.value().0;
+                client.transfer_folder_no_action(project, *folder, *old_parent);
+                Some(ObjAction::TransferFolder(*folder, new_parent))
+            },
+        }
     }
 
 }
@@ -39,16 +58,24 @@ impl Action {
         self.acts.push(act); 
     }
 
-    pub(crate) fn redo(&self, project: &mut Project, client: &mut ProjectClient) {
-        for act in &self.acts {
-            act.redo(project, client);
+    pub(crate) fn redo(self, project: &mut Project, client: &mut ProjectClient) -> Action {
+        let mut inv_action = Action::new();
+        for act in self.acts.into_iter().rev() {
+            if let Some(inv_act) = act.undo(project, client) {
+                inv_action.add_act(inv_act);
+            }
         }
+        inv_action
     }
 
-    pub(crate) fn undo(&self, project: &mut Project, client: &mut ProjectClient) {
-        for act in self.acts.iter().rev() {
-            act.undo(project, client);
+    pub(crate) fn undo(self, project: &mut Project, client: &mut ProjectClient) -> Action {
+        let mut inv_action = Action::new();
+        for act in self.acts.into_iter().rev() {
+            if let Some(inv_act) = act.undo(project, client) {
+                inv_action.add_act(inv_act);
+            }
         }
+        inv_action
     }
 
 }
@@ -78,8 +105,7 @@ impl ActionManager {
 
     pub fn redo(&mut self, project: &mut Project, client: &mut ProjectClient) {
         if let Some(action) = self.redo_stack.pop() {
-            action.redo(project, client);
-            self.undo_stack.push(action);
+            self.undo_stack.push(action.redo(project, client));
         }
     }
 
@@ -89,8 +115,7 @@ impl ActionManager {
     
     pub fn undo(&mut self, project: &mut Project, client: &mut ProjectClient) {
         if let Some(action) = self.undo_stack.pop() {
-            action.undo(project, client);
-            self.redo_stack.push(action);
+            self.redo_stack.push(action.undo(project, client));
         } 
     }
 

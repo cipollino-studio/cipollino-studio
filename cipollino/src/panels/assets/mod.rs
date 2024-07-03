@@ -1,29 +1,29 @@
 
-use cipollino_project::project::{folder::Folder, obj::{ObjPtr, ObjRef}};
+use cipollino_project::project::{action::Action, folder::Folder, obj::{ObjPtr, ObjRef}};
 
 use crate::{app::{editor::EditorState, AppSystems}, util::ui::dnd::{dnd_drop_zone_reset_colors, dnd_drop_zone_setup_colors, draggable_widget}};
 
 use super::Panel;
 
-#[derive(Default)]
-pub struct Assets {
-
-}
-
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 enum AssetPtr {
     Folder(ObjPtr<Folder>)
 }
 
+#[derive(Default)]
+pub struct Assets {
+    editing_name: Option<(AssetPtr, String)>
+}
+
 enum AssetCommand {
-    // RenameFolder(ObjPtr<Folder>, String),
+    RenameFolder(ObjPtr<Folder>, String),
 
     Transfer(AssetPtr, ObjPtr<Folder>) 
 }
 
 impl Panel for Assets {
 
-    fn ui(&mut self, ui: &mut egui::Ui, state: &mut EditorState, systems: &mut AppSystems) {
+    fn ui(&mut self, ui: &mut egui::Ui, state: &mut EditorState, _systems: &mut AppSystems) {
         egui::TopBottomPanel::top(ui.next_auto_id()).show_inside(ui, |ui| {
             egui::menu::bar(ui, |ui| {
                 if ui.button(egui_phosphor::regular::FOLDER).clicked() {
@@ -51,11 +51,12 @@ impl Panel for Assets {
         dnd_drop_zone_reset_colors(ui, colors);
 
         for command in commands {
-            // let mut action = Action::new();
+            let mut action = Action::new();
             match command {
-                AssetCommand::Transfer(AssetPtr::Folder(folder), new_parent) => state.client.transfer_folder(&mut state.project, folder, new_parent)
+                AssetCommand::RenameFolder(folder, new_name) => state.client.set_folder_name(&mut state.project, folder, new_name, &mut action),
+                AssetCommand::Transfer(AssetPtr::Folder(folder), new_parent) => state.client.transfer_folder(&mut state.project, folder, new_parent, &mut action),
             };
-            // state.actions.push_action(action);
+            state.actions.push_action(action);
         }
     }
 
@@ -77,6 +78,17 @@ impl Assets {
 
     fn render_subfolder(&mut self, ui: &mut egui::Ui, state: &EditorState, folder: &ObjRef<Folder>, folder_name: &str, commands: &mut Vec<AssetCommand>) -> Option<bool> {
 
+        if let Some((asset_ptr, name)) = &mut self.editing_name {
+            if *asset_ptr == AssetPtr::Folder(folder.ptr()) {
+                let resp = ui.text_edit_singleline(name);
+                if resp.lost_focus() {
+                    commands.push(AssetCommand::RenameFolder(folder.ptr(), name.clone()));
+                    self.editing_name = None;
+                }
+                return Some(false);
+            }
+        }
+
         let mut frame = egui::Frame::default().begin(ui);
         let mut inner_hovered = false;
         let folder_resp = draggable_widget(&mut frame.content_ui, AssetPtr::Folder(folder.ptr()), |ui, _| {
@@ -85,6 +97,14 @@ impl Assets {
             }).header_response;
             (resp.clone(), resp)
         });
+
+        folder_resp.context_menu(|ui| {
+            if ui.button("Rename").clicked() {
+                self.editing_name = Some((AssetPtr::Folder(folder.ptr()), folder.name.value().clone()));
+                ui.close_menu();
+            }
+        });
+
         let response = frame.allocate_space(ui);
 
         let is_anything_being_dragged = egui::DragAndDrop::has_any_payload(ui.ctx());

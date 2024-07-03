@@ -1,6 +1,6 @@
 
 use cipollino_project::{client::ProjectClient, project::{action::ActionManager, Project}};
-use keybind::{Keybind, UndoKeybind};
+use keybind::{Keybind, RedoKeybind, UndoKeybind};
 
 use crate::{app::AppState, panels::PanelManager};
 
@@ -61,6 +61,9 @@ impl Editor {
             self.panel_manager.update(ctx, &mut self.state, systems, disabled);
         });
 
+        if RedoKeybind::consume(ctx, systems.prefs) {
+            self.state.actions.redo(&mut self.state.project, &mut self.state.client);
+        }
         if UndoKeybind::consume(ctx, systems.prefs) {
             self.state.actions.undo(&mut self.state.project, &mut self.state.client);
         }
