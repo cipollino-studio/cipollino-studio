@@ -2,7 +2,7 @@
 
 use std::{collections::HashMap, sync::{Arc, Mutex}};
 
-use crate::{crdt::register::Register, project::{folder::Folder, obj::{ChildList, ObjPtr}, Project}, protocol::{Message, WelcomeData, WelcomeFolderData}, serialization::Serializer};
+use crate::{crdt::register::Register, project::{clip::Clip, folder::Folder, obj::{ChildList, ObjPtr}, Project}, protocol::{Message, ObjMessage, WelcomeData, WelcomeFolderData}, serialization::Serializer};
 
 use futures::{channel::mpsc::UnboundedSender, future, pin_mut, StreamExt};
 use tokio::net::{TcpListener, TcpStream};
@@ -27,6 +27,8 @@ pub struct ProjectServer {
     clients: HashMap<u64, Client>,
     curr_client_id: u64
 }
+
+include!("server.gen.rs");
 
 impl ProjectServer {
 
@@ -127,8 +129,9 @@ impl ProjectServer {
         let folder = self.project.folders.get(folder_ptr).unwrap();
         WelcomeFolderData {
             ptr: folder_ptr, 
-            parent: folder.parent.to_update(),
+            parent: folder.folder.to_update(),
             children: folder.folders.objs.iter().map(|(_idx, ptr)| self.get_folder_data(*ptr)).collect(),
+            clips: folder.clips.iter().map(|ptr| self.get_clip_data(ptr)).collect(),
             name: folder.name.to_update(),
         }
     }
@@ -155,61 +158,46 @@ impl ProjectServer {
                     });
                 }
             },
-            Message::AddFolder { ptr, name, parent } => {
+            Message::Obj(msg) => {
+                if let ObjMessage::TransferFolder { ptr, parent_update } = &msg {
+                    let ptr = *ptr;
+                    let parent_update = parent_update.clone();
 
-                self.project.add(ptr, Folder {
-                    parent: Register::from_update(parent.clone(), 0),
-                    name: Register::from_update(name.clone(), 0),
-                    folders: ChildList::new(),
-                });
+                    // Ensure the new folder exists
+                    self.project.folders.get(parent_update.value.0)?;
 
-                self.broadcast(Message::AddFolder {
-                    ptr,
-                    name,
-                    parent,
-                }, Some(client_id));
+                    if Folder::is_inside(&self.project, ptr, parent_update.value.0) {
+                        // A cycle was detected - revert their transfer
+                        let folder = self.project.folders.get_mut(ptr)?;
+                        let update = folder.folder.set(folder.folder.value.clone())?;
+                        // Broadcast just to be safe - ensure everyone has the same time/client_id for the parent register
+                        self.broadcast(Message::Obj(ObjMessage::TransferFolder {
+                            ptr,
+                            parent_update: update
+                        }), None); 
+                        return Some(());
+                    }
 
-            },
-            Message::SetFolderName { ptr, name_update } => {
-                let folder = self.project.folders.get_mut(ptr)?;
-                folder.name.apply(name_update.clone());
-                self.serializer.set_obj_data(&self.project, ptr);
-                self.broadcast(Message::SetFolderName { ptr, name_update }, Some(client_id));
-            },
-            Message::TransferFolder { ptr, parent_update } => {
-
-                // Ensure the new folder exists
-                self.project.folders.get(parent_update.value.0)?;
-
-                if Folder::is_inside(&self.project, ptr, parent_update.value.0) {
-                    // A cycle was detected - revert their transfer
                     let folder = self.project.folders.get_mut(ptr)?;
-                    let update = folder.parent.set(folder.parent.value.clone())?;
-                    // Broadcast just to be safe - ensure everyone has the same time/client_id for the parent register
-                    self.broadcast(Message::TransferFolder {
+                    let old_parent = folder.folder.0;
+                    if folder.folder.apply(parent_update.clone()) {
+                        self.project.folders.get_mut(old_parent)?.folders.remove(ptr); 
+                        self.project.folders.get_mut(parent_update.value.0)?.folders.insert(parent_update.value.1.clone(), ptr);
+                    }
+
+                    self.serializer.set_obj_data(&self.project, ptr);
+                    self.serializer.set_obj_data(&self.project, old_parent);
+                    self.serializer.set_obj_data(&self.project, parent_update.value.0);
+
+                    self.broadcast(Message::Obj(ObjMessage::TransferFolder {
                         ptr,
-                        parent_update: update
-                    }, None); 
-                    return Some(());
+                        parent_update,
+                    }), Some(client_id));
+
+                } else {
+                    self.handle_obj_message(client_id, msg);
                 }
-
-                let folder = self.project.folders.get_mut(ptr)?;
-                let old_parent = folder.parent.0;
-                if folder.parent.apply(parent_update.clone()) {
-                    self.project.folders.get_mut(old_parent)?.folders.remove(ptr); 
-                    self.project.folders.get_mut(parent_update.value.0)?.folders.insert(parent_update.value.1.clone(), ptr);
-                }
-
-                self.serializer.set_obj_data(&self.project, ptr);
-                self.serializer.set_obj_data(&self.project, old_parent);
-                self.serializer.set_obj_data(&self.project, parent_update.value.0);
-
-                self.broadcast(Message::TransferFolder {
-                    ptr,
-                    parent_update,
-                }, Some(client_id));
             },
-
             Message::Welcome(_) => {},
             Message::KeyGrant { .. } => {},
         }

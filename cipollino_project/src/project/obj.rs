@@ -5,23 +5,14 @@ use std::hash::Hash;
 use std::ops::Deref;
 
 use crate::crdt::fractional_index::FractionalIndex;
-use crate::crdt::register::Register;
 use crate::serialization::{ObjSerialize, Serializer};
 
 use super::Project;
 
 pub trait Obj: Sized + ObjSerialize {
 
-    type Parent;
-
     fn obj_list(project: &Project) -> &ObjList<Self>;
     fn obj_list_mut(project: &mut Project) -> &mut ObjList<Self>;
-
-    fn parent(&self) -> &Register<(Self::Parent, FractionalIndex)>;
-    fn parent_mut(&mut self) -> &mut Register<(Self::Parent, FractionalIndex)>;
-
-    fn list_in_parent(project: &Project, parent: Self::Parent) -> Option<&ChildList<Self>>;
-    fn list_in_parent_mut(project: &mut Project, parent: Self::Parent) -> Option<&mut ChildList<Self>>;
 
 }
 
@@ -206,7 +197,10 @@ impl<T: Obj> ChildList<T> {
     }
 
     pub(crate) fn insert(&mut self, idx: FractionalIndex, ptr: ObjPtr<T>) {
-        let arr_idx = self.objs.binary_search_by(|other_idx| other_idx.0.cmp(&idx)).expect_err("LSEQ keys must be unique.");
+        let arr_idx = match self.objs.binary_search_by(|other_idx| other_idx.0.cmp(&idx).then(other_idx.1.key.cmp(&ptr.key))) {
+            Ok(idx) => idx,
+            Err(idx) => idx
+        };
         self.objs.insert(arr_idx, (idx, ptr));
     }
 

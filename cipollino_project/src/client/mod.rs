@@ -6,7 +6,6 @@ use crate::project::Project;
 
 pub mod collab;
 pub mod local;
-pub mod folder;
 pub enum ProjectClient {
     Local(Local),
     Collab(Collab) 
@@ -49,6 +48,19 @@ impl ProjectClient {
             ProjectClient::Local(_local) => 0,
             ProjectClient::Collab(collab) => collab.client_id,
         }
+    }
+
+}
+
+include!("client.gen.rs");
+
+impl ProjectClient {
+
+    pub fn transfer_folder_no_action(&mut self, project: &mut Project, ptr: ObjPtr<Folder>, new_parent_ptr: ObjPtr<Folder>, idx: FractionalIndex) -> Option<()> {
+        if Folder::is_inside(project, ptr, new_parent_ptr) {
+            return None;
+        }
+        self.transfer_folder_no_action_gen(project, ptr, new_parent_ptr, idx)
     }
 
 }

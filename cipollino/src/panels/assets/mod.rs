@@ -1,13 +1,14 @@
 
-use cipollino_project::project::{action::Action, folder::Folder, obj::{ObjPtr, ObjRef}};
+use cipollino_project::{crdt::fractional_index::FractionalIndex, project::{action::Action, clip::Clip, folder::Folder, obj::{ObjPtr, ObjRef}}};
 
-use crate::{app::{editor::EditorState, AppSystems}, util::ui::dnd::{dnd_drop_zone_reset_colors, dnd_drop_zone_setup_colors, draggable_widget}};
+use crate::{app::{editor::EditorState, AppSystems}, util::ui::dnd::{dnd_drop_zone_reset_colors, dnd_drop_zone_setup_colors, draggable_label, draggable_widget}};
 
 use super::Panel;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum AssetPtr {
-    Folder(ObjPtr<Folder>)
+    Folder(ObjPtr<Folder>),
+    Clip(ObjPtr<Clip>)
 }
 
 #[derive(Default)]
@@ -16,8 +17,7 @@ pub struct Assets {
 }
 
 enum AssetCommand {
-    RenameFolder(ObjPtr<Folder>, String),
-
+    Rename(AssetPtr, String),
     Transfer(AssetPtr, ObjPtr<Folder>) 
 }
 
@@ -28,7 +28,11 @@ impl Panel for Assets {
             egui::menu::bar(ui, |ui| {
                 if ui.button(egui_phosphor::regular::FOLDER).clicked() {
                     let root_folder_ptr = state.project.root_folder().ptr();
-                    state.client.add_folder(&mut state.project, root_folder_ptr, "Folder".to_owned());
+                    state.client.add_folder(&mut state.project, root_folder_ptr, FractionalIndex::half(), "Folder".to_owned());
+                }
+                if ui.button(egui_phosphor::regular::FILM_STRIP).clicked() {
+                    let root_folder_ptr = state.project.root_folder().ptr();
+                    state.client.add_clip(&mut state.project, root_folder_ptr, FractionalIndex::half(), "Clip".to_owned());
                 }
             });
         });
@@ -53,8 +57,10 @@ impl Panel for Assets {
         for command in commands {
             let mut action = Action::new();
             match command {
-                AssetCommand::RenameFolder(folder, new_name) => state.client.set_folder_name(&mut state.project, folder, new_name, &mut action),
-                AssetCommand::Transfer(AssetPtr::Folder(folder), new_parent) => state.client.transfer_folder(&mut state.project, folder, new_parent, &mut action),
+                AssetCommand::Rename(AssetPtr::Folder(folder), new_name) => state.client.set_folder_name(&mut state.project, folder, new_name, &mut action),
+                AssetCommand::Rename(AssetPtr::Clip(clip), new_name) => state.client.set_clip_name(&mut state.project, clip, new_name, &mut action),
+                AssetCommand::Transfer(AssetPtr::Folder(folder), new_parent) => state.client.transfer_folder(&mut state.project, folder, new_parent, FractionalIndex::half(), &mut action),
+                AssetCommand::Transfer(AssetPtr::Clip(clip), new_parent) => state.client.transfer_clip(&mut state.project, clip, new_parent, FractionalIndex::half(), &mut action),
             };
             state.actions.push_action(action);
         }
@@ -72,6 +78,27 @@ impl Assets {
                 inner_hovered |= self.render_subfolder(ui, state, &subfolder, &subfolder.name, commands).unwrap_or(false);
             });
         }
+        for clip in folder.clips.iter_ref(&state.project.clips) {
+            let mut editing_name = false;
+            if let Some((asset_ptr, name)) = &mut self.editing_name {
+                if *asset_ptr == AssetPtr::Clip(clip.ptr()) {
+                    editing_name = true;
+                    let resp = ui.text_edit_singleline(name); 
+                    if resp.lost_focus() {
+                        commands.push(AssetCommand::Rename(AssetPtr::Clip(clip.ptr()), name.clone()));
+                        self.editing_name = None;
+                    }
+                }
+            }
+            if !editing_name {
+                draggable_label(ui, format!("{} {}", egui_phosphor::regular::FILM_STRIP, clip.name.value()).as_str(), AssetPtr::Clip(clip.ptr())).context_menu(|ui| {
+                    if ui.button("Rename").clicked() {
+                        self.editing_name = Some((AssetPtr::Clip(clip.ptr()), clip.name.clone()));
+                        ui.close_menu();
+                    }
+                });
+            }
+        }
 
         Some(inner_hovered)
     }
@@ -82,7 +109,7 @@ impl Assets {
             if *asset_ptr == AssetPtr::Folder(folder.ptr()) {
                 let resp = ui.text_edit_singleline(name);
                 if resp.lost_focus() {
-                    commands.push(AssetCommand::RenameFolder(folder.ptr(), name.clone()));
+                    commands.push(AssetCommand::Rename(AssetPtr::Folder(folder.ptr()), name.clone()));
                     self.editing_name = None;
                 }
                 return Some(false);

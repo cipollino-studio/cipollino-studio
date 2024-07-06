@@ -1,11 +1,13 @@
 
+use clip::Clip;
 use folder::Folder;
-use obj::{ChildList, Obj, ObjList, ObjPtr, ObjRef};
+use obj::{ChildList, ObjList, ObjPtr, ObjRef};
 
 use crate::crdt::{fractional_index::FractionalIndex, register::Register};
 
 pub mod obj;
 pub mod folder;
+pub mod clip;
 pub mod action;
 
 pub struct Project {
@@ -13,6 +15,7 @@ pub struct Project {
     pub sample_rate: f32,
 
     pub folders: ObjList<Folder>,
+    pub clips: ObjList<Clip>,
 
     pub(crate) root_folder: ObjPtr<Folder>
 }
@@ -24,6 +27,7 @@ impl Project {
             fps,
             sample_rate,
             folders: ObjList::new(),
+            clips: ObjList::new(),
             root_folder: ObjPtr::null(),
         }
     }
@@ -32,8 +36,9 @@ impl Project {
         let mut project = Self::empty(fps, sample_rate); 
         project.root_folder = ObjPtr::from_key(1);
         project.folders.objs.insert(project.root_folder, Folder {
-            parent: Register::new((ObjPtr::null(), FractionalIndex::half()), 0),
+            folder: Register::new((ObjPtr::null(), FractionalIndex::half()), 0),
             folders: ChildList::new(),
+            clips: ChildList::new(),
             name: Register::new("root".to_owned(), 0)
         });
         project
@@ -44,25 +49,6 @@ impl Project {
             ptr: self.root_folder,
             obj: self.folders.get(self.root_folder).unwrap()
         }
-    }
-
-    pub(crate) fn add<T: Obj<Parent = ObjPtr<P>>, P: Obj>(&mut self, new_obj_ptr: ObjPtr<T>, obj: T) -> Option<()> {
-        let parent_ptr: ObjPtr<P> = obj.parent().0;
-        let idx = obj.parent().1.clone();
-
-        // Create the object
-        T::obj_list_mut(self).objs.insert(new_obj_ptr, obj);
-
-        // Add it to the parent
-        let list_in_parent = T::list_in_parent_mut(self, parent_ptr.into())?;
-        list_in_parent.insert(idx.clone(), new_obj_ptr);
-
-        Some(())
-    }
-
-    pub(crate) fn get_insertion_idx<T: Obj<Parent = ObjPtr<P>>, P: Obj>(&self, parent_ptr: ObjPtr<P>, idx: usize) -> Option<FractionalIndex> {
-        let list_in_parent = T::list_in_parent(self, parent_ptr.into())?;
-        Some(list_in_parent.get_insertion_idx(idx)) 
     }
 
 }

@@ -1,46 +1,9 @@
 
 use crate::client::ProjectClient;
 
-use super::{folder::Folder, obj::ObjPtr, Project};
+use super::{obj::ObjPtr, Project};
 
-pub enum ObjAction {
-    SetFolderName(ObjPtr<Folder>, String),
-    TransferFolder(ObjPtr<Folder>, ObjPtr<Folder>)
-}
-
-impl ObjAction {
-
-    pub fn redo(&self, project: &mut Project, client: &mut ProjectClient) -> Option<ObjAction> {
-        match self {
-            ObjAction::SetFolderName(folder, new_name) => {
-                let old_name = project.folders.get(*folder)?.name.value().clone();
-                client.set_folder_name_no_action(project, *folder, new_name.clone())?;
-                Some(ObjAction::SetFolderName(*folder, old_name))
-            },
-            ObjAction::TransferFolder(folder, new_parent) => {
-                let old_parent = project.folders.get(*folder)?.parent.value().0;
-                client.transfer_folder_no_action(project, *folder, *new_parent);
-                Some(ObjAction::TransferFolder(*folder, old_parent))
-            },
-        }
-    }
-
-    pub fn undo(&self, project: &mut Project, client: &mut ProjectClient) -> Option<ObjAction> {
-        match self {
-            ObjAction::SetFolderName(folder, old_name) => {
-                let new_name = project.folders.get(*folder)?.name.value().clone();
-                client.set_folder_name_no_action(project, *folder, old_name.clone())?;
-                Some(ObjAction::SetFolderName(*folder, new_name))
-            },
-            ObjAction::TransferFolder(folder, old_parent) => {
-                let new_parent = project.folders.get(*folder)?.parent.value().0;
-                client.transfer_folder_no_action(project, *folder, *old_parent);
-                Some(ObjAction::TransferFolder(*folder, new_parent))
-            },
-        }
-    }
-
-}
+include!("action.gen.rs");
 
 pub struct Action {
     pub(crate) acts: Vec<ObjAction>
@@ -61,7 +24,7 @@ impl Action {
     pub(crate) fn redo(self, project: &mut Project, client: &mut ProjectClient) -> Action {
         let mut inv_action = Action::new();
         for act in self.acts.into_iter().rev() {
-            if let Some(inv_act) = act.undo(project, client) {
+            if let Some(inv_act) = act.redo(project, client) {
                 inv_action.add_act(inv_act);
             }
         }

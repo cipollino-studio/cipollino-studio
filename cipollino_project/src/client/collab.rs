@@ -1,6 +1,6 @@
 use ewebsock::{WsEvent, WsMessage};
 
-use crate::{crdt::register::Register, project::{folder::Folder, obj::{ChildList, ObjPtr}, Project}, protocol::{Message, WelcomeData, WelcomeFolderData}, socket::Socket};
+use crate::{crdt::register::Register, project::{obj::{ChildList, ObjPtr}, Project}, protocol::{Message, WelcomeData, WelcomeFolderData}, socket::Socket};
 
 use super::ProjectClient;
 
@@ -42,6 +42,8 @@ pub struct Collab {
     pub(crate) keys: [KeyBlock; N_KEY_BLOCKS],
     pub(crate) client_id: u64
 }
+
+include!("collab.gen.rs");
 
 impl Collab {
 
@@ -98,32 +100,7 @@ impl Collab {
     fn handle_collab_msg(&mut self, msg: Message, project: &mut Project) -> Option<()> {
         match msg {
             Message::KeyGrant { first, last } => self.handle_key_grant(first, last),
-            Message::AddFolder { ptr, name, parent } => {
-                project.add(ptr, Folder {
-                    parent: Register::from_update(parent, self.client_id),
-                    name: Register::from_update(name, self.client_id),
-                    folders: ChildList::new(),
-                });
-            },
-            Message::SetFolderName { ptr, name_update } => {
-                let folder = project.folders.get_mut(ptr)?;
-                folder.name.apply(name_update);
-            },
-            Message::TransferFolder {ptr, parent_update} => {
-                project.folders.get(parent_update.value.0)?;
-
-                if Folder::is_inside(project, ptr, parent_update.value.0) {
-                    return None;
-                }
-
-                let folder = project.folders.get_mut(ptr)?;
-                let old_parent = folder.parent.0;
-                if folder.parent.apply(parent_update.clone()) {
-                    project.folders.get_mut(old_parent)?.folders.remove(ptr); 
-                    project.folders.get_mut(parent_update.value.0)?.folders.insert(parent_update.value.1.clone(), ptr);
-                }
-            },
-            
+            Message::Obj(obj_msg) => { self.handle_obj_msg(obj_msg, project)? },
             Message::Welcome(_) => {},
             Message::KeyRequest { .. } => {},
         }
@@ -154,16 +131,24 @@ impl Collab {
 
 impl ProjectClient {
 
-    fn add_folders_from_welcome_data(project: &mut Project, client_id: u64, folder_data: WelcomeFolderData) -> ObjPtr<Folder> {
+    fn add_folder_from_welcome_data(project: &mut Project, client_id: u64, folder_data: WelcomeFolderData) -> ObjPtr<Folder> {
         let mut children = Vec::new();
         for child in folder_data.children {
-            children.push((child.parent.1.clone(), Self::add_folders_from_welcome_data(project, client_id, child)));
+            children.push((child.parent.1.clone(), Self::add_folder_from_welcome_data(project, client_id, child)));
+        }
+
+        let mut clips = Vec::new();
+        for clip in folder_data.clips {
+            clips.push((clip.parent.1.clone(), Self::add_clip_from_welcome_data(project, client_id, clip)));
         }
 
         project.folders.objs.insert(folder_data.ptr, Folder {
-            parent: Register::from_update(folder_data.parent, client_id),
+            folder: Register::from_update(folder_data.parent, client_id),
             folders: ChildList {
                 objs: children 
+            },
+            clips: ChildList {
+                objs: clips
             },
             name: Register::from_update(folder_data.name, client_id),
         });
@@ -173,7 +158,7 @@ impl ProjectClient {
     pub fn collab(socket: Socket, welcome_data: WelcomeData) -> (ProjectClient, Project) {
         let mut project = Project::empty(welcome_data.fps, welcome_data.sample_rate);
 
-        project.root_folder = Self::add_folders_from_welcome_data(&mut project, welcome_data.client_id, welcome_data.root_folder_data);
+        project.root_folder = Self::add_folder_from_welcome_data(&mut project, welcome_data.client_id, welcome_data.root_folder_data);
 
         let client = ProjectClient::Collab(Collab {
             socket,
