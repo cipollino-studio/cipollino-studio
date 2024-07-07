@@ -2,7 +2,7 @@
 
 use std::{collections::HashMap, sync::{Arc, Mutex}};
 
-use crate::{crdt::register::Register, project::{clip::Clip, folder::Folder, obj::{ChildList, ObjPtr}, Project}, protocol::{Message, ObjMessage, WelcomeData, WelcomeFolderData}, serialization::Serializer};
+use crate::{crdt::register::Register, project::{obj::{ChildList, ObjPtr}, Project}, protocol::{Message, ObjMessage, WelcomeData, WelcomeFolderData}, serialization::Serializer};
 
 use futures::{channel::mpsc::UnboundedSender, future, pin_mut, StreamExt};
 use tokio::net::{TcpListener, TcpStream};
@@ -198,6 +198,9 @@ impl ProjectServer {
                     self.handle_obj_message(client_id, msg);
                 }
             },
+            Message::LoadRequest(request) => { self.handle_load_request(client_id, request); },
+            // These messages only need to be handled by the client
+            Message::LoadResult(_) => {}, 
             Message::Welcome(_) => {},
             Message::KeyGrant { .. } => {},
         }

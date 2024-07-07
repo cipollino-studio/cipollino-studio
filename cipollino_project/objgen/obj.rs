@@ -89,6 +89,7 @@ pub fn generate_obj_code() {
         deserialize_fn.line("})");
 
         // Object Tree Manipulation
+        scope.import("crate::project::obj", "ObjState");
         let project_impl = scope.new_impl("Project");
 
         let add_fn = project_impl.new_fn(format!("add_{}", obj_type.name.to_case(Case::Snake)).as_str())
@@ -98,10 +99,13 @@ pub fn generate_obj_code() {
             .ret("Option<()>")
             .vis("pub(crate)");
         add_fn.line(format!("let parent_ptr = obj.{}.0;", obj_type.parent.to_case(Case::Snake)));
+        add_fn.line(format!("if !self.{}.is_loaded(parent_ptr) {{", parent_obj_type.list_name));
+        add_fn.line("\treturn None;");
+        add_fn.line("}");
         add_fn.line(format!("let idx = obj.{}.1.clone();", obj_type.parent.to_case(Case::Snake)));
-        add_fn.line(format!("self.{}.objs.insert(new_obj_ptr, obj);", obj_type.list_name));
         add_fn.line(format!("let list_in_parent = &mut self.{}.get_mut(parent_ptr)?.{};", parent_obj_type.list_name, obj_type.list_name));
         add_fn.line("list_in_parent.insert(idx.clone(), new_obj_ptr);");
+        add_fn.line(format!("self.{}.objs.insert(new_obj_ptr, ObjState::Loaded(obj));", obj_type.list_name));
         add_fn.line("Some(())");
         
         let _ = std::fs::write(format!("src/project/{}.gen.rs", obj_type.name.to_case(Case::Snake)), scope.to_string());

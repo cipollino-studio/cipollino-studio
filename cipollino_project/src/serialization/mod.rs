@@ -3,7 +3,7 @@ use std::{collections::HashMap, path::PathBuf};
 
 use project_file::ProjectFile;
 
-use crate::{crdt::{fractional_index::FractionalIndex, register::Register}, project::{folder::Folder, obj::{Obj, ObjPtr}, Project}};
+use crate::{crdt::{fractional_index::FractionalIndex, register::Register}, project::{folder::Folder, obj::{Obj, ObjPtr, ObjState}, Project}};
 
 pub mod project_file;
 
@@ -47,6 +47,42 @@ pub trait ObjSerialize: Sized {
 
     fn obj_serialize(&self, project: &Project, serializer: &mut Serializer) -> bson::Bson; 
     fn obj_deserialize(project: &mut Project, data: &bson::Bson, serializer: &mut Serializer, idx: FractionalIndex) -> Option<Self>;
+
+}
+
+impl ObjSerialize for bool {
+
+    fn obj_serialize(&self, _project: &Project, _serializer: &mut Serializer) -> bson::Bson {
+        bson::Bson::Boolean(*self)
+    }
+
+    fn obj_deserialize(_project: &mut Project, data: &bson::Bson, _serializer: &mut Serializer, _idx: FractionalIndex) -> Option<Self> {
+        Some(data.as_bool()?)
+    }
+
+}
+
+impl ObjSerialize for i32 {
+
+    fn obj_serialize(&self, _project: &Project, _serializer: &mut Serializer) -> bson::Bson {
+        bson::Bson::Int32(*self)
+    }
+
+    fn obj_deserialize(_project: &mut Project, data: &bson::Bson, _serializer: &mut Serializer, _idx: FractionalIndex) -> Option<Self> {
+        Some(data.as_i32()?)
+    }
+
+}
+
+impl ObjSerialize for f32 {
+
+    fn obj_serialize(&self, _project: &Project, _serializer: &mut Serializer) -> bson::Bson {
+        bson::Bson::Double(*self as f64)
+    }
+
+    fn obj_deserialize(_project: &mut Project, data: &bson::Bson, _serializer: &mut Serializer, _idx: FractionalIndex) -> Option<Self> {
+        Some(data.as_f64()? as f32)
+    }
 
 }
 
@@ -126,7 +162,7 @@ pub fn open_project(path: PathBuf) -> Option<(Serializer, u64, Project)> {
     };
 
     let root_folder = Folder::obj_deserialize(&mut project, &serializer.project_file.get_obj_data(root_folder_ptr).ok()?, &mut serializer, FractionalIndex::half())?;
-    project.folders.objs.insert(ObjPtr::from_key(root_folder_key), root_folder);
+    project.folders.objs.insert(ObjPtr::from_key(root_folder_key), ObjState::Loaded(root_folder));
     project.root_folder = ObjPtr::from_key(root_folder_key);
 
     Some((serializer, curr_key, project))

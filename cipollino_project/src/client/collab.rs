@@ -1,6 +1,6 @@
 use ewebsock::{WsEvent, WsMessage};
 
-use crate::{crdt::register::Register, project::{obj::{ChildList, ObjPtr}, Project}, protocol::{Message, WelcomeData, WelcomeFolderData}, socket::Socket};
+use crate::{crdt::register::Register, project::{obj::{ChildList, ObjPtr, ObjState}, Project}, protocol::{Message, WelcomeData, WelcomeFolderData}, socket::Socket};
 
 use super::ProjectClient;
 
@@ -37,13 +37,14 @@ impl KeyBlock {
 
 const N_KEY_BLOCKS: usize = 2;
 
+include!("collab.gen.rs");
+
 pub struct Collab {
     pub(crate) socket: Socket,
     pub(crate) keys: [KeyBlock; N_KEY_BLOCKS],
-    pub(crate) client_id: u64
+    pub(crate) client_id: u64,
+    pub(crate) load_info: CollabLoadInfo
 }
-
-include!("collab.gen.rs");
 
 impl Collab {
 
@@ -101,7 +102,9 @@ impl Collab {
         match msg {
             Message::KeyGrant { first, last } => self.handle_key_grant(first, last),
             Message::Obj(obj_msg) => { self.handle_obj_msg(obj_msg, project)? },
-            Message::Welcome(_) => {},
+            Message::LoadResult(load_result) => { self.handle_load_result(load_result, project, self.client_id)? },
+            Message::Welcome(_) => {}, // This message was handled when collab is initialized
+            Message::LoadRequest(_) => {}, // These messages only need to be handled by the server
             Message::KeyRequest { .. } => {},
         }
         Some(())
@@ -142,7 +145,7 @@ impl ProjectClient {
             clips.push((clip.parent.1.clone(), Self::add_clip_from_welcome_data(project, client_id, clip)));
         }
 
-        project.folders.objs.insert(folder_data.ptr, Folder {
+        project.folders.objs.insert(folder_data.ptr, ObjState::Loaded(Folder {
             folder: Register::from_update(folder_data.parent, client_id),
             folders: ChildList {
                 objs: children 
@@ -151,7 +154,7 @@ impl ProjectClient {
                 objs: clips
             },
             name: Register::from_update(folder_data.name, client_id),
-        });
+        }));
         folder_data.ptr 
     }
 
@@ -164,6 +167,7 @@ impl ProjectClient {
             socket,
             keys: [KeyBlock::empty(), KeyBlock::empty()],
             client_id: welcome_data.client_id,
+            load_info: CollabLoadInfo::new()
         });
 
         (client, project)

@@ -13,6 +13,7 @@ pub fn generate_client_code() {
     scope.import("crate::project::obj", "ChildList");
     scope.import("crate::protocol", "Message");
     scope.import("crate::protocol", "ObjMessage");
+    scope.import("crate::protocol", "LoadRequest");
     scope.import("crate::project::action", "Action");
     scope.import("crate::project::action", "ObjAction");
     scope.import("crate::crdt::fractional_index", "FractionalIndex");
@@ -162,8 +163,29 @@ pub fn generate_client_code() {
         transfer_fn.line(format!("action.add_act(ObjAction::Transfer{}(ptr, old_parent, old_idx));", obj_type.name));
         transfer_fn.line("Some(())");
 
+        // Load
+        if obj_type.is_asset() {
+            let load_fn = client_impl.new_fn(format!("load_{}", obj_type.name.to_case(Case::Snake)).as_str())
+                .arg_mut_self()
+                .arg("ptr", format!("ObjPtr<{}>", obj_type.name))
+                .arg("project", "&mut Project")
+                .vis("pub");
+            load_fn.line(format!("if project.{}.is_loaded(ptr) {{", obj_type.list_name));
+            load_fn.line("\treturn;");
+            load_fn.line("}");
+            load_fn.line("match self {");
+            load_fn.line("\tProjectClient::Local(_local) => {}, // TODO: partial file loading");
+            load_fn.line("\tProjectClient::Collab(collab) => {");
+            load_fn.line(format!("\t\tif collab.load_info.sent_{}_load_msg.contains(&ptr) {{", obj_type.name.to_case(Case::Snake)));
+            load_fn.line("\t\t\treturn;");
+            load_fn.line("\t\t}");
+            load_fn.line(format!("\t\tcollab.socket.send(Message::LoadRequest(LoadRequest::{}(ptr)));", obj_type.name));
+            load_fn.line(format!("\t\tcollab.load_info.sent_{}_load_msg.insert(ptr);", obj_type.name.to_case(Case::Snake))); 
+            load_fn.line("\t},");
+            load_fn.line("}");
+        }
     }
-
+    
     let _ = std::fs::write("src/client/client.gen.rs", scope.to_string());
 
 }

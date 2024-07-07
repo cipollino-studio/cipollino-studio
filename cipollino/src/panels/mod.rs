@@ -3,6 +3,7 @@ use crate::app::{editor::EditorState, AppSystems};
 
 mod assets;
 mod scene;
+mod timeline;
 
 pub trait Panel {
 
@@ -14,10 +15,11 @@ pub trait Panel {
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy)]
 pub enum PanelKind {
     Assets,
-    Scene
+    Scene,
+    Timeline
 }
 
-pub const PANEL_KINDS: [PanelKind; 2] = [PanelKind::Assets, PanelKind::Scene];
+pub const PANEL_KINDS: [PanelKind; 3] = [PanelKind::Assets, PanelKind::Scene, PanelKind::Timeline];
 
 impl PanelKind {
 
@@ -25,6 +27,7 @@ impl PanelKind {
         match self {
             PanelKind::Assets => Box::new(assets::Assets::default()),
             PanelKind::Scene => Box::new(scene::Scene::default()),
+            PanelKind::Timeline => Box::new(timeline::Timeline::default()),
         }
     }
 
@@ -32,6 +35,7 @@ impl PanelKind {
         match self {
             PanelKind::Assets => "Assets",
             PanelKind::Scene => "Scene",
+            PanelKind::Timeline => "Timeline",
         }
     }
 

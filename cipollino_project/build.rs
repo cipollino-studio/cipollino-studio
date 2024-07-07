@@ -5,4 +5,3 @@ mod objgen;
 fn main() {
     generate();
 }
-

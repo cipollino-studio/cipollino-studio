@@ -1,5 +1,5 @@
 
-use cipollino_project::{client::ProjectClient, project::{action::ActionManager, Project}};
+use cipollino_project::{client::ProjectClient, project::{action::ActionManager, clip::Clip, obj::ObjPtr, Project}};
 use keybind::{Keybind, RedoKeybind, UndoKeybind};
 
 use crate::{app::AppState, panels::PanelManager};
@@ -26,7 +26,9 @@ impl UserPref for PanelManagerPref {
 pub struct EditorState {
     pub project: Project,
     pub client: ProjectClient,
-    pub actions: ActionManager 
+    pub actions: ActionManager,
+
+    pub open_clip: ObjPtr<Clip> 
 }
 
 pub struct Editor {
@@ -41,7 +43,8 @@ impl Editor {
             state: EditorState {
                 project,
                 client,
-                actions: ActionManager::new()
+                actions: ActionManager::new(),
+                open_clip: ObjPtr::null()
             }, 
             panel_manager: systems.prefs.get::<PanelManagerPref>()
         }
@@ -52,6 +55,8 @@ impl Editor {
         if let Err(msg) = self.state.client.update(&mut self.state.project) {
             next_state = Some(AppState::Error(msg));
         }
+
+        self.state.client.load_clip(self.state.open_clip, &mut self.state.project);
 
         let disabled = !self.state.client.has_keys();
 

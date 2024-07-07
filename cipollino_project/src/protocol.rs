@@ -27,7 +27,9 @@ pub enum Message {
         first: u64,
         last: u64
     },
-    Obj(ObjMessage) 
+    Obj(ObjMessage),
+    LoadRequest(LoadRequest),
+    LoadResult(LoadResult)
 }
 
 include!("protocol.gen.rs");

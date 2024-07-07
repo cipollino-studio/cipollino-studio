@@ -122,8 +122,13 @@ impl<T: Obj> Hash for ObjPtr<T> {
 
 }
 
+pub(crate) enum ObjState<T: Obj> {
+    ToLoad(T),
+    Loaded(T)
+}
+
 pub struct ObjList<T: Obj> {
-    pub(crate) objs: HashMap<ObjPtr<T>, T>,
+    pub(crate) objs: HashMap<ObjPtr<T>, ObjState<T>>,
 }
 
 impl<T: Obj> ObjList<T> {
@@ -135,11 +140,35 @@ impl<T: Obj> ObjList<T> {
     }
 
     pub fn get(&self, ptr: ObjPtr<T>) -> Option<&T> {
-        self.objs.get(&ptr)
+        self.objs.get(&ptr).map(|state| match state {
+            ObjState::ToLoad(obj) | ObjState::Loaded(obj) => obj,
+        })
     }
     
     pub(crate) fn get_mut(&mut self, ptr: ObjPtr<T>) -> Option<&mut T> {
-        self.objs.get_mut(&ptr)
+        self.objs.get_mut(&ptr).map(|state| match state {
+            ObjState::ToLoad(obj) | ObjState::Loaded(obj) => obj,
+        })
+    }
+
+    pub fn is_loaded(&self, ptr: ObjPtr<T>) -> bool {
+        match self.objs.get(&ptr) {
+            None => false,
+            Some(ObjState::ToLoad(_)) => false,
+            Some(ObjState::Loaded(_)) => true
+        } 
+    }
+    
+    pub(crate) fn mark_as_loaded(&mut self, ptr: ObjPtr<T>) -> Option<()> {
+        let obj_state = self.objs.get_mut(&ptr)?;
+        if let ObjState::ToLoad(_) = obj_state {
+            let obj_state = self.objs.remove(&ptr).unwrap();
+            self.objs.insert(ptr, match obj_state {
+                ObjState::ToLoad(obj) => ObjState::Loaded(obj),
+                ObjState::Loaded(obj) => ObjState::Loaded(obj),
+            });
+        }
+        Some(())
     }
 
 }
@@ -204,10 +233,14 @@ impl<T: Obj> ChildList<T> {
         self.objs.insert(arr_idx, (idx, ptr));
     }
 
+    pub fn len(&self) -> usize {
+        self.objs.len()
+    }
+
     /**
         Get the fractional index you need to insert at to put a new object at a certain index
      */
-    pub(crate) fn get_insertion_idx(&self, idx: usize) -> FractionalIndex {
+    pub fn get_insertion_idx(&self, idx: usize) -> FractionalIndex {
         if self.objs.is_empty() {
             FractionalIndex::half()
         } else if idx == 0 {
@@ -241,7 +274,7 @@ impl<T: Obj> ObjSerialize for ChildList<T> {
             let Some(data) = serializer.project_file.get_obj_data(ptr_in_file).ok() else { return false; };
             let Some(obj) = T::obj_deserialize(project, &data, serializer, idx.clone()) else { return false; };
 
-            T::obj_list_mut(project).objs.insert(*ptr, obj);
+            T::obj_list_mut(project).objs.insert(*ptr, ObjState::Loaded(obj));
 
             true
         });

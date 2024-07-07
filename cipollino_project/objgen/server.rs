@@ -1,3 +1,4 @@
+
 use codegen::Scope;
 use convert_case::{Case, Casing};
 
@@ -8,10 +9,14 @@ use super::{find_obj_type, ObjTypeFlags, OBJ_TYPES};
 pub fn generate_server_code() {
     let mut scope = Scope::new();
 
+    scope.import("crate::protocol", "LoadRequest");
+    scope.import("crate::protocol", "LoadResult");
     for obj_type in &OBJ_TYPES {
         if obj_type.is_asset() {
             scope.import("crate::protocol", format!("Welcome{}Data", obj_type.name).as_str());
         }
+        scope.import(format!("crate::project::{}", obj_type.name.to_case(Case::Snake)).as_str(), &obj_type.name);
+        scope.import("crate::protocol", format!("{}LoadData", obj_type.name).as_str());
     }
 
     let project_server_impl = scope.new_impl("ProjectServer");
@@ -31,7 +36,7 @@ pub fn generate_server_code() {
         handle_msg.line("\t\tptr,");
         handle_msg.line("\t\tparent,");
         for field in obj_type.fields {
-            handle_msg.line(format!("\t\t{}", field.name));
+            handle_msg.line(format!("\t\t{},", field.name));
         }
         handle_msg.line("\t} => {");
         handle_msg.line(format!("\t\tself.project.add_{}(ptr, {} {{", obj_type.name.to_case(Case::Snake), obj_type.name));
@@ -88,6 +93,50 @@ pub fn generate_server_code() {
     }
     handle_msg.line("\t_ => {Some(())}");
     handle_msg.line("}");
+
+    // Handle load request
+    let handle_load = project_server_impl.new_fn("handle_load_request")
+        .arg_mut_self()
+        .arg("client_id", "u64")
+        .arg("req", "LoadRequest")
+        .ret("Option<()>");
+    handle_load.line("match req {");
+    for obj_type in &OBJ_TYPES {
+        if !obj_type.is_asset() {
+            continue;
+        }
+        handle_load.line(format!("\tLoadRequest::{}(ptr) => {{", obj_type.name));
+        handle_load.line(format!("\t\tlet obj = self.project.{}.get(ptr)?;", obj_type.list_name));
+        handle_load.line(format!("\t\tself.send(Message::LoadResult(LoadResult::{}(", obj_type.name));
+        handle_load.line("\t\t\tptr,");
+        for child in obj_type.children {
+            let child_obj = find_obj_type(child);
+            handle_load.line(format!("\t\t\tobj.{0}.iter_ref(&self.project.{0}).map(|child| self.get_{1}_load_data(&child, child.ptr())).collect(),", child_obj.list_name, child_obj.name.to_case(Case::Snake)));
+        }
+        handle_load.line("\t\t)), client_id);");
+        handle_load.line("\t},");
+    }
+    handle_load.line("}");
+    handle_load.line("Some(())");
+
+    for obj_type in &OBJ_TYPES {
+        let get_load_data_fn = project_server_impl.new_fn(format!("get_{}_load_data", obj_type.name.to_case(Case::Snake)).as_str())
+            .arg_ref_self()
+            .arg("obj", format!("&{}", obj_type.name))
+            .arg("ptr", format!("ObjPtr<{}>", obj_type.name))
+            .ret(format!("{}LoadData", obj_type.name));
+        get_load_data_fn.line(format!("{}LoadData {{", obj_type.name));
+        get_load_data_fn.line("\tptr,");
+        get_load_data_fn.line(format!("\tparent: obj.{}.to_update(),", obj_type.parent.to_case(Case::Snake)));
+        for field in obj_type.fields {
+            get_load_data_fn.line(format!("\t{0}: obj.{0}.to_update(),", field.name));
+        }
+        for child in obj_type.children {
+            let child_obj = find_obj_type(&child);
+            get_load_data_fn.line(format!("\t{0}: obj.{0}.iter_ref(&self.project.{0}).map(|child| self.get_{1}_load_data(&child, child.ptr())).collect(),", child_obj.list_name, child_obj.name.to_case(Case::Snake)));
+        }
+        get_load_data_fn.line("}");
+    }
 
     // Get welcome data
     for obj_type in &OBJ_TYPES {

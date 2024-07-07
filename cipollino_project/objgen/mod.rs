@@ -39,7 +39,7 @@ pub struct ObjType {
     flags: ObjTypeFlags
 }
 
-pub static OBJ_TYPES: [ObjType; 2] = [
+pub static OBJ_TYPES: [ObjType; 4] = [
     ObjType {
         name: "Folder",
         list_name: "folders",
@@ -58,15 +58,63 @@ pub static OBJ_TYPES: [ObjType; 2] = [
         name: "Clip",
         list_name: "clips",
         parent: "Folder",
-        children: &[],
+        children: &["Layer"],
         fields: &[
             ObjField {
                 name: "name",
                 ty: "String",
                 default: "\"Clip\".to_owned()"
+            },
+            ObjField {
+                name: "length",
+                ty: "i32",
+                default: "100"
             }
         ],
         flags: ObjTypeFlags::Asset
+    },
+    ObjType {
+        name: "Layer",
+        list_name: "layers",
+        parent: "Clip",
+        children: &["Frame"],
+        fields: &[
+            ObjField {
+                name: "name",
+                ty: "String",
+                default: "\"Layer\".to_owned()"
+            },
+            ObjField {
+                name: "alpha",
+                ty: "f32",
+                default: "1.0"
+            },
+            ObjField {
+                name: "hide",
+                ty: "bool",
+                default: "false"
+            },
+            ObjField {
+                name: "lock",
+                ty: "bool",
+                default: "false"
+            }
+        ],
+        flags: ObjTypeFlags::empty()
+    },
+    ObjType {
+        name: "Frame",
+        list_name: "frames",
+        parent: "Layer",
+        children: &[],
+        fields: &[
+            ObjField {
+                name: "time",
+                ty: "i32",
+                default: "0"
+            }
+        ],
+        flags: ObjTypeFlags::empty()
     }
 ];
 

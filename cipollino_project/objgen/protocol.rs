@@ -1,7 +1,7 @@
 
 use codegen::Scope;
 use convert_case::{Case, Casing};
-use super::OBJ_TYPES;
+use super::{find_obj_type, OBJ_TYPES};
 
 
 // src/protocol.gen.rs
@@ -13,6 +13,7 @@ pub fn generate_protocol_code() {
         scope.import(format!("crate::project::{}", obj_type.name.to_case(Case::Snake)).as_str(), &obj_type.name);
     }
     
+    // ObjMessage
     let obj_message_enum = scope.new_enum("ObjMessage")
         .vis("pub")
         .derive("serde::Serialize")
@@ -42,6 +43,55 @@ pub fn generate_protocol_code() {
         obj_message_enum.new_variant(format!("Transfer{}", obj_type.name))
             .named("ptr", format!("ObjPtr<{}>", obj_type.name))
             .named("parent_update", parent_type);
+    }
+
+    // LoadRequest
+    let load_request_enum = scope.new_enum("LoadRequest")
+        .vis("pub")
+        .derive("serde::Serialize")
+        .derive("serde::Deserialize")
+        .derive("Clone");
+    for obj_type in &OBJ_TYPES {
+        if !obj_type.is_asset() {
+            continue;
+        }
+        load_request_enum.new_variant(obj_type.name)
+            .tuple(format!("ObjPtr<{}>", obj_type.name).as_str());
+    }
+
+    // LoadResult
+    let load_result_enum = scope.new_enum("LoadResult")
+        .vis("pub")
+        .derive("serde::Serialize")
+        .derive("serde::Deserialize")
+        .derive("Clone");
+    for obj_type in &OBJ_TYPES {
+        if !obj_type.is_asset() {
+            continue;
+        }
+        let variant = load_result_enum.new_variant(obj_type.name)
+            .tuple(format!("ObjPtr<{}>", obj_type.name).as_str());
+        for child in obj_type.children {
+            variant.tuple(format!("Vec<{}LoadData>", child).as_str());
+        }
+    }
+
+    for obj_type in &OBJ_TYPES {
+        let load_data = scope.new_struct(format!("{}LoadData", obj_type.name).as_str())
+            .vis("pub")
+            .derive("serde::Serialize")
+            .derive("serde::Deserialize")
+            .derive("Clone")
+            .field("pub(crate) ptr", format!("ObjPtr<{}>", obj_type.name))
+            .field("pub(crate) parent", format!("RegisterUpdate<(ObjPtr<{}>, FractionalIndex)>", obj_type.parent));
+
+        for field in obj_type.fields {
+            load_data.field(format!("pub(crate) {}", field.name).as_str(), format!("RegisterUpdate<{}>", field.ty));
+        }
+        for child in obj_type.children {
+            let child_obj = find_obj_type(child);
+            load_data.field(format!("pub(crate) {}", child_obj.list_name).as_str(), format!("Vec<{}LoadData>", child_obj.name));
+        }
     }
 
     // Welcome Data

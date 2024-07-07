@@ -18,7 +18,8 @@ pub struct Assets {
 
 enum AssetCommand {
     Rename(AssetPtr, String),
-    Transfer(AssetPtr, ObjPtr<Folder>) 
+    Transfer(AssetPtr, ObjPtr<Folder>),
+    OpenClip(ObjPtr<Clip>)
 }
 
 impl Panel for Assets {
@@ -32,7 +33,7 @@ impl Panel for Assets {
                 }
                 if ui.button(egui_phosphor::regular::FILM_STRIP).clicked() {
                     let root_folder_ptr = state.project.root_folder().ptr();
-                    state.client.add_clip(&mut state.project, root_folder_ptr, FractionalIndex::half(), "Clip".to_owned());
+                    state.client.add_clip(&mut state.project, root_folder_ptr, FractionalIndex::half(), "Clip".to_owned(), 100);
                 }
             });
         });
@@ -55,12 +56,18 @@ impl Panel for Assets {
         dnd_drop_zone_reset_colors(ui, colors);
 
         for command in commands {
+            if let AssetCommand::OpenClip(clip) = command {
+                state.open_clip = clip;
+                continue;
+            } 
+
             let mut action = Action::new();
             match command {
                 AssetCommand::Rename(AssetPtr::Folder(folder), new_name) => state.client.set_folder_name(&mut state.project, folder, new_name, &mut action),
                 AssetCommand::Rename(AssetPtr::Clip(clip), new_name) => state.client.set_clip_name(&mut state.project, clip, new_name, &mut action),
                 AssetCommand::Transfer(AssetPtr::Folder(folder), new_parent) => state.client.transfer_folder(&mut state.project, folder, new_parent, FractionalIndex::half(), &mut action),
                 AssetCommand::Transfer(AssetPtr::Clip(clip), new_parent) => state.client.transfer_clip(&mut state.project, clip, new_parent, FractionalIndex::half(), &mut action),
+                _ => {None}
             };
             state.actions.push_action(action);
         }
@@ -91,7 +98,11 @@ impl Assets {
                 }
             }
             if !editing_name {
-                draggable_label(ui, format!("{} {}", egui_phosphor::regular::FILM_STRIP, clip.name.value()).as_str(), AssetPtr::Clip(clip.ptr())).context_menu(|ui| {
+                let resp = draggable_label(ui, format!("{} {}", egui_phosphor::regular::FILM_STRIP, clip.name.value()).as_str(), AssetPtr::Clip(clip.ptr()));
+                if resp.double_clicked() {
+                    commands.push(AssetCommand::OpenClip(clip.ptr()));
+                }
+                resp.context_menu(|ui| {
                     if ui.button("Rename").clicked() {
                         self.editing_name = Some((AssetPtr::Clip(clip.ptr()), clip.name.clone()));
                         ui.close_menu();
