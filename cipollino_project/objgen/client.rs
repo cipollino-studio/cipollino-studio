@@ -21,56 +21,127 @@ pub fn generate_client_code() {
     for obj_type in &OBJ_TYPES {
 
         scope.import(format!("crate::project::{}", obj_type.name.to_case(Case::Snake)).as_str(), &obj_type.name);
+        scope.import(format!("crate::project::{}", obj_type.name.to_case(Case::Snake)).as_str(), format!("{}RawData", obj_type.name).as_str());
 
         let client_impl = scope.new_impl("ProjectClient");
 
         // Add
+        let add_fn_no_action = client_impl.new_fn(format!("add_{}_no_action", obj_type.name.to_case(Case::Snake)).as_str())
+            .vis("pub")
+            .arg_mut_self()
+            .arg("project", "&mut Project")
+            .arg("ptr", format!("ObjPtr<{}>", obj_type.name))
+            .arg("parent", format!("ObjPtr<{}>", obj_type.parent))
+            .arg("idx", "FractionalIndex")
+            .ret(format!("Option<ObjPtr<{}>>", obj_type.name));
+
+        for field in obj_type.fields {
+            add_fn_no_action.arg(field.name, field.ty);
+        }
+        for field in obj_type.fields { 
+            add_fn_no_action.line(format!("let {0} = Register::new({0}, self.client_id());", field.name));
+            add_fn_no_action.line(format!("let {0}_update = {0}.to_update();", field.name));
+        }
+        add_fn_no_action.line("let parent_reg = Register::new((parent, idx), self.client_id());");
+        add_fn_no_action.line("let parent_update = parent_reg.to_update();");
+        add_fn_no_action.line(format!("project.add_{}(ptr, {} {{", obj_type.name.to_case(Case::Snake), obj_type.name));
+        add_fn_no_action.line(format!("\t{}: parent_reg,", obj_type.parent.to_case(Case::Snake)));
+        for field in obj_type.fields {
+            add_fn_no_action.line(format!("\t{},", field.name));
+        }
+        for child in obj_type.children {
+            let child_obj = find_obj_type(child);
+            add_fn_no_action.line(format!("\t{}: ChildList::new(),", child_obj.list_name));
+        }
+        add_fn_no_action.line("})?;");
+
+        add_fn_no_action.line("match self {");
+        add_fn_no_action.line("\tProjectClient::Local(local) => {");
+        add_fn_no_action.line("\t\tlocal.serializer.set_obj_data(project, ptr);");
+        add_fn_no_action.line("\t\tlocal.serializer.set_obj_data(project, parent);");
+        add_fn_no_action.line("\t\tlocal.update_root_obj(project);");
+        add_fn_no_action.line("\t},");
+        add_fn_no_action.line("\tProjectClient::Collab(collab) => {");
+        add_fn_no_action.line(format!("\t\tcollab.socket.send(Message::Obj(ObjMessage::Add{} {{", obj_type.name));
+        add_fn_no_action.line("\t\t\tptr,");
+        for field in obj_type.fields {
+            add_fn_no_action.line(format!("\t\t\t{0}: {0}_update,", field.name));
+        }
+        add_fn_no_action.line("\t\t\tparent: parent_update,");
+        add_fn_no_action.line("\t\t}))");
+        add_fn_no_action.line("\t}");
+        add_fn_no_action.line("}");
+        add_fn_no_action.line("Some(ptr)");
+
         let add_fn = client_impl.new_fn(format!("add_{}", obj_type.name.to_case(Case::Snake)).as_str())
             .vis("pub")
             .arg_mut_self()
             .arg("project", "&mut Project")
             .arg("parent", format!("ObjPtr<{}>", obj_type.parent))
-            .arg("idx", "FractionalIndex")
-            .ret("Option<()>");
-
+            .arg("idx", "FractionalIndex");
         for field in obj_type.fields {
             add_fn.arg(field.name, field.ty);
         }
+        add_fn.arg("action", "&mut Action")
+            .ret(format!("Option<ObjPtr<{}>>", obj_type.name));
         add_fn.line("let ptr = ObjPtr::from_key(self.next_key()?);");
-        for field in obj_type.fields { 
-            add_fn.line(format!("let {0} = Register::new({0}, self.client_id());", field.name));
-            add_fn.line(format!("let {0}_update = {0}.to_update();", field.name));
-        }
-        add_fn.line("let parent_reg = Register::new((parent, idx), self.client_id());");
-        add_fn.line("let parent_update = parent_reg.to_update();");
-        add_fn.line(format!("project.add_{}(ptr, {} {{", obj_type.name.to_case(Case::Snake), obj_type.name));
-        add_fn.line(format!("\t{}: parent_reg,", obj_type.parent.to_case(Case::Snake)));
+        add_fn.line(format!("self.add_{}_no_action(", obj_type.name.to_case(Case::Snake)));
+        add_fn.line("\tproject,");
+        add_fn.line("\tptr,");
+        add_fn.line("\tparent,");
+        add_fn.line("\tidx,");
         for field in obj_type.fields {
             add_fn.line(format!("\t{},", field.name));
         }
+        add_fn.line(")?;");
+        add_fn.line(format!("action.add_act(ObjAction::Delete{}(ptr));", obj_type.name));
+        add_fn.line("Some(ptr)");
+
+        // Recreate
+        let parent_obj = find_obj_type(obj_type.parent);
+        let recreate_fn = client_impl.new_fn(format!("recreate_{}", obj_type.name.to_case(Case::Snake)).as_str())
+            .arg_mut_self()
+            .arg("project", "&mut Project")
+            .arg("parent", format!("ObjPtr<{}>", parent_obj.name))
+            .arg("idx", "FractionalIndex")
+            .arg("data", format!("{}RawData", obj_type.name))
+            .ret("Option<()>")
+            .vis("pub(crate)");
+        recreate_fn.line(format!("self.add_{}_no_action(", obj_type.name.to_case(Case::Snake)));
+        recreate_fn.line("\tproject,");
+        recreate_fn.line("\tdata.ptr,");
+        recreate_fn.line("\tparent,");
+        recreate_fn.line("\tidx,");
+        for field in obj_type.fields {
+            recreate_fn.line(format!("\tdata.{},", field.name));
+        }
+        recreate_fn.line(");");
         for child in obj_type.children {
             let child_obj = find_obj_type(child);
-            add_fn.line(format!("\t{}: ChildList::new(),", child_obj.list_name));
+            recreate_fn.line(format!("let idxs = FractionalIndex::range(data.{}.len());", child_obj.list_name));
+            recreate_fn.line(format!("for (child, idx) in data.{}.into_iter().zip(idxs.into_iter()) {{", child_obj.list_name));
+            recreate_fn.line(format!("\tself.recreate_{}(project, data.ptr, idx, child);", child_obj.name.to_case(Case::Snake)));
+            recreate_fn.line("}");
         }
-        add_fn.line("})?;");
+        recreate_fn.line("Some(())");
 
-        add_fn.line("match self {");
-        add_fn.line("\tProjectClient::Local(local) => {");
-        add_fn.line("\t\tlocal.serializer.set_obj_data(project, ptr);");
-        add_fn.line("\t\tlocal.serializer.set_obj_data(project, parent);");
-        add_fn.line("\t\tlocal.update_root_obj(project);");
-        add_fn.line("\t},");
-        add_fn.line("\tProjectClient::Collab(collab) => {");
-        add_fn.line(format!("\t\tcollab.socket.send(Message::Obj(ObjMessage::Add{} {{", obj_type.name));
-        add_fn.line("\t\t\tptr,");
-        for field in obj_type.fields {
-            add_fn.line(format!("\t\t\t{0}: {0}_update,", field.name));
-        }
-        add_fn.line("\t\t\tparent: parent_update,");
-        add_fn.line("\t\t}))");
-        add_fn.line("\t}");
-        add_fn.line("}");
-        add_fn.line("Some(())");
+        // Delete
+        let delete_fn = client_impl.new_fn(format!("delete_{}_no_action", obj_type.name.to_case(Case::Snake)).as_str())
+            .arg_mut_self()
+            .arg("project", "&mut Project")
+            .arg("ptr", format!("ObjPtr<{}>", obj_type.name))
+            .ret("Option<()>")
+            .vis("pub");
+        delete_fn.line("if let ProjectClient::Local(local) = self {");
+        delete_fn.line(format!("\tlocal.serializer.delete_{}(project, ptr);", obj_type.name.to_case(Case::Snake)));
+        delete_fn.line("}");
+        delete_fn.line(format!("project.delete_{}(ptr)?;", obj_type.name.to_case(Case::Snake)));
+        delete_fn.line("if let ProjectClient::Collab(collab) = self {");
+        delete_fn.line(format!("\tcollab.socket.send(Message::Obj(ObjMessage::Delete{} {{", obj_type.name));
+        delete_fn.line("\t\tptr");
+        delete_fn.line("\t}));");
+        delete_fn.line("}");
+        delete_fn.line("Some(())");
 
         // Set
         for field in obj_type.fields {

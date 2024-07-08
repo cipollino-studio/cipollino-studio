@@ -1,4 +1,6 @@
 
+use cipollino_project::project::action::Action;
+
 use crate::app::{editor::EditorState, AppSystems};
 
 use super::Panel;
@@ -26,13 +28,15 @@ impl Panel for Timeline {
 
         ui.heading(clip.name.value());
         for layer in clip.layers.iter_ref(&state.project.layers) {
-            ui.label(layer.name.value());
+            ui.label(format!("{} (idx: {:?})", layer.name.value(), layer.clip.1));
         }
 
         let idx = clip.layers.len();
         let new_layer_idx = clip.layers.get_insertion_idx(idx);
         if ui.button("+").clicked() {
-            state.client.add_layer(&mut state.project, state.open_clip, new_layer_idx, format!("Layer No. {}", idx), 1.0, false, false);
+            let mut action = Action::new();
+            state.client.add_layer(&mut state.project, state.open_clip, new_layer_idx, format!("Layer No. {}", idx), 1.0, false, false, &mut action);
+            state.actions.push_action(action);
         }
     }
 

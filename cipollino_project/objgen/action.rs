@@ -1,7 +1,7 @@
 use codegen::Scope;
 use convert_case::{Case, Casing};
 
-use super::OBJ_TYPES;
+use super::{find_obj_type, OBJ_TYPES};
 
 
 // src/project/action.gen.rs
@@ -12,6 +12,7 @@ pub fn generate_action_code() {
     scope.import("crate::crdt::fractional_index", "FractionalIndex");
     for obj_type in &OBJ_TYPES {
         scope.import(format!("crate::project::{}", obj_type.name.to_case(Case::Snake)).as_str(), &obj_type.name);
+        scope.import(format!("crate::project::{}", obj_type.name.to_case(Case::Snake)).as_str(), format!("{}RawData", &obj_type.name).as_str());
     }
 
     // ObjAction enum
@@ -19,6 +20,16 @@ pub fn generate_action_code() {
         .vis("pub");
 
     for obj_type in &OBJ_TYPES {
+
+        // Add
+        obj_action_enum.new_variant(format!("Add{}", obj_type.name))
+            .tuple(format!("{}RawData", obj_type.name).as_str())
+            .tuple(format!("ObjPtr<{}>", obj_type.parent).as_str())
+            .tuple("FractionalIndex");
+
+        // Delete
+        obj_action_enum.new_variant(format!("Delete{}", obj_type.name))
+            .tuple(format!("ObjPtr<{}>", obj_type.name).as_str());
 
         // Set
         for field in obj_type.fields {
@@ -37,61 +48,51 @@ pub fn generate_action_code() {
 
     let obj_action_impl = scope.new_impl("ObjAction");
     
-    // Redo
-    let redo_fn = obj_action_impl.new_fn("redo")
-        .arg_ref_self()
+    let perform = obj_action_impl.new_fn("perform")
+        .arg_self()
         .arg("project", "&mut Project")
         .arg("client", "&mut ProjectClient")
         .ret("Option<Self>");
 
-    redo_fn.line("match self {");
+    perform.line("match self {");
     for obj_type in &OBJ_TYPES {
+
+        // Add
+        perform.line(format!("\tObjAction::Add{}(data, parent, idx) => {{", obj_type.name));
+        perform.line("\t\tlet ptr = data.ptr;");
+        perform.line(format!("\t\tclient.recreate_{}(project, parent, idx, data)?;", obj_type.name.to_case(Case::Snake)));
+        perform.line(format!("\t\tSome(ObjAction::Delete{}(ptr))", obj_type.name));
+        perform.line("\t},");
+
+        // Delete
+        let parent_obj = find_obj_type(obj_type.parent);
+        perform.line(format!("\tObjAction::Delete{}(ptr) => {{", obj_type.name));
+        perform.line(format!("\t\tlet obj = project.{}.get(ptr)?;", obj_type.list_name));
+        perform.line(format!("\t\tlet parent = obj.{}.0;", parent_obj.name.to_case(Case::Snake)));
+        perform.line(format!("\t\tlet idx = obj.{}.1.clone();", parent_obj.name.to_case(Case::Snake)));
+        perform.line(format!("\t\tlet data = project.get_{}_raw_data(project.{}.get(ptr)?, ptr);", obj_type.name.to_case(Case::Snake), obj_type.list_name));
+        perform.line(format!("\t\tclient.delete_{}_no_action(project, ptr);", obj_type.name.to_case(Case::Snake)));
+        perform.line(format!("\t\tSome(ObjAction::Add{}(data, parent, idx))", obj_type.name));
+        perform.line("\t},");
+
         // Set
         for field in obj_type.fields {
-            redo_fn.line(format!("\tObjAction::Set{}{}(ptr, new_value) => {{", obj_type.name, field.name.to_case(Case::Pascal)));
-            redo_fn.line(format!("\t\tlet old_value = project.{}.get(*ptr)?.{}.value().clone();", obj_type.list_name, field.name));
-            redo_fn.line(format!("\t\tclient.set_{}_{}_no_action(project, *ptr, new_value.clone())?;", obj_type.name.to_case(Case::Snake), field.name));
-            redo_fn.line(format!("\t\tSome(ObjAction::Set{}{}(*ptr, old_value))", obj_type.name, field.name.to_case(Case::Pascal)));
-            redo_fn.line("\t},");
+            perform.line(format!("\tObjAction::Set{}{}(ptr, new_value) => {{", obj_type.name, field.name.to_case(Case::Pascal)));
+            perform.line(format!("\t\tlet old_value = project.{}.get(ptr)?.{}.value().clone();", obj_type.list_name, field.name));
+            perform.line(format!("\t\tclient.set_{}_{}_no_action(project, ptr, new_value.clone())?;", obj_type.name.to_case(Case::Snake), field.name));
+            perform.line(format!("\t\tSome(ObjAction::Set{}{}(ptr, old_value))", obj_type.name, field.name.to_case(Case::Pascal)));
+            perform.line("\t},");
         }
 
         // Transfer
-        redo_fn.line(format!("\tObjAction::Transfer{}(ptr, new_parent, new_idx) => {{", obj_type.name));
-        redo_fn.line(format!("\t\tlet old_parent = project.{}.get(*ptr)?.{}.value().0;", obj_type.list_name, obj_type.parent.to_case(Case::Snake)));
-        redo_fn.line(format!("\t\tlet old_idx = project.{}.get(*ptr)?.{}.value().1.clone();", obj_type.list_name, obj_type.parent.to_case(Case::Snake)));
-        redo_fn.line(format!("\t\tclient.transfer_{}_no_action(project, *ptr, *new_parent, new_idx.clone());", obj_type.name.to_case(Case::Snake)));
-        redo_fn.line(format!("\t\tSome(ObjAction::Transfer{}(*ptr, old_parent, old_idx))", obj_type.name));
-        redo_fn.line("\t},");
+        perform.line(format!("\tObjAction::Transfer{}(ptr, new_parent, new_idx) => {{", obj_type.name));
+        perform.line(format!("\t\tlet old_parent = project.{}.get(ptr)?.{}.value().0;", obj_type.list_name, obj_type.parent.to_case(Case::Snake)));
+        perform.line(format!("\t\tlet old_idx = project.{}.get(ptr)?.{}.value().1.clone();", obj_type.list_name, obj_type.parent.to_case(Case::Snake)));
+        perform.line(format!("\t\tclient.transfer_{}_no_action(project, ptr, new_parent, new_idx.clone());", obj_type.name.to_case(Case::Snake)));
+        perform.line(format!("\t\tSome(ObjAction::Transfer{}(ptr, old_parent, old_idx))", obj_type.name));
+        perform.line("\t},");
     }
-    redo_fn.line("}");
-
-    // Undo
-    let undo_fn = obj_action_impl.new_fn("undo")
-        .arg_ref_self()
-        .arg("project", "&mut Project")
-        .arg("client", "&mut ProjectClient")
-        .ret("Option<Self>");
-
-    undo_fn.line("match self {");
-    for obj_type in &OBJ_TYPES {
-        // Set
-        for field in obj_type.fields {
-            undo_fn.line(format!("\tObjAction::Set{}{}(ptr, old_value) => {{", obj_type.name, field.name.to_case(Case::Pascal)));
-            undo_fn.line(format!("\t\tlet new_value = project.{}.get(*ptr)?.{}.value().clone();", obj_type.list_name, field.name));
-            undo_fn.line(format!("\t\tclient.set_{}_{}_no_action(project, *ptr, old_value.clone())?;", obj_type.name.to_case(Case::Snake), field.name));
-            undo_fn.line(format!("\t\tSome(ObjAction::Set{}{}(*ptr, new_value))", obj_type.name, field.name.to_case(Case::Pascal)));
-            undo_fn.line("\t},");
-        }
-
-        // Transfer
-        undo_fn.line(format!("\tObjAction::Transfer{}(ptr, old_parent, old_idx) => {{", obj_type.name));
-        undo_fn.line(format!("\t\tlet new_parent = project.{}.get(*ptr)?.{}.value().0;", obj_type.list_name, obj_type.parent.to_case(Case::Snake)));
-        undo_fn.line(format!("\t\tlet new_idx = project.{}.get(*ptr)?.{}.value().1.clone();", obj_type.list_name, obj_type.parent.to_case(Case::Snake)));
-        undo_fn.line(format!("\t\tclient.transfer_{}_no_action(project, *ptr, *old_parent, old_idx.clone());", obj_type.name.to_case(Case::Snake)));
-        undo_fn.line(format!("\t\tSome(ObjAction::Transfer{}(*ptr, new_parent, new_idx))", obj_type.name));
-        undo_fn.line("\t},");
-    }
-    undo_fn.line("}"); 
+    perform.line("}");
 
     let _ = std::fs::write("src/project/action.gen.rs", scope.to_string());
 

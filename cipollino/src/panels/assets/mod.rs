@@ -29,11 +29,15 @@ impl Panel for Assets {
             egui::menu::bar(ui, |ui| {
                 if ui.button(egui_phosphor::regular::FOLDER).clicked() {
                     let root_folder_ptr = state.project.root_folder().ptr();
-                    state.client.add_folder(&mut state.project, root_folder_ptr, FractionalIndex::half(), "Folder".to_owned());
+                    let mut action = Action::new();
+                    state.client.add_folder(&mut state.project, root_folder_ptr, FractionalIndex::half(), "Folder".to_owned(), &mut action);
+                    state.actions.push_action(action);
                 }
                 if ui.button(egui_phosphor::regular::FILM_STRIP).clicked() {
                     let root_folder_ptr = state.project.root_folder().ptr();
-                    state.client.add_clip(&mut state.project, root_folder_ptr, FractionalIndex::half(), "Clip".to_owned(), 100);
+                    let mut action = Action::new();
+                    state.client.add_clip(&mut state.project, root_folder_ptr, FractionalIndex::half(), "Clip".to_owned(), 100, &mut action);
+                    state.actions.push_action(action);
                 }
             });
         });

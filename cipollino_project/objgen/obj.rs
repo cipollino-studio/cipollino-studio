@@ -18,6 +18,7 @@ pub fn generate_obj_code() {
         for child in obj_type.children {
             if *child != obj_type.name {
                 scope.import(format!("crate::project::{}", child.to_case(Case::Snake)).as_str(), &child);
+                scope.import(format!("crate::project::{}", child.to_case(Case::Snake)).as_str(), format!("{}RawData", &child).as_str());
             }
         }
 
@@ -44,6 +45,18 @@ pub fn generate_obj_code() {
             let mut struct_field = Field::new(&field.name, format!("Register<{}>", field.ty));
             struct_field.vis("pub");
             obj_struct.push_field(struct_field);
+        }
+
+        // Raw data struct(used for add/delete undo & copy paste)
+        let raw_data_struct = scope.new_struct(format!("{}RawData", obj_type.name).as_str())
+            .vis("pub")
+            .field("pub ptr", format!("ObjPtr<{}>", obj_type.name));
+        for field in obj_type.fields {
+            raw_data_struct.field(format!("pub {}", &field.name).as_str(), field.ty);
+        } 
+        for child in obj_type.children {
+            let child_obj = find_obj_type(&child);
+            raw_data_struct.field(format!("pub {}", &child_obj.list_name).as_str(), format!("Vec<{}RawData>", child_obj.name));
         }
 
         // Generate ObjSerialize implementation
@@ -88,10 +101,11 @@ pub fn generate_obj_code() {
         }
         deserialize_fn.line("})");
 
-        // Object Tree Manipulation
+
         scope.import("crate::project::obj", "ObjState");
         let project_impl = scope.new_impl("Project");
 
+        // Add 
         let add_fn = project_impl.new_fn(format!("add_{}", obj_type.name.to_case(Case::Snake)).as_str())
             .arg_mut_self()
             .arg("new_obj_ptr", format!("ObjPtr<{}>", obj_type.name))
@@ -107,7 +121,71 @@ pub fn generate_obj_code() {
         add_fn.line("list_in_parent.insert(idx.clone(), new_obj_ptr);");
         add_fn.line(format!("self.{}.objs.insert(new_obj_ptr, ObjState::Loaded(obj));", obj_type.list_name));
         add_fn.line("Some(())");
-        
+
+        // Delete
+        let delete_rec_fn = project_impl.new_fn(format!("delete_{}_rec", obj_type.name.to_case(Case::Snake)).as_str())
+            .arg_mut_self()
+            .arg("ptr", format!("ObjPtr<{}>", obj_type.name))
+            .ret("Option<()>")
+            .vis("pub(crate)");
+        delete_rec_fn.line(format!("let obj = self.{}.remove(ptr)?;", obj_type.list_name));
+        for child in obj_type.children {
+            let child_obj = find_obj_type(&child);
+            delete_rec_fn.line(format!("for (_idx, child) in obj.{0}.objs {{", child_obj.list_name));
+            delete_rec_fn.line(format!("\tself.delete_{}(child);", child_obj.name.to_case(Case::Snake)));
+            delete_rec_fn.line("}");
+        }
+        delete_rec_fn.line("Some(())");
+
+        let delete_fn = project_impl.new_fn(format!("delete_{}", obj_type.name.to_case(Case::Snake)).as_str())
+            .arg_mut_self()
+            .arg("ptr", format!("ObjPtr<{}>", obj_type.name))
+            .ret("Option<()>")
+            .vis("pub(crate)");
+        let parent_obj = find_obj_type(obj_type.parent);
+        delete_fn.line(format!("let obj = self.{}.get(ptr)?;", obj_type.list_name));
+        delete_fn.line(format!("let parent = self.{}.get_mut(obj.{}.0)?;", parent_obj.list_name, parent_obj.name.to_case(Case::Snake)));
+        delete_fn.line(format!("parent.{}.remove(ptr);", obj_type.list_name));
+        delete_fn.line(format!("self.delete_{}_rec(ptr)", obj_type.name.to_case(Case::Snake)));
+
+        // Get raw data
+        let get_raw_fn = project_impl.new_fn(format!("get_{}_raw_data", obj_type.name.to_case(Case::Snake)).as_str())
+            .arg_ref_self()
+            .arg("obj", format!("&{}", obj_type.name))
+            .arg("ptr", format!("ObjPtr<{}>", obj_type.name))
+            .ret(format!("{}RawData", obj_type.name))
+            .vis("pub");
+        get_raw_fn.line(format!("{}RawData {{", obj_type.name));
+        get_raw_fn.line("\tptr,");
+        for field in obj_type.fields {
+            get_raw_fn.line(format!("\t{0}: obj.{0}.value.clone(),", field.name));
+        }
+        for child in obj_type.children {
+            let child_obj = find_obj_type(&child);
+            get_raw_fn.line(format!("\t{0}: obj.{0}.iter_ref(&self.{0}).map(|child| self.get_{1}_raw_data(&child, child.ptr())).collect(),", child_obj.list_name, child_obj.name.to_case(Case::Snake)));
+        }
+        get_raw_fn.line("}");
+
+        // Delete from project file
+        let serializer_impl = scope.new_impl("Serializer");
+        let delete_fn = serializer_impl.new_fn(format!("delete_{}", obj_type.name.to_case(Case::Snake)).as_str())
+            .arg_mut_self()
+            .arg("project", "&Project")
+            .arg("ptr", format!("ObjPtr<{}>", obj_type.name))
+            .ret("Option<()>")
+            .vis("pub(crate)");
+        delete_fn.line(format!("let obj = project.{}.get(ptr)?;", obj_type.list_name));
+        delete_fn.line("if let Some(ptr) = self.obj_ptrs.remove(&ptr.key) {");
+        delete_fn.line("\tself.project_file.delete_obj(ptr);"); 
+        delete_fn.line("}");
+        for child in obj_type.children {
+            let child_obj = find_obj_type(child);
+            delete_fn.line(format!("for child in obj.{0}.iter_ref(&project.{0}) {{", child_obj.list_name));
+            delete_fn.line(format!("\tself.delete_{}(project, child.ptr());", child_obj.name.to_case(Case::Snake)));
+            delete_fn.line("}");
+        }
+        delete_fn.line("Some(())");
+
         let _ = std::fs::write(format!("src/project/{}.gen.rs", obj_type.name.to_case(Case::Snake)), scope.to_string());
     }
 

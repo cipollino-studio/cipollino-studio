@@ -24,7 +24,7 @@ impl Action {
     pub(crate) fn redo(self, project: &mut Project, client: &mut ProjectClient) -> Action {
         let mut inv_action = Action::new();
         for act in self.acts.into_iter().rev() {
-            if let Some(inv_act) = act.redo(project, client) {
+            if let Some(inv_act) = act.perform(project, client) {
                 inv_action.add_act(inv_act);
             }
         }
@@ -34,7 +34,7 @@ impl Action {
     pub(crate) fn undo(self, project: &mut Project, client: &mut ProjectClient) -> Action {
         let mut inv_action = Action::new();
         for act in self.acts.into_iter().rev() {
-            if let Some(inv_act) = act.undo(project, client) {
+            if let Some(inv_act) = act.perform(project, client) {
                 inv_action.add_act(inv_act);
             }
         }

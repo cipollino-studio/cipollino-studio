@@ -61,6 +61,14 @@ pub fn generate_server_code() {
         handle_msg.line("\t\tSome(())");
         handle_msg.line("\t},");
 
+        // Delete
+        handle_msg.line(format!("\tObjMessage::Delete{} {{ ptr }} => {{", obj_type.name));
+        handle_msg.line(format!("\t\tself.serializer.delete_{}(&self.project, ptr);", obj_type.name.to_case(Case::Snake)));
+        handle_msg.line(format!("\t\tself.project.delete_{}(ptr)?;", obj_type.name.to_case(Case::Snake)));
+        handle_msg.line(format!("\t\tself.broadcast(Message::Obj(ObjMessage::Delete{} {{ ptr }}), Some(client_id));", obj_type.name));
+        handle_msg.line("\t\tSome(())");
+        handle_msg.line("\t},");
+
         // Set
         for field in obj_type.fields {
             handle_msg.line(format!("\tObjMessage::Set{}{} {{ ptr, update }} => {{", obj_type.name, field.name.to_case(Case::Pascal)));

@@ -32,6 +32,10 @@ pub fn generate_protocol_code() {
             add.named(&field.name, format!("RegisterUpdate<{}>", field.ty));
         }
 
+        // Delete message
+        obj_message_enum.new_variant(format!("Delete{}", obj_type.name))
+            .named("ptr", format!("ObjPtr<{}>", obj_type.name));
+
         // Set messages
         for field in obj_type.fields {
             obj_message_enum.new_variant(format!("Set{}{}", obj_type.name, field.name.to_case(Case::Pascal)))

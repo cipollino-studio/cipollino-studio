@@ -139,6 +139,13 @@ impl<T: Obj> ObjList<T> {
         }
     }
 
+    pub(crate) fn remove(&mut self, ptr: ObjPtr<T>) -> Option<T> {
+        match self.objs.remove(&ptr)? {
+            ObjState::ToLoad(obj) => Some(obj),
+            ObjState::Loaded(obj) => Some(obj),
+        }
+    }
+
     pub fn get(&self, ptr: ObjPtr<T>) -> Option<&T> {
         self.objs.get(&ptr).map(|state| match state {
             ObjState::ToLoad(obj) | ObjState::Loaded(obj) => obj,

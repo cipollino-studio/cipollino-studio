@@ -2,7 +2,7 @@
 /**
     A fractional index(essentially, an arbitrary precision number between 0 and 1) used for implementing LSEQ
  */
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct FractionalIndex {
     /**
         Stores the bits of the index as booleans, most significan bits first
@@ -81,9 +81,9 @@ impl FractionalIndex {
 
         let n_bits = (n + 1).ilog2();
         (1..=n).map(|i| {
-            let bits = (0..n_bits)
+            let bits = (0..=n_bits)
                 .map(|idx| {
-                    let bit_idx = n_bits - 1 - idx;
+                    let bit_idx = n_bits - idx;
                     (i & (1 << bit_idx)) > 0
                 }) 
                 .collect::<Vec<bool>>();
@@ -92,6 +92,16 @@ impl FractionalIndex {
                 bits
             }
         }).collect()
+    }
+
+}
+
+use std::fmt::Debug;
+impl Debug for FractionalIndex {
+
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let bit_str: String = self.bits.iter().map(|bit| if *bit { '1' } else { '0' }).collect();
+        bit_str.fmt(f)
     }
 
 }

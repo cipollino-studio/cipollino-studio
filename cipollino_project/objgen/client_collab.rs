@@ -72,6 +72,11 @@ pub fn generate_client_collab_code() {
         handle_fn.line("\t\t})");
         handle_fn.line("\t},");
 
+        // Delete messages
+        handle_fn.line(format!("\tObjMessage::Delete{} {{ ptr }} => {{", obj_type.name));
+        handle_fn.line(format!("\t\tproject.delete_{}(ptr)", obj_type.name.to_case(Case::Snake)));
+        handle_fn.line("\t},");
+
         // Set messages
         for field in obj_type.fields {
             handle_fn.line(format!("\tObjMessage::Set{}{} {{ ptr, update }} => {{", obj_type.name, field.name.to_case(Case::Pascal)));
