@@ -4,6 +4,7 @@ use folder::Folder;
 use frame::Frame;
 use layer::Layer;
 use obj::{ChildList, ObjList, ObjPtr, ObjRef, ObjState};
+use stroke::Stroke;
 
 use crate::crdt::{fractional_index::FractionalIndex, register::Register};
 
@@ -13,6 +14,7 @@ pub mod clip;
 pub mod layer;
 pub mod action;
 pub mod frame;
+pub mod stroke;
 
 pub struct Project {
     pub fps: f32,
@@ -22,6 +24,7 @@ pub struct Project {
     pub clips: ObjList<Clip>,
     pub layers: ObjList<Layer>,
     pub frames: ObjList<Frame>,
+    pub strokes: ObjList<Stroke>,
 
     pub(crate) root_folder: ObjPtr<Folder>
 }
@@ -36,6 +39,7 @@ impl Project {
             clips: ObjList::new(),
             layers: ObjList::new(),
             frames: ObjList::new(),
+            strokes: ObjList::new(),
             root_folder: ObjPtr::null(),
         }
     }

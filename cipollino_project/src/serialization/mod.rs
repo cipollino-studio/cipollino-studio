@@ -110,6 +110,21 @@ impl<T: ObjSerialize> ObjSerialize for Register<T> {
 
 }
 
+impl<T: ObjSerialize> ObjSerialize for Vec<T> {
+
+    fn obj_serialize(&self, project: &Project, serializer: &mut Serializer) -> bson::Bson {
+        bson::Bson::Array(
+            self.iter().map(|elem| elem.obj_serialize(project, serializer)).collect()
+        )
+    }
+
+    fn obj_deserialize(project: &mut Project, data: &bson::Bson, serializer: &mut Serializer, idx: FractionalIndex) -> Option<Self> {
+        let arr = data.as_array()?;
+        Some(arr.iter().filter_map(|elem| T::obj_deserialize(project, elem, serializer, idx.clone())).collect())
+    }
+
+}
+
 pub fn create_project(path: PathBuf, fps: f32, sample_rate: f32) -> Option<(Serializer, u64, Project)> {
     let project = Project::new(fps, sample_rate);
     let mut project_file = ProjectFile::create(&path, bson::bson!({})).ok()?;

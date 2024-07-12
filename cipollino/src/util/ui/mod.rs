@@ -55,3 +55,12 @@ pub fn path_selector<F>(ui: &mut egui::Ui, path: &mut PathBuf, pick_folder: bool
         }
     });
 }
+
+pub const NO_MARGIN : egui::Frame = egui::Frame {
+    inner_margin: egui::Margin::same(0.0),
+    outer_margin: egui::Margin::same(0.0),
+    rounding: egui::Rounding::same(0.0),
+    shadow: egui::epaint::Shadow { offset: egui::Vec2::ZERO, blur: 0.0, spread: 0.0, color: egui::Color32::TRANSPARENT },
+    fill: egui::Color32::TRANSPARENT,
+    stroke: egui::Stroke::NONE 
+};

@@ -1,5 +1,5 @@
 
-use egui::{InnerResponse, LayerId, Order};
+use egui::{Color32, InnerResponse, LayerId, Order, Stroke};
 
 pub fn draggable_label<P>(ui: &mut egui::Ui, text: &str, payload: P) -> egui::Response where P: std::marker::Send + std::marker::Sync + 'static {
     draggable_widget(ui, payload, |ui, _| {
@@ -43,16 +43,27 @@ pub fn draggable_widget<F, P, R>(ui: &mut egui::Ui, payload: P, mut add_contents
   
 }
 
-pub fn dnd_drop_zone_setup_colors(ui: &mut egui::Ui) -> (egui::Color32, egui::Color32) {
-    let style = ui.style_mut();
-    let init_inactive_bg_fill = std::mem::replace(&mut style.visuals.widgets.inactive.bg_fill, style.visuals.window_fill);
-    let init_active_bg_fill = std::mem::replace(&mut style.visuals.widgets.active.bg_fill, style.visuals.window_fill);
-    (init_inactive_bg_fill, init_active_bg_fill)
+pub struct DndDropZoneSetupColors {
+    inactive_bg_fill: Color32,
+    inactive_bg_stroke: Stroke,
+    active_bg_fill: Color32,
+    active_bg_stroke: Stroke 
 }
 
-pub fn dnd_drop_zone_reset_colors(ui: &mut egui::Ui, colors: (egui::Color32, egui::Color32)) {
-    let (init_inactive_bg_fill, init_active_bg_fill) = colors; 
+pub fn dnd_drop_zone_setup_colors(ui: &mut egui::Ui) -> DndDropZoneSetupColors {
     let style = ui.style_mut();
-    style.visuals.widgets.inactive.bg_fill = init_inactive_bg_fill;
-    style.visuals.widgets.active.bg_fill = init_active_bg_fill;
+    DndDropZoneSetupColors {
+        inactive_bg_fill: std::mem::replace(&mut style.visuals.widgets.inactive.bg_fill, style.visuals.window_fill),
+        inactive_bg_stroke: std::mem::replace(&mut style.visuals.widgets.inactive.bg_stroke, egui::Stroke::NONE),
+        active_bg_fill: std::mem::replace(&mut style.visuals.widgets.active.bg_fill, style.visuals.window_fill),
+        active_bg_stroke: std::mem::replace(&mut style.visuals.widgets.active.bg_stroke, egui::Stroke::NONE),
+    }
+}
+
+pub fn dnd_drop_zone_reset_colors(ui: &mut egui::Ui, colors: DndDropZoneSetupColors) {
+    let style = ui.style_mut();
+    style.visuals.widgets.inactive.bg_fill = colors.inactive_bg_fill;
+    style.visuals.widgets.inactive.bg_stroke = colors.inactive_bg_stroke;
+    style.visuals.widgets.active.bg_fill = colors.active_bg_fill;
+    style.visuals.widgets.active.bg_stroke = colors.active_bg_stroke;
 }

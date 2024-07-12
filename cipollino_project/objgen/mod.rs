@@ -39,7 +39,7 @@ pub struct ObjType {
     flags: ObjTypeFlags
 }
 
-pub static OBJ_TYPES: [ObjType; 4] = [
+pub static OBJ_TYPES: [ObjType; 5] = [
     ObjType {
         name: "Folder",
         list_name: "folders",
@@ -106,12 +106,26 @@ pub static OBJ_TYPES: [ObjType; 4] = [
         name: "Frame",
         list_name: "frames",
         parent: "Layer",
-        children: &[],
+        children: &["Stroke"],
         fields: &[
             ObjField {
                 name: "time",
                 ty: "i32",
                 default: "0"
+            }
+        ],
+        flags: ObjTypeFlags::empty()
+    },
+    ObjType {
+        name: "Stroke",
+        list_name: "strokes",
+        parent: "Frame",
+        children: &[],
+        fields: &[
+            ObjField {
+                name: "pts",
+                ty: "Vec<crate::project::stroke::StrokePoint>",
+                default: "vec![]"
             }
         ],
         flags: ObjTypeFlags::empty()
