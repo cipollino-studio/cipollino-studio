@@ -1,9 +1,9 @@
 
 use cipollino_project::{client::ProjectClient, protocol::Message, socket::{Socket, WsEvent, WsMessage}};
 
-use crate::util::ui::{clickable_label, key_value_layout, key_value_row};
+use crate::{editor::Editor, util::ui::{clickable_label, key_value_layout, key_value_row}};
 
-use super::{editor::Editor, prefs::UserPref, splash_screen::SplashScreen, util::centered_fixed_window, AppState, AppSystems};
+use super::{prefs::UserPref, splash_screen::SplashScreen, util::centered_fixed_window, AppState, AppSystems};
 
 struct CollabURLPref;
 

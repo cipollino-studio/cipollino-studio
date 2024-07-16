@@ -1,23 +1,22 @@
 
 use cipollino_project::{crdt::fractional_index::FractionalIndex, project::{layer::Layer, obj::ObjPtr}};
 
-use crate::{app::{editor::EditorState, AppSystems}, util::ui::{dnd::{dnd_drop_zone_setup_colors, draggable_widget}, NO_MARGIN}};
+use crate::{editor::EditorState, util::ui::dnd::{dnd_drop_zone, draggable_widget}};
 
 use super::{Timeline, TimelineCommand, TimelineLayer, TimelineRenderInfo};
 
 impl Timeline {
 
-    pub(super) fn render_layers(&mut self, ui: &mut egui::Ui, state: &EditorState, systems: &mut AppSystems, info: &mut TimelineRenderInfo) {
+    pub(super) fn render_layers(&mut self, ui: &mut egui::Ui, state: &EditorState, info: &mut TimelineRenderInfo) {
         let scroll_resp = egui::ScrollArea::vertical()
             .scroll_bar_visibility(egui::scroll_area::ScrollBarVisibility::AlwaysHidden)
             .scroll_offset(egui::vec2(0.0, info.y_scroll)) // Always scroll to the current scroll y to sync with other scroll areas
             .show(ui, |ui| {
                 ui.style_mut().spacing.item_spacing = egui::Vec2::ZERO;
-                dnd_drop_zone_setup_colors(ui);
                 let mut drop_idx = None;
-                if let (_, Some(layer)) = ui.dnd_drop_zone::<ObjPtr<Layer>, ()>(NO_MARGIN, |ui| {
+                if let (_, Some(layer)) = dnd_drop_zone::<ObjPtr<Layer>, ()>(ui, |ui| {
                     for layer in &info.layers {
-                        self.render_layer(ui, layer, info.layer_h, &mut info.commands, &mut drop_idx);
+                        self.render_layer(ui, state, layer, info.layer_h, &mut info.commands, &mut drop_idx);
                     }
                 }) {
                     if let Some(idx) = drop_idx {
@@ -33,9 +32,14 @@ impl Timeline {
         }
     }
 
-    fn render_layer(&mut self, ui: &mut egui::Ui, layer: &TimelineLayer, layer_h: f32, commands: &mut Vec<TimelineCommand>, drop_idx: &mut Option<FractionalIndex>) {
+    fn render_layer(&mut self, ui: &mut egui::Ui, state: &EditorState, layer: &TimelineLayer, layer_h: f32, commands: &mut Vec<TimelineCommand>, drop_idx: &mut Option<FractionalIndex>) {
         draggable_widget(ui, layer.layer.ptr(), |ui, dragged| {
             let (rect, resp) = ui.allocate_exact_size(egui::vec2(ui.available_width(), layer_h), egui::Sense::click());
+
+            // If this is the active layer, highlight it
+            if layer.layer.ptr() == state.active_layer {
+                ui.painter().rect_filled(rect, egui::Rounding::ZERO, ui.visuals().widgets.active.bg_fill);
+            }
 
             // Eye/lock icons
             let icon_area_w = 32.0;
@@ -61,6 +65,11 @@ impl Timeline {
             // Drop zone
             if !dragged {
                 self.handle_layer_drop_zone(ui, layer, &rect, &resp, drop_idx);
+            }
+
+            // Interaction
+            if resp.clicked() {
+                commands.push(TimelineCommand::SetActiveLayer(layer.layer.ptr()));
             }
 
             ((), resp)

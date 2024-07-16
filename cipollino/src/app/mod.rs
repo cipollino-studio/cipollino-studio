@@ -1,7 +1,8 @@
 
 mod util;
 
-mod splash_screen;
+pub mod splash_screen;
+use crate::editor::Editor;
 use crate::util::ui::clickable_label;
 
 use self::prefs::UserPrefs;
@@ -15,8 +16,6 @@ mod new_project;
 #[cfg(not(target_arch = "wasm32"))]
 use self::new_project::NewProject;
 
-pub mod editor;
-use self::editor::Editor;
 use self::util::centered_fixed_window;
 
 pub mod prefs;

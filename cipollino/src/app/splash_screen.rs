@@ -5,9 +5,9 @@ use cipollino_project::client::ProjectClient;
 use include_lines::static_include_lines;
 use rand::Rng;
 
-use crate::app::editor::Editor;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::app::new_project::NewProject;
+use crate::editor::Editor;
 
 use super::{collab::Collab, util::centered_fixed_window, AppState, AppSystems};
 static_include_lines!(QUOTES, "cipollino/res/quotes.txt");

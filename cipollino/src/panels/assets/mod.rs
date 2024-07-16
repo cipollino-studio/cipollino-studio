@@ -1,7 +1,7 @@
 
 use cipollino_project::{crdt::fractional_index::FractionalIndex, project::{action::Action, clip::Clip, folder::Folder, obj::{ObjPtr, ObjRef}}};
 
-use crate::{app::{editor::EditorState, AppSystems}, util::ui::dnd::{dnd_drop_zone_reset_colors, dnd_drop_zone_setup_colors, draggable_label, draggable_widget}};
+use crate::{app::AppSystems, editor::EditorState, util::ui::dnd::{dnd_drop_zone, draggable_label, draggable_widget}};
 
 use super::Panel;
 
@@ -42,12 +42,10 @@ impl Panel for Assets {
             });
         });
 
-        let colors = dnd_drop_zone_setup_colors(ui);
-
         let mut commands = Vec::new();
         egui::ScrollArea::both().show(ui, |ui| {
             self.render_folder_contents(ui, state, &state.project.root_folder(), &mut commands); 
-            let (_, root_payload) = ui.dnd_drop_zone::<AssetPtr, ()>(egui::Frame::default(), |ui| {
+            let (_, root_payload) = dnd_drop_zone::<AssetPtr, ()>(ui, |ui| {
                 let available_size = ui.available_size();
                 ui.allocate_exact_size(available_size.max(egui::vec2(available_size.x, 30.0)), egui::Sense::hover());
             });
@@ -56,8 +54,6 @@ impl Panel for Assets {
                 commands.push(AssetCommand::Transfer(asset, state.project.root_folder().ptr()))
             }
         });
-
-        dnd_drop_zone_reset_colors(ui, colors);
 
         for command in commands {
             if let AssetCommand::OpenClip(clip) = command {

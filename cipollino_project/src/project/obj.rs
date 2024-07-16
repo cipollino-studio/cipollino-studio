@@ -1,5 +1,6 @@
 
 use std::collections::HashMap;
+use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::hash::Hash;
 use std::ops::Deref;
@@ -51,6 +52,14 @@ impl<'de, T: Obj> serde::Deserialize<'de> for ObjPtr<T> {
             key,
             _marker: PhantomData
         })
+    }
+
+}
+
+impl<T: Obj> Debug for ObjPtr<T> {
+
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("ObjPtr").field(&self.key).finish()
     }
 
 }

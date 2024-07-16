@@ -3,9 +3,9 @@ use std::path::PathBuf;
 
 use cipollino_project::client::ProjectClient;
 
-use crate::util::ui::{clickable_label, error_label, key_value_layout, key_value_row, path_selector};
+use crate::{editor::Editor, util::ui::{clickable_label, error_label, key_value_layout, key_value_row, path_selector}};
 
-use super::{editor::Editor, splash_screen::SplashScreen, util::centered_fixed_window, AppState, AppSystems};
+use super::{splash_screen::SplashScreen, util::centered_fixed_window, AppState, AppSystems};
 
 pub struct NewProject {
     project_name: String,

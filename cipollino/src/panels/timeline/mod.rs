@@ -1,13 +1,14 @@
 
 use cipollino_project::{crdt::fractional_index::FractionalIndex, project::{action::Action, layer::Layer, obj::{ObjPtr, ObjRef}}};
-use egui::ScrollArea;
 
-use crate::{app::{editor::EditorState, AppSystems}, util::ui::{dnd::{dnd_drop_zone_setup_colors, draggable_widget}, NO_MARGIN}};
+use crate::{app::AppSystems, editor::EditorState, util::ui::NO_MARGIN};
 
 use super::Panel;
 
 mod layers;
 mod frames;
+mod header;
+mod controls;
 
 #[derive(Default)]
 pub struct Timeline {
@@ -15,10 +16,21 @@ pub struct Timeline {
     y_scroll: f32
 }
 
+const PLAYBACK_HEAD_STROKE_COLOR: egui::Color32 = egui::Color32::from_rgb(0, 50, 255);
+const PLAYBACK_HEAD_HIGHLIGHT_COLOR: egui::Color32 = egui::Color32::from_rgba_premultiplied(0, 12, 96, 30);
+
 enum TimelineCommand {
+    AddLayer,
     HideLayer(ObjPtr<Layer>),
     LockLayer(ObjPtr<Layer>),
-    TransferLayer(ObjPtr<Layer>, FractionalIndex)
+    TransferLayer(ObjPtr<Layer>, FractionalIndex),
+
+    TogglePlaying,
+    SetPlaybackFrame(i32),
+
+    SetActiveLayer(ObjPtr<Layer>),
+
+    AddFrame
 }
 
 struct TimelineLayer<'a> {
@@ -48,7 +60,7 @@ struct TimelineRenderInfo<'a> {
 
 impl Timeline {
 
-    fn render(&mut self, ui: &mut egui::Ui, state: &mut EditorState, systems: &mut AppSystems) {
+    fn render(&mut self, ui: &mut egui::Ui, state: &mut EditorState) {
         let Some(clip) = state.project.clips.get(state.open_clip) else { return; };
 
         let layers: Vec<ObjRef<Layer>> = clip.layers.iter_ref(&state.project.layers).collect();
@@ -65,9 +77,11 @@ impl Timeline {
                     layers[i].clip.1.avg_with_1()
                 }
         }).collect();
+        let new_layer_insertion_idx = layers.first().map(|layer| layer.clip.1.avg_with_0()).unwrap_or(FractionalIndex::half());
 
+        let len = *clip.length.value();
         let mut render_info = TimelineRenderInfo {
-            len: /* *clip.length.value() */ 1000, 
+            len, 
             layers: timeline_layers,
 
             layer_h: 20.0,
@@ -89,17 +103,13 @@ impl Timeline {
             .frame(NO_MARGIN)
             .show_separator_line(false)
             .show_inside(ui, |ui| {
-                ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
-                    ui.button("1");
-                    ui.button("2");
-                    ui.button("3");
-                });
+                self.render_controls(ui, state, &mut render_info);
             });
         
         egui::CentralPanel::default()
             .frame(NO_MARGIN)
             .show_inside(ui, |ui| {
-                self.render_timeline(ui, state, systems, &mut render_info);
+                self.render_timeline(ui, state, &mut render_info);
             });
 
         if let Some(x) = render_info.set_x_scroll {
@@ -110,6 +120,11 @@ impl Timeline {
         }
         for command in render_info.commands {
             match command {
+                TimelineCommand::AddLayer => {
+                    let mut action = Action::new();
+                    state.client.add_layer(&mut state.project, state.open_clip, new_layer_insertion_idx.clone(), "Layer".to_owned(), 1.0, false, false, &mut action);
+                    state.actions.push_action(action);
+                },
                 TimelineCommand::HideLayer(ptr) => {
                     let mut action = Action::new();
                     let Some(layer) = state.project.layers.get(ptr) else { continue; };
@@ -129,11 +144,23 @@ impl Timeline {
                     state.client.transfer_layer(&mut state.project, layer, state.open_clip, new_idx, &mut action);
                     state.actions.push_action(action);
                 },
+                TimelineCommand::TogglePlaying => {
+                    state.playing = !state.playing;
+                },
+                TimelineCommand::SetPlaybackFrame(frame) => {
+                    state.playback_time = ((frame.max(0).min(len - 1) as f32) / state.project.fps * state.project.sample_rate) as i64 + 10;
+                },
+                TimelineCommand::SetActiveLayer(layer) => {
+                    state.active_layer = layer;
+                },
+                TimelineCommand::AddFrame => {
+                    state.create_frame();
+                }
             }
         }
     }
 
-    fn render_timeline(&mut self, ui: &mut egui::Ui, state: &EditorState, systems: &mut AppSystems, info: &mut TimelineRenderInfo) {
+    fn render_timeline(&mut self, ui: &mut egui::Ui, state: &EditorState, info: &mut TimelineRenderInfo) {
 
         let header_height = 22.0;
 
@@ -158,7 +185,7 @@ impl Timeline {
                         clip_rect.max.x -= 3.0;
                         ui.set_clip_rect(clip_rect);
 
-                        self.render_layers(ui, state, systems, info);
+                        self.render_layers(ui, state, info);
                     })
             });
 
@@ -169,9 +196,15 @@ impl Timeline {
                     .exact_height(header_height)
                     .frame(NO_MARGIN)
                     .show_inside(ui, |ui| {
-                        self.render_header(ui, state, systems, info);
+                        // Fix panel clipping weirdness
+                        let mut clip_rect = ui.max_rect();
+                        clip_rect.max += egui::Vec2::splat(3.0);
+                        ui.set_clip_rect(clip_rect);
+
+                        self.render_header(ui, state, info);
                     });
-                egui::CentralPanel::default()
+                
+                let (frames_rect, frames_scroll_area) = egui::CentralPanel::default()
                     .frame(NO_MARGIN)
                     .show_inside(ui, |ui| {
                         // Fix panel clipping weirdness
@@ -179,36 +212,35 @@ impl Timeline {
                         clip_rect.max += egui::Vec2::splat(3.0);
                         ui.set_clip_rect(clip_rect);
 
-                        self.render_frames(ui, state, systems, info);
-                    })
+                        self.render_frames(ui, state, info)
+                    }).inner;
+
+                // We draw the playback line separately to give it the correct clipping rectangle 
+                self.render_playback_line(ui, state, info, frames_rect, frames_scroll_area);
             });
     }
 
-    fn render_header(&mut self, ui: &mut egui::Ui, state: &EditorState, systems: &mut AppSystems, info: &mut TimelineRenderInfo) {
-        let scroll_resp = ScrollArea::horizontal()
-            .scroll_bar_visibility(egui::scroll_area::ScrollBarVisibility::AlwaysHidden)
-            .scroll_offset(egui::vec2(info.x_scroll, 0.0)) // Always scroll to the current scroll x to sync with other scroll areas
-            .show(ui, |ui| {
-                let (rect, resp) = ui.allocate_exact_size(egui::vec2(info.frame_w * (info.len as f32), ui.available_height()), egui::Sense::click_and_drag());
-                for i in (0..info.len).skip(info.frame_number_step - 1).step_by(info.frame_number_step) {
-                    let number_center = rect.min + egui::vec2((i as f32 + 0.5) * info.frame_w, ui.available_height() / 2.0);
-                    let number_rect = egui::Rect::from_center_size(number_center, egui::vec2(0.0, ui.available_height()));
-                    ui.put(number_rect, egui::Label::new(format!("{}", i + 1)).selectable(false).wrap(false));
-                }
-            });
+    fn render_playback_line(&mut self, ui: &mut egui::Ui, state: &EditorState, info: &TimelineRenderInfo, frames_rect: egui::Rect, frames_scroll_area: egui::Rect) {
+        // Draw playback line
+        let painter = ui.painter().with_clip_rect(egui::Rect::from_center_size(frames_scroll_area.center(), egui::vec2(frames_scroll_area.width(), 1000000.0)));
+        let frame = state.playback_frame();
+        painter.vline(
+            frames_rect.left() + (frame as f32 + 0.5) * info.frame_w,
+            egui::Rangef::new(frames_scroll_area.top() - 2.0, frames_scroll_area.bottom()),
+            egui::Stroke {
+                width: 1.0,
+                color: PLAYBACK_HEAD_STROKE_COLOR,
+            }
+        );
 
-        // If the user hovered over the header scroll area, update the scroll x based on the scroll area
-        if ui.input(|i| i.pointer.hover_pos().map(|pos| scroll_resp.inner_rect.contains(pos)).unwrap_or(false)) {
-            info.set_x_scroll = Some(scroll_resp.state.offset.x);
-        }
     }
 
 }
 
 impl Panel for Timeline {
     
-    fn ui(&mut self, ui: &mut egui::Ui, state: &mut EditorState, systems: &mut AppSystems) {
-        let Some(clip) = state.project.clips.get(state.open_clip) else {
+    fn ui(&mut self, ui: &mut egui::Ui, state: &mut EditorState, _systems: &mut AppSystems) {
+        let Some(_clip) = state.project.clips.get(state.open_clip) else {
             ui.centered_and_justified(|ui| {
                 ui.label("No clip open");
             });
@@ -221,7 +253,7 @@ impl Panel for Timeline {
             return;
         }
         
-        self.render(ui, state, systems);
+        self.render(ui, state);
     }
 
 }

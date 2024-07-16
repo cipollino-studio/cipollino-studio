@@ -1,5 +1,5 @@
 
-use crate::app::{editor::EditorState, AppSystems};
+use crate::{app::AppSystems, editor::EditorState};
 
 mod assets;
 mod scene;

@@ -1,5 +1,6 @@
 
 pub mod app;
+pub mod editor;
 pub mod util;
 pub mod panels;
 
@@ -13,6 +14,7 @@ fn main() -> eframe::Result<()> {
             .with_icon(eframe::icon_data::from_png_bytes(&include_bytes!("../res/icon256x256.png")[..]).expect("failed to load icon")), 
         ..Default::default()
     };
+
     eframe::run_native(
         "Cipollino",
         native_options,
