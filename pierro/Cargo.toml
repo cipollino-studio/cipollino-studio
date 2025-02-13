@@ -1,8 +1,8 @@
 [package]
 name = "pierro"
 description = "An immediate mode UI library for Rust"
-homepage = "https://github.com/cipollino-studio/pierro"
-repository = "https://github.com/cipollino-studio/pierro"
+homepage = "https://github.com/cipollino-studio/cipollino-studio/tree/main/pierro"
+repository = "https://github.com/cipollino-studio/cipollino-studio/tree/main/pierro"
 readme = "README.md"
 
 categories = ["gui"]
