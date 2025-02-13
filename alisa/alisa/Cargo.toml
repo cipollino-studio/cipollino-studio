@@ -1,0 +1,19 @@
+[package]
+name = "alisa"
+description = "A framework for building apps with real-time collaboration"
+homepage = "https://github.com/cipollino-studio/alisa"
+repository = "https://github.com/cipollino-studio/alisa"
+readme = "../README.md"
+
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+[dependencies]
+verter = "0.1.0"
+rmpv = "1.3.0"
+paste = "1.0.15"
+alisa-proc-macros = { version = "0.1.0", path = "../alisa-proc-macros" }
+
+[dev-dependencies]
+pierro = {git = "https://github.com/cipollino-studio/pierro.git", rev = "3462b22"}

@@ -1,0 +1,9 @@
+/target
+**/.DS_Store
+
+# cipollino test projects
+**/*.cip
+
+# alisa examples 
+**/*.project
+**/*.slips

@@ -1,0 +1,18 @@
+[package]
+name = "alisa-proc-macros"
+description = "Procedural macros for the Alisa framework"
+homepage = "https://github.com/cipollino-studio/alisa"
+repository = "https://github.com/cipollino-studio/alisa"
+readme = "../README.md"
+
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+quote = "1"
+proc-macro2 = "1.0"
+syn = "2.0"

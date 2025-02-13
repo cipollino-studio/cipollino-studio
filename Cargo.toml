@@ -1,0 +1,12 @@
+
+[workspace]
+members = [
+    "alisa/alisa-proc-macros",
+    "alisa/alisa",
+
+    "pierro",
+
+    "cipollino/project",
+    "cipollino/client",
+    "cipollino/server"
+]

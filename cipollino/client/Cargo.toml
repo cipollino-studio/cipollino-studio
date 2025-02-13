@@ -1,0 +1,8 @@
+[package]
+name = "cipollino-studio"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+project = { path = "../project" }
+pierro = { path = "../../pierro" } 

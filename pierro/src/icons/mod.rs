@@ -1,0 +1,2 @@
+
+include!("icons.gen.rs");
