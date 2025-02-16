@@ -147,7 +147,7 @@ impl pierro::DockingTab for ClientTab {
     fn add_tab_dropdown<F: FnMut(Self)>(ui: &mut pierro::UI, mut add_tab: F, context: &mut Context) {
         if pierro::menu_button(ui, "Add Client").mouse_clicked() {
             let (client_id, welcome_data) = context.server.add_client();
-            if let Some(client) = alisa::Client::collab(welcome_data) {
+            if let Some(client) = alisa::Client::collab(&welcome_data) {
                 add_tab(ClientTab {
                     client_id,
                     client,

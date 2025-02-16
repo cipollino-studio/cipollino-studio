@@ -168,4 +168,8 @@ impl<P: Project> Server<P> {
         Some(&mut self.clients.get_mut(&client)?.to_send)
     }
 
+    pub fn take_all_msgs_to_send(&mut self) -> HashMap<ClientId, Vec<rmpv::Value>> {
+        self.clients.iter_mut().map(|(id, client)| (*id, std::mem::replace(&mut client.to_send, Vec::new()))).collect()
+    }
+
 }

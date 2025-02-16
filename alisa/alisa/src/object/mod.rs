@@ -10,7 +10,7 @@ pub use obj_list::*;
 mod obj_kind;
 pub use obj_kind::*;
 
-pub trait Object: Sized + Clone + Serializable<Self::Project> + 'static {
+pub trait Object: Sized + Clone + Serializable<Self::Project> + 'static + Send + Sync{
 
     type Project: Project;
 

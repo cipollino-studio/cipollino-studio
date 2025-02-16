@@ -10,7 +10,7 @@ pub use unordered_child_list::*;
 /// A list of references to the children of a tree object
 pub trait Children<O: Object> {
 
-    type Index: Copy + Serializable<O::Project> + Default;
+    type Index: Copy + Serializable<O::Project> + Default + Send + Sync;
 
     fn n_children(&self) -> usize;
     fn insert(&mut self, idx: Self::Index, child: Ptr<O>);
@@ -67,10 +67,10 @@ impl<O: TreeObj> Delta for SetParentDelta<O> {
 }
 
 /// An object that is part of a tree of objects. 
-pub trait TreeObj: Object {
+pub trait TreeObj: Object + Send + Sync {
 
     /// The type of pointer that points to the parent object 
-    type ParentPtr: Default + Clone;
+    type ParentPtr: Default + Clone + Send + Sync;
     /// The list of children the parent has that points to this tree object
     type ChildList: Children<Self>;
     /// The information needed to recreate this object and all of its children in the tree

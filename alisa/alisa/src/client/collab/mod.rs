@@ -76,13 +76,13 @@ impl<P: Project> Collab<P> {
 
 impl<P: Project> Client<P> {
 
-    pub fn collab(welcome_data: rmpv::Value) -> Option<Self> {
+    pub fn collab(welcome_data: &rmpv::Value) -> Option<Self> {
 
         #[cfg(debug_assertions)]
         verify_project_type::<P>();
 
         welcome_data.as_map()?;
-        let project_data = rmpv_get(&welcome_data, "project")?;
+        let project_data = rmpv_get(welcome_data, "project")?;
         let mut objects = P::Objects::default();
         let project = P::deserialize(project_data, &mut DeserializationContext::collab(&mut objects))?;
         Some(Self {

@@ -5,7 +5,7 @@ pub use common::*;
 use crate::{ObjList, Object, Project, ProjectContext, ProjectContextMut};
 
 /// A tiny change to the project. Used for moving backwards in time for the collaboration conflict resolution system. 
-pub trait Delta {
+pub trait Delta: Send + Sync {
     type Project: Project;
 
     fn perform(&self, context: &mut ProjectContextMut<'_, Self::Project>);

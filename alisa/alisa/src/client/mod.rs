@@ -1,6 +1,6 @@
 
 
-use std::{any::{type_name, TypeId}, cell::RefCell};
+use std::{any::{type_name, TypeId}, cell::RefCell, ops::Deref};
 
 use crate::{Act, Action, Object, Operation, OperationDyn, Project, ProjectContext, ProjectContextMut, Ptr, Recorder};
 
@@ -178,6 +178,14 @@ impl<P: Project> Client<P> {
         }
     }
 
+}
+
+impl<P: Project> Deref for Client<P> {
+    type Target = P;
+
+    fn deref(&self) -> &Self::Target {
+        self.project()
+    }
 }
 
 #[cfg(debug_assertions)]

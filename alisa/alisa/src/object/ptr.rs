@@ -39,6 +39,10 @@ impl<Obj: Object> Ptr<Obj> {
         *self == Self::null()
     }
 
+    pub fn any(&self) -> AnyPtr {
+        AnyPtr(self.key)
+    }
+
 }
 
 impl<Obj: Object> PartialEq for Ptr<Obj> {
@@ -72,4 +76,31 @@ impl<Obj: Object> Debug for Ptr<Obj> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_tuple(Obj::NAME).field(&self.key).finish()
     }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+pub struct AnyPtr(u64);
+
+impl AnyPtr {
+
+    pub fn null() -> Self {
+        Self(0)
+    }
+
+}
+
+impl Default for AnyPtr {
+
+    fn default() -> Self {
+        Self::null()
+    }
+
+}
+
+impl Debug for AnyPtr {
+
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("Ptr").field(&self.0).finish()
+    }
+
 }

@@ -11,7 +11,7 @@ pub use delta::*;
 /// An operation performed on the project. 
 /// Operations can be inverted for undo/redo. 
 /// Note that when collaborating, undoing an operation and redoing might not return to the original state of the project. 
-pub trait Operation: Sized + Any + Serializable<Self::Project> {
+pub trait Operation: Sized + Any + Serializable<Self::Project> + Send + Sync {
 
     type Project: Project;
     type Inverse: Operation<Project = Self::Project, Inverse = Self>;
@@ -27,7 +27,7 @@ pub trait Operation: Sized + Any + Serializable<Self::Project> {
 }
 
 /// Shim trait for turning an operation into a dyn object
-pub(crate) trait OperationDyn {
+pub(crate) trait OperationDyn: Send + Sync {
     type Project: Project;
 
     fn perform(&self, recorder: &mut Recorder<'_, Self::Project>);
