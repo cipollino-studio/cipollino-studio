@@ -4,3 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+project = { path = "../project" }
+
+clap = { version = "4.1.11", features = ["derive"] }
+
+tokio = { version = "1.43.0", features = ["macros", "rt-multi-thread"] }
+warp = "0.3.7"
+futures = "0.3.31"

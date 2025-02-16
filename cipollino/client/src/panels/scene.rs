@@ -14,7 +14,7 @@ impl Panel for ScenePanel {
         "Scene".to_owned()
     }
 
-    fn render(&mut self, ui: &mut pierro::UI, state: &mut EditorState) {
+    fn render(&mut self, ui: &mut pierro::UI, _state: &mut EditorState) {
         pierro::label(ui, "Scene!");
     }
 

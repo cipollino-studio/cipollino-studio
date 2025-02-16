@@ -1,12 +1,12 @@
 
-use crate::{asset_operations, Asset, Objects, Project};
+use crate::{asset_operations, Action, Asset, Client, Objects, Project};
 
 #[derive(alisa::Serializable, Clone)]
 #[project(Project)]
 pub struct Folder {
-    parent: alisa::Ptr<Folder>,
-    name: String,
-    folders: alisa::UnorderedChildList<Folder>
+    pub parent: alisa::Ptr<Folder>,
+    pub name: String,
+    pub folders: alisa::UnorderedChildList<Folder>
 }
 
 impl Default for Folder {
@@ -39,8 +39,8 @@ impl alisa::Object for Folder {
 #[derive(alisa::Serializable)]
 #[project(Project)]
 pub struct FolderTreeData {
-    name: String,
-    folders: alisa::UnorderedChildListTreeData<Folder>
+    pub name: String,
+    pub folders: alisa::UnorderedChildListTreeData<Folder>
 }
 
 impl Default for FolderTreeData {
@@ -112,6 +112,19 @@ impl Asset for Folder {
 
     fn name_mut(&mut self) -> &mut String {
         &mut self.name
+    }
+    
+    fn rename(client: &Client, action: &mut Action, ptr: alisa::Ptr<Self>, name: String) {
+        client.perform(action, RenameFolder {
+            ptr,
+            name,
+        });
+    }
+
+    fn delete(client: &Client, action: &mut Action, ptr: alisa::Ptr<Self>) {
+        client.perform(action, DeleteFolder {
+            ptr
+        }); 
     }
 
 }

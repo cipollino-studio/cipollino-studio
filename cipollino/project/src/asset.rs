@@ -1,21 +1,27 @@
 use std::collections::HashSet;
 
-use crate::{Folder, Project};
+use crate::{Action, Client, Folder, Project};
 
 pub trait Asset: alisa::TreeObj<ParentPtr = alisa::Ptr<Folder>, Project = Project, ChildList = alisa::UnorderedChildList<Self>> {
 
     fn name(&self) -> &String;    
     fn name_mut(&mut self) -> &mut String;
 
-    fn get_sibling_names(child_list: &Self::ChildList, objects: &alisa::ObjList<Self>) -> HashSet<String> {
-        child_list.iter().filter_map(|ptr| objects.get(ptr)).map(|asset| asset.name().clone()).collect()
-    } 
+    fn rename(client: &Client, action: &mut Action, ptr: alisa::Ptr<Self>, name: String);
+    fn delete(client: &Client, action: &mut Action, ptr: alisa::Ptr<Self>);
+
+    fn get_sibling_names(child_list: &Self::ChildList, objects: &alisa::ObjList<Self>, exclude: Option<alisa::Ptr<Self>>) -> HashSet<String> {
+        child_list.iter()
+            .filter(|ptr| Some(*ptr) != exclude)
+            .filter_map(|ptr| objects.get(ptr)).map(|asset| asset.name().clone())
+            .collect()
+    }
 
 }
 
-struct SetAssetNameDelta<A: Asset> {
-    ptr: alisa::Ptr<A>,
-    name: String
+pub(crate) struct SetAssetNameDelta<A: Asset> {
+    pub ptr: alisa::Ptr<A>,
+    pub name: String
 }
 
 impl<A: Asset> alisa::Delta for SetAssetNameDelta<A> {
@@ -50,15 +56,15 @@ macro_rules! asset_operations {
             #[derive(alisa::Serializable, Default)]
             #[project(crate::Project)]
             pub struct [< Create $asset:camel >] {
-                ptr: alisa::Ptr<$asset>,
-                parent: alisa::Ptr<crate::Folder>,
-                data: <$asset as alisa::TreeObj>::TreeData
+                pub ptr: alisa::Ptr<$asset>,
+                pub parent: alisa::Ptr<crate::Folder>,
+                pub data: <$asset as alisa::TreeObj>::TreeData
             }
 
             #[derive(alisa::Serializable, Default)]
             #[project(crate::Project)]
             pub struct [< Delete $asset:camel >] {
-                ptr: alisa::Ptr<$asset>
+                pub ptr: alisa::Ptr<$asset>
             }
 
             impl alisa::Operation for [< Create $asset:camel >] {
@@ -75,7 +81,7 @@ macro_rules! asset_operations {
                     // Make sure the parent we're creating the object in exists 
                     let context = &recorder.context();
                     let Some(child_list) = $asset::child_list(self.parent, &context) else { return; };
-                    let sibling_names = $asset::get_sibling_names(child_list, recorder.obj_list());
+                    let sibling_names = $asset::get_sibling_names(child_list, recorder.obj_list(), None);
 
                     // Instance the object and its children
                     $asset::instance(&self.data, self.ptr, self.parent, recorder);
@@ -138,6 +144,61 @@ macro_rules! asset_operations {
                         ptr: self.ptr,
                         parent,
                         data
+                    })
+                }
+
+            }
+
+            #[derive(alisa::Serializable)]
+            #[project(crate::Project)]
+            pub struct [< Rename $asset:camel >] {
+                pub ptr: alisa::Ptr<$asset>,
+                pub name: String
+            }
+
+            impl Default for [< Rename $asset:camel >] {
+
+                fn default() -> Self {
+                    Self {
+                        ptr: alisa::Ptr::null(),
+                        name: stringify!($asset).to_owned()
+                    }
+                }
+
+            }
+
+            impl alisa::Operation for [< Rename $asset:camel >] {
+
+                type Project = crate::Project;
+                type Inverse = [< Rename $asset:camel >];
+                
+                const NAME: &'static str = stringify!([< Rename $asset:camel >]);
+
+                fn perform(&self, recorder: &mut alisa::Recorder<Self::Project>) {
+                    use alisa::TreeObj; 
+                    let Some(obj) = recorder.obj_list().get(self.ptr) else { return; };
+                    let context = recorder.context();
+                    let Some(child_list) = $asset::child_list(obj.parent(), &context) else { return; };
+                    let sibling_names = $asset::get_sibling_names(child_list, recorder.obj_list(), Some(self.ptr));
+
+                    if let Some(obj) = recorder.obj_list_mut().get_mut(self.ptr) {
+                        let old_name = obj.name().clone();
+                        *obj.name_mut() = self.name.clone();
+
+                        crate::rectify_name_duplication(self.ptr, sibling_names, recorder);
+
+                        recorder.push_delta(crate::SetAssetNameDelta {
+                            ptr: self.ptr,
+                            name: old_name
+                        });
+                    }
+                }
+
+                fn inverse(&self, context: &alisa::ProjectContext<Self::Project>) -> Option<Self::Inverse> {
+                    let object = context.obj_list().get(self.ptr)?; 
+                    Some(Self {
+                        ptr: self.ptr,
+                        name: object.name().clone()
                     })
                 }
 

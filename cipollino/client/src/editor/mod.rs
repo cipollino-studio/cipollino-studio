@@ -1,5 +1,13 @@
 
+use std::path::PathBuf;
+
+use project::alisa::rmpv;
+use project::Client;
+
 use crate::{AssetsPanel, EditorPanel, ScenePanel};
+
+mod socket;
+pub use socket::*;
 
 pub struct EditorState {
     pub client: project::Client,
@@ -8,12 +16,13 @@ pub struct EditorState {
 
 pub struct Editor {
     state: EditorState,
-    docking: pierro::DockingState<EditorPanel>
+    docking: pierro::DockingState<EditorPanel>,
+    socket: Option<Socket>
 }
 
 impl Editor {
 
-    pub fn new(client: project::Client) -> Self {
+    fn new(client: Client, socket: Option<Socket>) -> Self {
         Self {
             state: EditorState {
                 client,
@@ -23,7 +32,16 @@ impl Editor {
                 EditorPanel::new::<ScenePanel>(),
                 EditorPanel::new::<AssetsPanel>(),
             ]),
+            socket
         }
+    }
+
+    pub fn local(path: PathBuf) -> Option<Self> {
+        Some(Self::new(Client::local(path)?, None))
+    }
+
+    pub fn collab(socket: Socket, welcome_msg: &rmpv::Value) -> Option<Self> {
+        Some(Self::new(Client::collab(welcome_msg)?, Some(socket)))
     }
 
     pub fn tick(&mut self, ui: &mut pierro::UI) {
@@ -39,11 +57,20 @@ impl Editor {
                     self.state.undo_redo.undo(&self.state.client);
                 }
                 if pierro::menu_button(ui, "Redo").mouse_clicked() {
-                    self.state.undo_redo.undo(&self.state.client);
+                    self.state.undo_redo.redo(&self.state.client);
                 }
             });
         });
         self.state.client.tick(&mut ());
+
+        if let Some(socket) = &mut self.socket {
+            for to_send in self.state.client.take_messages() {
+                socket.send(to_send);
+            }
+            while let Some(msg) = socket.receive() {
+                self.state.client.receive_message(msg, &mut ());
+            }
+        }
 
         self.docking.render(ui, &mut self.state);
     }

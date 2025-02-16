@@ -5,4 +5,3 @@ edition = "2021"
 
 [dependencies]
 alisa = { path = "../../alisa/alisa" } 
-verter = "0.1.0"

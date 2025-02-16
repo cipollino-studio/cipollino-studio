@@ -1,5 +1,5 @@
 
-use crate::{CreateFolder, DeleteFolder, Folder};
+use crate::{CreateFolder, DeleteFolder, Folder, RenameFolder};
 
 #[derive(alisa::Serializable)]
 #[project(Project)]
@@ -35,8 +35,8 @@ impl alisa::Project for Project {
 
     }
 
-    fn verter_config() -> verter::Config {
-        verter::Config {
+    fn verter_config() -> alisa::verter::Config {
+        alisa::verter::Config {
             magic_bytes: b"CIPOLINO",
             page_size: 64,
         } 
@@ -49,6 +49,7 @@ impl alisa::Project for Project {
     const OPERATIONS: &'static [alisa::OperationKind<Self>] = &[
         alisa::OperationKind::from::<CreateFolder>(),
         alisa::OperationKind::from::<DeleteFolder>(),
+        alisa::OperationKind::from::<RenameFolder>(),
     ];
 
 }

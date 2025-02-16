@@ -39,7 +39,7 @@ impl pierro::DockingTab for EditorPanel {
         self.panel.render(ui, state); 
     }
 
-    fn add_tab_dropdown<F: FnMut(Self)>(ui: &mut pierro::UI, add_tab: F, context: &mut EditorState) {
+    fn add_tab_dropdown<F: FnMut(Self)>(_ui: &mut pierro::UI, _add_tab: F, _context: &mut EditorState) {
 
     }
 
