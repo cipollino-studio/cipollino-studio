@@ -1,7 +1,7 @@
 
 use cosmic_text::{Edit, FontSystem};
 
-use crate::{vec2, CursorIcon, Key, LayoutInfo, LogicalKey, PaintRect, PaintText, Rect, Size, UINodeParams, Vec2, UI};
+use crate::{vec2, CursorIcon, Key, LayoutInfo, LogicalKey, PaintRect, PaintText, Rect, Response, Size, UINodeParams, Vec2, UI};
 
 use super::{label_text_style, Theme};
 
@@ -14,7 +14,12 @@ fn font_system<'a>(ui: &'a mut UI) -> &'a mut FontSystem {
     ui.font_system(ui.text_font()).unwrap()
 }
 
-pub fn text_edit(ui: &mut UI, text: &mut String) {
+pub struct TextEditResponse {
+    pub response: Response,
+    pub done_editing: bool 
+}
+
+pub fn text_edit(ui: &mut UI, text: &mut String) -> TextEditResponse {
 
     let theme = ui.style::<Theme>();
     let color = theme.bg_text_field;
@@ -35,20 +40,20 @@ pub fn text_edit(ui: &mut UI, text: &mut String) {
 
     if text_edit.mouse_pressed() && !text_edit.is_focused(ui) {
         text_edit.request_focus(ui);
+    }
+
+    if text_edit.is_focused(ui) && !ui.memory().has::<TextEditMemory>(text_edit.id) {
         let mut buffer = cosmic_text::Buffer::new(font_system(ui), cosmic_text::Metrics { font_size, line_height: font_size });
         buffer.set_text(font_system(ui), text, cosmic_text::Attrs::new().family(cosmic_text::Family::SansSerif), cosmic_text::Shaping::Advanced);
-        let editor = cosmic_text::Editor::new(buffer);
+        let mut editor = cosmic_text::Editor::new(buffer);
+        editor.action(font_system(ui), cosmic_text::Action::Motion(cosmic_text::Motion::End));
         ui.memory().insert(text_edit.id, TextEditMemory {
             editor,
             scroll: 0.0
         });
     }
-    if text_edit.mouse_pressed_outside(ui) {
-        text_edit.release_focus(ui);
-    }
-    if !text_edit.is_focused(ui) {
-        ui.memory().remove::<TextEditMemory>(text_edit.id);
-    }
+
+    let mut done_editing = false;
 
     let focused = text_edit.is_focused(ui); 
     let theme = ui.style::<Theme>();
@@ -154,6 +159,9 @@ pub fn text_edit(ui: &mut UI, text: &mut String) {
                     }
                     memory.editor.action(font_system(ui), cosmic_text::Action::Delete);
                 },
+                Some(LogicalKey::Enter) => {
+                    done_editing = true;
+                },
                 _ => {}
             }
         }
@@ -255,6 +263,20 @@ pub fn text_edit(ui: &mut UI, text: &mut String) {
         ui.set_cursor(CursorIcon::Text);
     }
 
+    if text_edit.mouse_pressed_outside(ui) {
+        done_editing = true;
+    }
+    if done_editing {
+        text_edit.release_focus(ui);
+    }
+    if !text_edit.is_focused(ui) {
+        ui.memory().remove::<TextEditMemory>(text_edit.id);
+    }
+
+    TextEditResponse {
+        response: text_edit,
+        done_editing
+    }
 }
 
 // Taken from iced.

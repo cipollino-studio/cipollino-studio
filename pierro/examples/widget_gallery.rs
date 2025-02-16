@@ -40,7 +40,7 @@ impl Basic {
                 });
                 pierro::v_spacing(ui, 10.0);
 
-                pierro::collapsing_header(ui, "A collapsing header", |ui| {
+                pierro::collapsing_label(ui, "A collapsing header", |ui| {
                     for i in 0..50 {
                         pierro::label(ui, i.to_string());
                     }

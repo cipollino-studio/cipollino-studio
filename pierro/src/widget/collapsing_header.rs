@@ -1,7 +1,7 @@
 
-use crate::{icons, Size, UINodeParams, UI};
+use crate::{icons, Response, Size, UINodeParams, UI};
 
-use super::{h_spacing, horizontal_fit, icon, label, v_spacing, vertical_fit};
+use super::{h_spacing, horizontal_fit, horizontal_fit_centered, icon, label, v_spacing, vertical_fit};
 
 struct CollapsingHeaderMemory {
     open: bool
@@ -17,12 +17,12 @@ impl Default for CollapsingHeaderMemory {
 
 }
 
-pub fn collapsing_header<S: Into<String>, F: FnOnce(&mut UI)>(ui: &mut UI, label_text: S, contents: F) {
+pub fn collapsing_header<H: FnOnce(&mut UI), F: FnOnce(&mut UI)>(ui: &mut UI, header: H, contents: F) -> Response {
     let container = ui.node(UINodeParams::new(Size::fit(), Size::fit()));
 
     ui.with_parent(container.node_ref, |ui| {
         let open = ui.memory().get::<CollapsingHeaderMemory>(container.id).open;
-        let (header_response, _) = horizontal_fit(ui, |ui| {
+        let (header_response, _) = horizontal_fit_centered(ui, |ui| {
             let icon_text = if open {
                 icons::CARET_DOWN
             } else {
@@ -30,7 +30,7 @@ pub fn collapsing_header<S: Into<String>, F: FnOnce(&mut UI)>(ui: &mut UI, label
             };
             icon(ui, icon_text);
             h_spacing(ui, 3.0);
-            label(ui, label_text);
+            header(ui);
         });
         ui.set_sense_mouse(header_response.node_ref, true);
 
@@ -49,5 +49,12 @@ pub fn collapsing_header<S: Into<String>, F: FnOnce(&mut UI)>(ui: &mut UI, label
             });
         }
 
-    });
+        header_response
+    })
+} 
+
+pub fn collapsing_label<S: Into<String>, F: FnOnce(&mut UI)>(ui: &mut UI, label_text: S, contents: F) -> Response {
+    collapsing_header(ui, |ui| {
+        label(ui, label_text);
+    }, contents) 
 }

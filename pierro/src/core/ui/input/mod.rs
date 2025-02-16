@@ -242,6 +242,8 @@ impl MouseButton {
 }
 
 pub struct Input {
+    pub delta_time: f32,
+
     pub prev_mouse_pos: Option<Vec2>,
     pub mouse_pos: Option<Vec2>,
     pub l_mouse: MouseButton,
@@ -360,6 +362,7 @@ impl Input {
 
     pub(crate) fn new() -> Self {
         Self {
+            delta_time: 0.0,
             prev_mouse_pos: None,
             mouse_pos: None,
             l_mouse: MouseButton::new(),
@@ -376,11 +379,13 @@ impl Input {
     /// Update the input given the raw input from the window.
     /// Resets the raw input in preparation for the next frame.
     pub(crate) fn update(&mut self, raw_input: &mut RawInput, scale_factor: f32) {
+        self.delta_time = raw_input.delta_time;
+
         self.prev_mouse_pos = self.mouse_pos;
         self.mouse_pos = raw_input.mouse_pos.map(|pos| pos / scale_factor);
 
-        self.l_mouse.update(raw_input.l_mouse_down, self.mouse_pos, raw_input.delta_time);
-        self.r_mouse.update(raw_input.r_mouse_down, self.mouse_pos, raw_input.delta_time);
+        self.l_mouse.update(raw_input.l_mouse_down, self.mouse_pos, self.delta_time);
+        self.r_mouse.update(raw_input.r_mouse_down, self.mouse_pos, self.delta_time);
 
         // If we start dragging, set the mouse position to the previous mouse position
         // so that the drag starting is registered on the same widget where the mouse began

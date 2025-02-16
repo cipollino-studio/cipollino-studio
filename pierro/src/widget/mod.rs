@@ -52,3 +52,9 @@ pub use docking::*;
 
 mod dropdown;
 pub use dropdown::*;
+
+mod window;
+pub use window::*;
+
+mod modal;
+pub use modal::*;

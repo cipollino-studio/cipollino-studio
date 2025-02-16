@@ -15,6 +15,14 @@ pub fn horizontal<R, F: FnOnce(&mut UI) -> R>(ui: &mut UI, body: F) -> (Response
     (container, ui.with_parent(container.node_ref, body))
 }
 
+pub fn horizontal_centered<R, F: FnOnce(&mut UI) -> R>(ui: &mut UI, body: F) -> (Response, R) {
+    let container = ui.node(
+        UINodeParams::new(Size::fr(1.0), Size::fit())
+            .with_layout(Layout::horizontal().align_center())
+    );
+    (container, ui.with_parent(container.node_ref, body))
+}
+
 pub fn horizontal_fit<R, F: FnOnce(&mut UI) -> R>(ui: &mut UI, body: F) -> (Response, R) {
     let container = ui.node(
         UINodeParams::new(Size::fit(), Size::fit())
@@ -39,6 +47,14 @@ pub fn vertical<R, F: FnOnce(&mut UI) -> R>(ui: &mut UI, body: F) -> (Response, 
     (container, ui.with_parent(container.node_ref, body))
 }
 
+pub fn vertical_centered<R, F: FnOnce(&mut UI) -> R>(ui: &mut UI, body: F) -> (Response, R) {
+    let container = ui.node(
+        UINodeParams::new(Size::fr(1.0), Size::fit())
+            .with_layout(Layout::vertical().align_center())
+    );
+    (container, ui.with_parent(container.node_ref, body))
+}
+
 pub fn vertical_fit<R, F: FnOnce(&mut UI) -> R>(ui: &mut UI, body: F) -> (Response, R) {
     let container = ui.node(
         UINodeParams::new(Size::fit(), Size::fit())
@@ -59,4 +75,8 @@ pub fn margin<R, F: FnOnce(&mut UI) -> R>(ui: &mut UI, body: F) -> R {
     let theme = ui.style::<Theme>();
     let widget_marin = theme.widget_margin;
     ui.with_node(UINodeParams::new(Size::fit(), Size::fit()).with_margin(Margin::same(widget_marin)), body).1
+}
+
+pub fn centered<R, F: FnOnce(&mut UI) -> R>(ui: &mut UI, body: F) -> R {
+    container(ui, Size::fr(1.0), Size::fr(1.0), Layout::vertical().align_center().justify_center(), body).1
 }

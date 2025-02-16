@@ -22,6 +22,8 @@ pub struct Theme {
     pub widget_rounding: f32,
     pub widget_stroke_width: f32,
 
+    pub window_margin: f32,
+
     pub color_transition_animation_rate: f32
 }
 
@@ -47,6 +49,8 @@ impl Default for Theme {
             widget_margin: 5.0,
             widget_rounding: 5.0,
             widget_stroke_width: 1.0,
+
+            window_margin: 7.5,
 
             color_transition_animation_rate: 0.3
         }
