@@ -185,6 +185,10 @@ impl<'a, 'b> UI<'a, 'b> {
     pub fn set_fill(&mut self, node: UIRef, fill: Color) {
         self.tree.get_mut(node).params.fill = fill;
     }
+    
+    pub fn set_text_color(&mut self, node: UIRef, color: Color) {
+        self.tree.get_mut(node).params.text_style.color = color;
+    }
 
     pub fn set_stroke(&mut self, node: UIRef, stroke: Stroke) {
         self.tree.get_mut(node).params.stroke = stroke;

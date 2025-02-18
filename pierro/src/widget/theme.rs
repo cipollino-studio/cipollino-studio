@@ -13,6 +13,7 @@ pub struct Theme {
     
     pub text: Color,
     pub text_active: Color,
+    pub link: Color,
 
     pub accent: Color,
 
@@ -41,6 +42,7 @@ impl Default for Theme {
 
             text: Color::hex(0xB9BDC1FF),
             text_active: Color::hex(0xE8ECEFFF),
+            link: Color::hex(0x3d98ffFF),
 
             accent: Color::hex(0x6AC3C1FF),
 
