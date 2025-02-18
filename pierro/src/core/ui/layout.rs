@@ -217,11 +217,24 @@ impl UITree {
             let mut content_size = 0.0;
 
             let mut child_ref = self.get(node).first_child;
+            let mut frac_units = 0.0;
+            let mut frac_unit_size = 0.0f32;
             while child_ref.is_some() {
                 let child = self.get(child_ref);
-                content_size += child.basis_size.on_axis(axis);
+                let child_basis_size = child.basis_size.on_axis(axis);
+
+                // We want to make sure all fractional units have the same size, so we'll add the size of the fractional children at the end
+                if let SizeKind::Fr(child_frac_units) = child.params.size.on_axis(axis).size {
+                    frac_units += child_frac_units;
+                    frac_unit_size = frac_unit_size.max(child_basis_size / child_frac_units);
+                } else {
+                    content_size += child_basis_size;
+                }
+
                 child_ref = self.get(child_ref).next;
             }
+
+            content_size += frac_units * frac_unit_size;
 
             content_size
         } else {
