@@ -1,6 +1,6 @@
 
 pub mod layout;
-use std::any::Any;
+use std::{any::Any, collections::HashMap};
 
 pub use layout::*;
 
@@ -21,11 +21,13 @@ pub use tree::*;
 mod cursor;
 pub use cursor::*;
 
+mod texture;
+
 mod clipboard;
 
 use crate::{Color, Rect, Vec2};
 
-use super::{text::FontId, Margin, Painter, PerAxis, RenderResources, Stroke, TSTransform};
+use super::{text::FontId, Margin, Painter, PerAxis, RenderResources, Stroke, TSTransform, Texture};
 
 pub struct UI<'a, 'b> {
     input: &'a Input,
@@ -34,6 +36,8 @@ pub struct UI<'a, 'b> {
 
     render_resources: &'a mut RenderResources<'b>,
     clipboard: Option<&'a mut arboard::Clipboard>,
+
+    textures: &'a mut HashMap<String, Texture>,
 
     window_size: Vec2,
 
@@ -50,12 +54,13 @@ pub struct UI<'a, 'b> {
 
 impl<'a, 'b> UI<'a, 'b> {
 
-    pub(crate) fn new(input: &'a Input, memory: &'a mut Memory, render_resources: &'a mut RenderResources<'b>, clipboard: Option<&'a mut arboard::Clipboard>, window_size: Vec2, tree: UITree, layer: UIRef) -> Self {
+    pub(crate) fn new(input: &'a Input, memory: &'a mut Memory, render_resources: &'a mut RenderResources<'b>, clipboard: Option<&'a mut arboard::Clipboard>, textures: &'a mut HashMap<String, Texture>, window_size: Vec2, tree: UITree, layer: UIRef) -> Self {
         Self {
             input,
             memory,
             style: Style::new(),
             render_resources,
+            textures,
             clipboard,
             window_size,
             tree,
@@ -223,12 +228,12 @@ impl<'a, 'b> UI<'a, 'b> {
     }
 
     /// Get the WebGPU render device
-    pub fn wgpu_device(&mut self) -> &wgpu::Device {
+    pub fn wgpu_device(&self) -> &wgpu::Device {
         &self.render_resources.device
     } 
 
     /// Get the WebGPU render queue
-    pub fn wgpu_queue(&mut self) -> &wgpu::Queue {
+    pub fn wgpu_queue(&self) -> &wgpu::Queue {
         &self.render_resources.queue
     }
 

@@ -18,3 +18,4 @@ pub use ui::*;
 
 pub use wgpu;
 pub use cosmic_text;
+pub use image;

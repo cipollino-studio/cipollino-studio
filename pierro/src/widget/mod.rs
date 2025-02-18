@@ -20,6 +20,9 @@ pub use label::*;
 mod icon;
 pub use icon::*;
 
+mod image;
+pub use image::*;
+
 mod button;
 pub use button::*;
 

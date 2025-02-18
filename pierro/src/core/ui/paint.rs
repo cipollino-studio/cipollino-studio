@@ -12,7 +12,11 @@ impl UITree {
         painter.push_transform(node.transform);
 
         if node.params.fill.a > 0.0 || (node.params.stroke.color.a > 0.0 && node.params.stroke.width > 0.0) {
-            painter.rect(PaintRect::new(node.rect, node.params.fill).with_rounding(node.params.rounding).with_stroke(node.params.stroke));
+            let mut rect = PaintRect::new(node.rect, node.params.fill).with_rounding(node.params.rounding).with_stroke(node.params.stroke); 
+            if let Some(texture) = node.params.texture.take() {
+                rect = rect.with_texture(texture);
+            }
+            painter.rect(rect);
         }
 
         if let Some(text) = node.params.text.take() {

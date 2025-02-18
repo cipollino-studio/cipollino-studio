@@ -1,7 +1,7 @@
 
 use std::fmt::Debug;
 
-use crate::{Axis, Color, Painter, PerAxis, Rect, Stroke, TSTransform, TextStyle, Vec2, Margin};
+use crate::{Axis, Color, Margin, Painter, PerAxis, Rect, Stroke, TSTransform, TextStyle, Texture, Vec2};
 
 use super::{Id, Layout, Size};
 
@@ -50,6 +50,7 @@ pub struct UINodeParams {
     pub(crate) rounding: f32,
     pub(crate) stroke: Stroke,
     pub(crate) clip: bool,
+    pub(crate) texture: Option<Texture>,
 
     // Text
     pub(crate) text: Option<String>,
@@ -82,6 +83,7 @@ impl UINodeParams {
             clip: true,
             text: None,
             text_style: TextStyle::default(),
+            texture: None,
             id_source: None,
             mouse: false,
             scroll: false,
@@ -132,6 +134,11 @@ impl UINodeParams {
 
     pub fn with_stroke(mut self, stroke: Stroke) -> Self {
         self.stroke = stroke;
+        self
+    }
+
+    pub fn with_texture(mut self, texture: Texture) -> Self {
+        self.texture = Some(texture);
         self
     }
 

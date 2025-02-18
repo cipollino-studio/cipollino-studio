@@ -1,11 +1,13 @@
 
+use std::collections::HashMap;
+
 use winit::{
     application::ApplicationHandler, dpi::{LogicalPosition, LogicalSize, Position, Size}, event::*, event_loop::{ActiveEventLoop, ControlFlow, EventLoop}, window::WindowId
 };
 
 use crate::{vec2, Input, Memory, Painter, RawInput, Rect, RenderResources, UITree, Vec2, WindowConfig, UI};
 
-use super::{CursorIcon, Key, LayoutMemory, LogicalKey, TextRenderCache};
+use super::{CursorIcon, Key, LayoutMemory, LogicalKey, TextRenderCache, Texture};
 
 pub trait App {
 
@@ -22,6 +24,7 @@ struct AppHandler<'a, T: App> {
 
     render_resources: Option<RenderResources<'a>>,
     clipboard: Option<arboard::Clipboard>,
+    textures: HashMap<String, Texture>,
     raw_input: RawInput,
     input: Input,
     memory: Memory,
@@ -32,7 +35,7 @@ struct AppHandler<'a, T: App> {
 
 impl<T: App> AppHandler<'_, T> {
 
-    pub fn tick(app: &mut T, render_resources: &mut RenderResources<'_>, clipboard: Option<&mut arboard::Clipboard>, raw_input: &mut RawInput, input: &mut Input, memory: &mut Memory) {
+    pub fn tick(app: &mut T, render_resources: &mut RenderResources<'_>, clipboard: Option<&mut arboard::Clipboard>, textures: &mut HashMap<String, Texture>, raw_input: &mut RawInput, input: &mut Input, memory: &mut Memory) {
         let physical_size = vec2(render_resources.window.inner_size().width as f32, render_resources.window.inner_size().height as f32);
         let scale_factor = render_resources.window.scale_factor() as f32;
         let size = physical_size / scale_factor;
@@ -45,7 +48,7 @@ impl<T: App> AppHandler<'_, T> {
         input.distribute(memory);
 
         // ui generation
-        let mut ui = UI::new(input, memory, render_resources, clipboard, size, tree, layer);
+        let mut ui = UI::new(input, memory, render_resources, clipboard, textures, size, tree, layer);
         app.tick(&mut ui);
 
         let cursor = ui.cursor;
@@ -236,7 +239,7 @@ impl<T: App> ApplicationHandler for AppHandler<'_, T> {
                 let delta_time = self.prev_redraw_time.elapsed().as_secs_f32();
                 self.prev_redraw_time = std::time::Instant::now();
                 self.raw_input.delta_time = delta_time;
-                Self::tick(&mut self.app, render_resources, self.clipboard.as_mut(), &mut self.raw_input, &mut self.input, &mut self.memory);
+                Self::tick(&mut self.app, render_resources, self.clipboard.as_mut(), &mut self.textures, &mut self.raw_input, &mut self.input, &mut self.memory);
                 if self.redraw_counter > 0 {
                     self.redraw_counter -= 1;
                     render_resources.request_redraw();
@@ -306,6 +309,7 @@ pub fn run<T: App>(app: T) {
         app,
         render_resources: None,
         clipboard: arboard::Clipboard::new().ok(),
+        textures: HashMap::new(),
         raw_input: RawInput::new(),
         input: Input::new(),
         memory: Memory::new(),
