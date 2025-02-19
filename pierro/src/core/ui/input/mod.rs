@@ -415,6 +415,17 @@ impl Input {
 
     /// Distribute the input to nodes, taking foucs into account.
     pub(crate) fn distribute(&self, memory: &mut Memory) {
+
+        // Take away focus if we clicked outside the focused node
+        if let Some(focused_node) = memory.get_focus() {
+            let focused_node_memory = memory.get::<LayoutMemory>(focused_node);
+            if let Some(mouse_pos) = self.mouse_pos {
+                if (self.l_mouse.pressed() || self.r_mouse.pressed()) && !focused_node_memory.interaction_rect.contains(mouse_pos) {
+                    memory.release_focus();
+                }
+            }
+        }
+
         let layer_ids = memory.layer_ids.clone();
         let hovered_node = memory.get_focus().or_else(|| {
             let mouse_pos = self.mouse_pos?;

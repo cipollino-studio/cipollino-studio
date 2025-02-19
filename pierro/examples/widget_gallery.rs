@@ -21,7 +21,7 @@ impl Basic {
 
     fn ui(&mut self, ui: &mut pierro::UI) {
         pierro::scroll_area(ui, |ui| {
-            pierro::margin(ui, |ui| { 
+            pierro::margin(ui, pierro::Margin::same(5.0), |ui| { 
                 pierro::label(ui, "A label");
                 pierro::v_spacing(ui, 10.0);
 
@@ -86,7 +86,7 @@ impl Layout {
 
     fn ui(&mut self, ui: &mut pierro::UI) {
 
-        pierro::margin(ui, |ui| {
+        pierro::margin(ui, pierro::Margin::same(5.0), |ui| {
             pierro::dropdown_labeled(ui, "Axis: ", match self.axis {
                 pierro::Axis::X => "X",
                 pierro::Axis::Y => "Y",
