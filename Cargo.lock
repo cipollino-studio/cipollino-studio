@@ -99,7 +99,7 @@ dependencies = [
  "ndk-context",
  "ndk-sys 0.6.0+11769913",
  "num_enum",
- "thiserror 1.0.69",
+ "thiserror",
 ]
 
 [[package]]
@@ -652,7 +652,7 @@ dependencies = [
  "polling",
  "rustix",
  "slab",
- "thiserror 1.0.69",
+ "thiserror",
 ]
 
 [[package]]
@@ -737,12 +737,15 @@ name = "cipollino-studio"
 version = "0.1.0"
 dependencies = [
  "clap",
- "dirs",
+ "directories",
  "ewebsock",
+ "pathdiff",
  "pierro 0.1.0",
  "project",
  "rfd",
  "rustls",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -1052,24 +1055,24 @@ dependencies = [
 ]
 
 [[package]]
-name = "dirs"
-version = "6.0.0"
+name = "directories"
+version = "5.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c3e8aa94d75141228480295a7d0e7feb620b1a5ad9f12bc40be62411e38cce4e"
+checksum = "9a49173b84e034382284f27f1af4dcbbd231ffa358c0fe316541a7337f376a35"
 dependencies = [
  "dirs-sys",
 ]
 
 [[package]]
 name = "dirs-sys"
-version = "0.5.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e01a3366d27ee9890022452ee61b2b63a67e6f13f58900b651ff5665f0bb1fab"
+checksum = "520f05a5cbd335fae5a99ff7a6ab8627577660ee5cfd6a94a6a929b52ff0321c"
 dependencies = [
  "libc",
  "option-ext",
  "redox_users",
- "windows-sys 0.59.0",
+ "windows-sys 0.48.0",
 ]
 
 [[package]]
@@ -1596,7 +1599,7 @@ checksum = "fdd4240fc91d3433d5e5b0fc5b67672d771850dc19bbee03c1381e19322803d7"
 dependencies = [
  "log",
  "presser",
- "thiserror 1.0.69",
+ "thiserror",
  "winapi",
  "windows",
 ]
@@ -1669,7 +1672,7 @@ dependencies = [
  "com",
  "libc",
  "libloading",
- "thiserror 1.0.69",
+ "thiserror",
  "widestring",
  "winapi",
 ]
@@ -2031,7 +2034,7 @@ dependencies = [
  "combine",
  "jni-sys",
  "log",
- "thiserror 1.0.69",
+ "thiserror",
  "walkdir",
  "windows-sys 0.45.0",
 ]
@@ -2324,7 +2327,7 @@ dependencies = [
  "rustc-hash",
  "spirv",
  "termcolor",
- "thiserror 1.0.69",
+ "thiserror",
  "unicode-xid",
 ]
 
@@ -2340,7 +2343,7 @@ dependencies = [
  "ndk-sys 0.6.0+11769913",
  "num_enum",
  "raw-window-handle",
- "thiserror 1.0.69",
+ "thiserror",
 ]
 
 [[package]]
@@ -2770,6 +2773,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "57c0d7b74b563b49d38dae00a0c37d4d6de9b432382b2892f0574ddcae73fd0a"
 
 [[package]]
+name = "pathdiff"
+version = "0.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "df94ce210e5bc13cb6651479fa48d14f601d9858cfe0467f43ae157023b938d3"
+
+[[package]]
 name = "percent-encoding"
 version = "2.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3069,7 +3078,7 @@ dependencies = [
  "rand_chacha",
  "simd_helpers",
  "system-deps",
- "thiserror 1.0.69",
+ "thiserror",
  "v_frame",
  "wasm-bindgen",
 ]
@@ -3145,13 +3154,13 @@ dependencies = [
 
 [[package]]
 name = "redox_users"
-version = "0.5.0"
+version = "0.4.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dd6f9d3d47bdd2ad6945c5015a226ec6155d0bcdfd8f7cd29f86b71f8de99d2b"
+checksum = "ba009ff324d1fc1b900bd1fdb31564febe58a8ccc8a6fdbb93b543d33b13ca43"
 dependencies = [
  "getrandom 0.2.15",
  "libredox",
- "thiserror 2.0.11",
+ "thiserror",
 ]
 
 [[package]]
@@ -3541,7 +3550,7 @@ dependencies = [
  "log",
  "memmap2",
  "rustix",
- "thiserror 1.0.69",
+ "thiserror",
  "wayland-backend",
  "wayland-client",
  "wayland-csd-frame",
@@ -3723,16 +3732,7 @@ version = "1.0.69"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b6aaf5339b578ea85b50e080feb250a3e8ae8cfcdff9a461c9ec2904bc923f52"
 dependencies = [
- "thiserror-impl 1.0.69",
-]
-
-[[package]]
-name = "thiserror"
-version = "2.0.11"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d452f284b73e6d76dd36758a0c8684b1d5be31f92b89d07fd5822175732206fc"
-dependencies = [
- "thiserror-impl 2.0.11",
+ "thiserror-impl",
 ]
 
 [[package]]
@@ -3740,17 +3740,6 @@ name = "thiserror-impl"
 version = "1.0.69"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4fee6c4efc90059e10f81e6d42c60a18f76588c3d74cb83a0b242a2b6c7504c1"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.98",
-]
-
-[[package]]
-name = "thiserror-impl"
-version = "2.0.11"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "26afc1baea8a989337eeb52b6e72a039780ce45c3edfcc9c5b9d112feeb173c2"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3980,7 +3969,7 @@ dependencies = [
  "log",
  "rand",
  "sha1",
- "thiserror 1.0.69",
+ "thiserror",
  "url",
  "utf-8",
 ]
@@ -4001,7 +3990,7 @@ dependencies = [
  "rustls",
  "rustls-pki-types",
  "sha1",
- "thiserror 1.0.69",
+ "thiserror",
  "utf-8",
  "webpki-roots",
 ]
@@ -4489,7 +4478,7 @@ dependencies = [
  "raw-window-handle",
  "rustc-hash",
  "smallvec",
- "thiserror 1.0.69",
+ "thiserror",
  "wgpu-hal",
  "wgpu-types",
 ]
@@ -4532,7 +4521,7 @@ dependencies = [
  "renderdoc-sys",
  "rustc-hash",
  "smallvec",
- "thiserror 1.0.69",
+ "thiserror",
  "wasm-bindgen",
  "web-sys",
  "wgpu-types",

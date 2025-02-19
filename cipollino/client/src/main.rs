@@ -8,6 +8,9 @@ mod panels;
 pub use panels::*;
 use splash::SplashScreen;
 
+mod systems;
+pub use systems::*;
+
 use std::path::PathBuf;
 use clap::Parser;
 
@@ -15,9 +18,9 @@ enum AppState {
     SplashScreen(SplashScreen),
     Editor(Editor)
 }
-
 struct App {
-    state: AppState
+    state: AppState,
+    systems: AppSystems
 }
 
 impl pierro::App for App {
@@ -31,7 +34,7 @@ impl pierro::App for App {
         let mut next_app_state = None;
 
         match &mut self.state {
-            AppState::SplashScreen(splash_screen) => splash_screen.tick(ui, &mut next_app_state),
+            AppState::SplashScreen(splash_screen) => splash_screen.tick(ui, &mut next_app_state, &mut self.systems),
             AppState::Editor(editor) => editor.tick(ui),
         }
 
@@ -54,12 +57,15 @@ fn main() {
 
     rustls::crypto::aws_lc_rs::default_provider().install_default().unwrap();
 
+    let systems = AppSystems::new();
+
     let args = Args::parse();
 
     let app = if let Some(path) = args.project {
         let editor = Editor::local(path).expect("could not open project.");
         App {
-            state: AppState::Editor(editor)
+            state: AppState::Editor(editor),
+            systems
         }
     } else if let Some(url) = args.url {
 
@@ -77,11 +83,13 @@ fn main() {
         let editor = Editor::collab(socket, &welcome_msg).expect("invalid server protocol");
 
         App {
-            state: AppState::Editor(editor)
+            state: AppState::Editor(editor),
+            systems
         }
     } else {
         App {
-            state: AppState::SplashScreen(SplashScreen::new())
+            state: AppState::SplashScreen(SplashScreen::new()),
+            systems
         }
     };
 

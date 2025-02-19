@@ -1,8 +1,8 @@
 
 use std::path::PathBuf;
 
-use crate::{AppState, Editor};
-use super::SplashScreenState;
+use crate::{AppState, AppSystems, Editor};
+use super::{recents::add_recent, SplashScreenState};
 
 
 pub(super) struct NewProjectScreen {
@@ -11,7 +11,7 @@ pub(super) struct NewProjectScreen {
 }
 
 fn get_default_project_location() -> String {
-    if let Some(documents_path) = dirs::document_dir() {
+    if let Some(documents_path) = directories::UserDirs::new().and_then(|dirs| dirs.document_dir().map(|path| path.to_owned())) {
         let project_path = documents_path.join("Cipollino Projects/");
         if !project_path.exists() {
             let _ = std::fs::create_dir_all(&project_path);
@@ -61,7 +61,7 @@ impl NewProjectScreen {
         Ok(path)
     }
 
-    pub fn render(&mut self, ui: &mut pierro::UI, next_state: &mut Option<SplashScreenState>, next_app_state: &mut Option<AppState>) {
+    pub fn render(&mut self, ui: &mut pierro::UI, next_state: &mut Option<SplashScreenState>, next_app_state: &mut Option<AppState>, systems: &mut AppSystems) {
         pierro::margin(ui, pierro::Margin::same(10.0), |ui| {
 
             // Back button
@@ -94,7 +94,8 @@ impl NewProjectScreen {
             if let Some(path) = project_path {
                 pierro::vertical_centered(ui, |ui| {
                     if pierro::button(ui, "Create").mouse_clicked() {
-                        if let Some(editor) = Editor::local(path) {
+                        if let Some(editor) = Editor::local(path.clone()) {
+                            add_recent(&mut systems.prefs, path);
                             *next_app_state = Some(AppState::Editor(editor));
                         }
                     }
