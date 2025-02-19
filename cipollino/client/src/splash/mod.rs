@@ -5,11 +5,15 @@ use collab::CollabScreen;
 mod menu;
 use menu::menu;
 
+mod new_project;
+use new_project::NewProjectScreen;
+
 use crate::AppState;
 
 enum SplashScreenState {
     Menu,
-    Collab(CollabScreen)
+    NewProject(NewProjectScreen),
+    Collab(CollabScreen),
 }
 
 pub struct SplashScreen {
@@ -31,6 +35,9 @@ impl SplashScreen {
             match &mut self.state {
                 SplashScreenState::Menu => {
                     menu(ui, &mut next_state, next_app_state); 
+                },
+                SplashScreenState::NewProject(new_project) => {
+                    new_project.render(ui, &mut next_state, next_app_state);
                 },
                 SplashScreenState::Collab(collab) => {
                     collab.render(ui, &mut next_state, next_app_state);
