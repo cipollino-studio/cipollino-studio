@@ -12,6 +12,21 @@ struct AssetSelection {
     folders: Vec<Ptr<Folder>>
 }
 
+impl AssetSelection {
+
+    fn transfer(self, new_parent: Ptr<Folder>, state: &EditorState) {
+        let mut action = Action::new(); 
+        for moved_folder in self.folders {
+            state.client.perform(&mut action, TransferFolder {
+                ptr: moved_folder,
+                new_parent: new_parent 
+            });
+        }
+        state.undo_redo.add(action);
+    }
+
+}
+
 #[derive(Default)]
 pub struct AssetsPanel {
     renaming_state: RefCell<Option<(AnyPtr, String)>>,
@@ -94,14 +109,7 @@ impl AssetsPanel {
         });
 
         if let Some(moved_assets) = moved_assets {
-            let mut action = Action::new(); 
-            for moved_folder in moved_assets.folders {
-                state.client.perform(&mut action, TransferFolder {
-                    ptr: moved_folder,
-                    new_parent: folder_ptr
-                });
-            }
-            state.undo_redo.add(action);
+            moved_assets.transfer(folder_ptr, state);
         }
     }
 
@@ -132,9 +140,14 @@ impl Panel for AssetsPanel {
             }
         });
 
-        pierro::scroll_area(ui, |ui| {
-            self.render_folder_contents(ui, &state.client.folders, state); 
+        let (_, moved_assets) = pierro::dnd_drop_zone_with_size::<AssetSelection, _>(ui, pierro::Size::fr(1.0), pierro::Size::fr(1.0), |ui| {
+            pierro::scroll_area(ui, |ui| {
+                self.render_folder_contents(ui, &state.client.folders, state); 
+            });
         });
+        if let Some(moved_assets) = moved_assets {
+            moved_assets.transfer(Ptr::null(), state);
+        }
 
         self.asset_dnd_source.borrow_mut().display(ui, |ui| {
             let Some(assets) = ui.memory().get_dnd_payload::<AssetSelection>() else {
