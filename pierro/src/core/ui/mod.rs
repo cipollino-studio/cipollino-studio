@@ -1,6 +1,6 @@
 
 pub mod layout;
-use std::{any::Any, collections::HashMap};
+use std::{any::Any, collections::HashMap, hash::Hash};
 
 pub use layout::*;
 
@@ -27,7 +27,7 @@ mod clipboard;
 
 use crate::{Color, Rect, Vec2};
 
-use super::{text::FontId, Margin, Painter, PerAxis, RenderResources, Stroke, TSTransform, Texture};
+use super::{hash, text::FontId, Margin, Painter, PerAxis, RenderResources, Stroke, TSTransform, Texture};
 
 pub struct UI<'a, 'b> {
     input: &'a Input,
@@ -83,9 +83,11 @@ impl<'a, 'b> UI<'a, 'b> {
 
     pub fn node(&mut self, params: UINodeParams) -> Response {
         let parent_ref = self.curr_parent();
-        let parent = self.tree.get(parent_ref);
+        let parent = self.tree.get_mut(parent_ref);
 
-        let mut new_node = UINode::new(parent.id, parent.n_children, params);
+        let mut new_node = UINode::new(parent.id, parent.curr_id_seed, params);
+        parent.curr_id_seed += 1;
+
         new_node.prev = self.curr_sibling;
         new_node.parent = parent_ref;
 
@@ -159,6 +161,12 @@ impl<'a, 'b> UI<'a, 'b> {
 
     pub fn get_node_id(&self, node: UIRef) -> Id {
         self.tree.get(node).id
+    }
+
+    pub fn push_id_seed<H: Hash>(&mut self, source: &H) {
+        let parent_ref = self.curr_parent();
+        let parent = self.tree.get_mut(parent_ref);
+        parent.curr_id_seed = hash(source);
     }
 
     pub fn input(&self) -> &Input {

@@ -1,7 +1,7 @@
 
-use std::fmt::Debug;
+use std::{fmt::Debug, hash::Hash};
 
-use crate::{Axis, Color, Margin, Painter, PerAxis, Rect, Stroke, TSTransform, TextStyle, Texture, Vec2};
+use crate::{hash, Axis, Color, Margin, Painter, PerAxis, Rect, Stroke, TSTransform, TextStyle, Texture, Vec2};
 
 use super::{Id, Layout, Size};
 
@@ -163,6 +163,11 @@ impl UINodeParams {
         self
     }
 
+    pub fn with_id<H: Hash>(mut self, source: &H) -> Self {
+        self.id_source = Some(hash(source));
+        self
+    }
+
     pub fn sense_mouse(mut self) -> Self {
         self.mouse = true;
         self
@@ -207,14 +212,17 @@ pub(crate) struct UINode {
     pub(crate) rect: Rect,
     pub(crate) transform: TSTransform,
     pub(crate) basis_size: Vec2,
-    pub(crate) frac_units: Vec2
+    pub(crate) frac_units: Vec2,
+    
+    /// The current ID seed for adding children to this node. 
+    pub(crate) curr_id_seed: u64,
 }
 
 impl UINode {
 
-    pub(crate) fn new(parent_id: Id, sibling_idx: u64, params: UINodeParams) -> Self {
+    pub(crate) fn new(parent_id: Id, id_seed: u64, params: UINodeParams) -> Self {
         Self {
-            id: Id(ahash::RandomState::with_seeds(1, 9, 8, 4).hash_one((parent_id, params.id_source.unwrap_or(sibling_idx)))),
+            id: Id(hash(&(parent_id, params.id_source.unwrap_or(id_seed)))),
             next: UIRef::Null,
             prev: UIRef::Null,
             first_child: UIRef::Null,
@@ -225,7 +233,8 @@ impl UINode {
             rect: Rect::ZERO,
             transform: TSTransform::IDENTITY,
             basis_size: Vec2::ZERO,
-            frac_units: Vec2::ONE
+            frac_units: Vec2::ONE,
+            curr_id_seed: 0
         }
     }
 

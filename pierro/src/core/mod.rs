@@ -16,6 +16,9 @@ pub mod text;
 mod ui;
 pub use ui::*;
 
+mod util;
+pub use util::*;
+
 pub use wgpu;
 pub use cosmic_text;
 pub use image;
