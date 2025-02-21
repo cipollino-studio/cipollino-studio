@@ -1,5 +1,5 @@
 
-use crate::{button_fill_animation, dnd_drop_zone_with_size, dnd_source, h_draggable_line, horizontal_fit, icon_text_style, icons, left_click_context_menu, menu_bar, tab, v_draggable_line, v_line, Axis, Color, CursorIcon, Layout, LayoutInfo, Margin, PaintRect, PerAxis, ScrollArea, Size, Stroke, Theme, UINodeParams, UI};
+use crate::{button_fill_animation, dnd_drop_zone_with_size, dnd_draggable, h_draggable_line, horizontal_fit, icon_text_style, icons, left_click_context_menu, menu_bar, tab, v_draggable_line, v_line, Axis, Color, CursorIcon, Layout, LayoutInfo, Margin, PaintRect, PerAxis, ScrollArea, Size, Stroke, Theme, UINodeParams, UI};
 
 use super::{command::{DockingCommand, TabDragSource}, DockingNodeId, DockingNodeKind, DockingState, DockingTab, DockingTree, Tabs};
 
@@ -9,7 +9,7 @@ impl<Tab: DockingTab> Tabs<Tab> {
         let selected = self.active_tab == tab_idx;
         let theme = ui.style::<Theme>();
         let base_color = if selected { theme.bg_light } else { theme.bg_dark };
-        let (dnd_response, tab_response) = dnd_source(ui, TabDragSource { node_id, tab_idx }, |ui| {
+        let (dnd_response, tab_response) = dnd_draggable(ui, TabDragSource { node_id, tab_idx }, |ui| {
             let tab_response = tab(ui, self.tabs[tab_idx].title(), selected);
             if tab_response.close_button.mouse_released() {
                 commands.push(DockingCommand::CloseTab { tab: TabDragSource { node_id, tab_idx } });

@@ -49,6 +49,10 @@ impl Memory {
         self.dnd_payload = Some(Box::new(payload)); 
     }
 
+    pub fn has_dnd_payload(&self) -> bool {
+        self.dnd_payload.is_some()
+    }
+
     pub fn has_dnd_payload_of_type<T: Any>(&self) -> bool {
         match &self.dnd_payload {
             Some(payload) => {
@@ -56,6 +60,13 @@ impl Memory {
             },
             None => false,
         } 
+    }
+
+    pub fn get_dnd_payload<T: Any>(&mut self) -> Option<&T> {
+        match &self.dnd_payload {
+            Some(payload) => payload.downcast_ref(),
+            None => None,
+        }
     }
 
     pub fn take_dnd_payload<T: Any>(&mut self) -> Option<T> {

@@ -261,10 +261,10 @@ pub struct Input {
 /// The memory storing what inputs are provided to a node
 pub(crate) struct Interaction {
     pub(crate) hovered: bool,
-    pub(crate) through_hovered: bool,
     pub(crate) l_mouse: MouseButton,
     pub(crate) r_mouse: MouseButton,
-    pub(crate) scroll: Vec2
+    pub(crate) scroll: Vec2,
+    pub(crate) dnd_hovered: bool,
 }
 
 impl Default for Interaction {
@@ -272,21 +272,21 @@ impl Default for Interaction {
     fn default() -> Self {
         Self {
             hovered: false,
-            through_hovered: false,
             l_mouse: MouseButton::new(),
             r_mouse: MouseButton::new(),
-            scroll: Vec2::ZERO
+            scroll: Vec2::ZERO,
+            dnd_hovered: false
         }
     }
 
 }
 
-fn find_interacted_node<F: Fn(&mut LayoutMemory) -> bool>(memory: &mut Memory, node: Id, pos: Vec2, ignore: Option<Id>, criteria: &F) -> Option<Id> {
+fn find_interacted_node<F: Fn(&mut LayoutMemory) -> bool>(memory: &mut Memory, node: Id, pos: Vec2, criteria: &F) -> Option<Id> {
     // Check priority nodes first
     let mut child = memory.get::<LayoutMemory>(node).first_child;
     while let Some(child_id) = child {
         if memory.get::<LayoutMemory>(child_id).has_interaction_priority {
-            if let Some(node) = find_interacted_node(memory, child_id, pos, ignore, criteria) {
+            if let Some(node) = find_interacted_node(memory, child_id, pos, criteria) {
                 return Some(node);
             }
         }
@@ -297,7 +297,7 @@ fn find_interacted_node<F: Fn(&mut LayoutMemory) -> bool>(memory: &mut Memory, n
     let mut child = memory.get::<LayoutMemory>(node).first_child;
     while let Some(child_id) = child {
         if !memory.get::<LayoutMemory>(child_id).has_interaction_priority {
-            if let Some(node) = find_interacted_node(memory, child_id, pos, ignore, criteria) {
+            if let Some(node) = find_interacted_node(memory, child_id, pos, criteria) {
                 return Some(node);
             }
         }
@@ -305,7 +305,7 @@ fn find_interacted_node<F: Fn(&mut LayoutMemory) -> bool>(memory: &mut Memory, n
     }
 
     let layout_mem = memory.get::<LayoutMemory>(node);
-    if layout_mem.interaction_rect.contains(pos) && criteria(layout_mem) && Some(node) != ignore {
+    if layout_mem.interaction_rect.contains(pos) && criteria(layout_mem) {
         return Some(node);
     }
 
@@ -314,13 +314,18 @@ fn find_interacted_node<F: Fn(&mut LayoutMemory) -> bool>(memory: &mut Memory, n
 }
 
 /// Find the node hovered at a given position in screen space
-fn find_hover_node(memory: &mut Memory, node: Id, pos: Vec2, ignore: Option<Id>) -> Option<Id> {
-    find_interacted_node(memory, node, pos, ignore, &|mem| mem.sense_mouse)
+fn find_hover_node(memory: &mut Memory, node: Id, pos: Vec2) -> Option<Id> {
+    find_interacted_node(memory, node, pos, &|mem| mem.sense_mouse)
 }
 
 /// Find the scrollable at a given position in screen space
-fn find_scrollable_node(memory: &mut Memory, node: Id, pos: Vec2, ignore: Option<Id>) -> Option<Id> {
-    find_interacted_node(memory, node, pos, ignore, &|mem| mem.sense_scroll)
+fn find_scrollable_node(memory: &mut Memory, node: Id, pos: Vec2) -> Option<Id> {
+    find_interacted_node(memory, node, pos, &|mem| mem.sense_scroll)
+}
+
+/// Find the dnd hovered node at a given position in screen space
+fn find_dnd_hovered_node(memory: &mut Memory, node: Id, pos: Vec2) -> Option<Id> {
+    find_interacted_node(memory, node, pos, &|mem| mem.sense_dnd_hover)
 }
 
 impl Input {
@@ -430,7 +435,7 @@ impl Input {
         let hovered_node = memory.get_focus().or_else(|| {
             let mouse_pos = self.mouse_pos?;
             for layer in layer_ids.iter().rev() { 
-                if let Some(hovered_node) = find_hover_node(memory, *layer, mouse_pos, None) {
+                if let Some(hovered_node) = find_hover_node(memory, *layer, mouse_pos) {
                     return Some(hovered_node)
                 }
             }
@@ -439,29 +444,30 @@ impl Input {
         let scrollable_node = (|| {
             let mouse_pos = self.mouse_pos?;
             for layer in layer_ids.iter().rev() { 
-                if let Some(scrollable_node) = find_scrollable_node(memory, *layer, mouse_pos, None) {
+                if let Some(scrollable_node) = find_scrollable_node(memory, *layer, mouse_pos) {
                     return Some(scrollable_node)
                 }
             }
             None
         })();
-        let through_hovered_node = self.mouse_pos.map(|mouse_pos| {
+        let dnd_hovered_node = (|| {
+            let mouse_pos = self.mouse_pos?;
             for layer in layer_ids.iter().rev() { 
-                if let Some(hovered_node) = find_hover_node(memory, *layer, mouse_pos, memory.get_focus()) {
-                    return Some(hovered_node)
+                if let Some(scrollable_node) = find_dnd_hovered_node(memory, *layer, mouse_pos) {
+                    return Some(scrollable_node)
                 }
             }
             None
-        }).flatten();
+        })();
 
         for (id, interaction) in memory.iter_mut::<Interaction>() {
             let hovered = Some(id) == hovered_node;
             let scrollable = Some(id) == scrollable_node;
             interaction.hovered = hovered;
-            interaction.through_hovered = Some(id) == through_hovered_node;
             interaction.l_mouse = if hovered { self.l_mouse } else { MouseButton::new() };
             interaction.r_mouse = if hovered { self.r_mouse } else { MouseButton::new() };
             interaction.scroll = if scrollable { self.scroll } else { Vec2::ZERO };
+            interaction.dnd_hovered = Some(id) == dnd_hovered_node;
         }
 
         // If we're not holding the mouse down, we can't be drag and dropping anything
@@ -478,11 +484,11 @@ pub struct Response {
     pub node_ref: UIRef,
 
     pub hovered: bool,
-    /// Is this node being hovered through the currently focused node?
-    pub through_hovered: bool,
     pub l_mouse: MouseButton,
     pub r_mouse: MouseButton,
-    pub scroll: Vec2
+    pub scroll: Vec2,
+
+    pub dnd_hovered: bool
 }
 
 impl Response {

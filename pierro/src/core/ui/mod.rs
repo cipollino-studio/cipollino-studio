@@ -111,10 +111,10 @@ impl<'a, 'b> UI<'a, 'b> {
             id,
             node_ref: new_node,
             hovered: interaction.hovered,
-            through_hovered: interaction.through_hovered,
             l_mouse: interaction.l_mouse,
             r_mouse: interaction.r_mouse,
-            scroll: interaction.scroll
+            scroll: interaction.scroll,
+            dnd_hovered: interaction.dnd_hovered
         }
     }
 
@@ -155,6 +155,10 @@ impl<'a, 'b> UI<'a, 'b> {
     pub fn get_parent_id(&self, node: UIRef) -> Id {
         let parent_ref = self.get_parent_ref(node);
         self.tree.get(parent_ref).id
+    }
+
+    pub fn get_node_id(&self, node: UIRef) -> Id {
+        self.tree.get(node).id
     }
 
     pub fn input(&self) -> &Input {
