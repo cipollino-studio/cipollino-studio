@@ -103,8 +103,8 @@ impl ScrollArea {
                 let scroll = memory.scroll;
                 ui.set_transform(content_response.node_ref, TSTransform::translation(-scroll));
 
-                let show_h_scroll_bar = max_scroll.x > 0.0 && self.show_scroll_bars;
-                let show_v_scroll_bar = max_scroll.y > 0.0 && self.show_scroll_bars;
+                let show_h_scroll_bar = max_scroll.x > 0.5 && self.show_scroll_bars;
+                let show_v_scroll_bar = max_scroll.y > 0.5 && self.show_scroll_bars;
 
                 let h_scroll_bar = if show_h_scroll_bar {
                     let scroll_bar = ui.node(
