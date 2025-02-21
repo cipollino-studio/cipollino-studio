@@ -95,6 +95,7 @@ impl AssetsPanel {
     fn render_folder(&self, ui: &mut pierro::UI, folder_ptr: Ptr<Folder>, state: &EditorState) {
         let Some(folder) = state.client.get(folder_ptr) else { return; };
 
+        ui.push_id_seed(&folder_ptr);
         let (_, moved_assets) = pierro::dnd_drop_zone::<AssetSelection, _>(ui, |ui| {
             let folder_response = pierro::collapsing_header(ui, |ui| {
                 self.renamable_asset_label(ui, &folder.name, folder_ptr, state);
