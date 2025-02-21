@@ -1,16 +1,22 @@
 
 use std::cell::RefCell;
 
-use project::{alisa::{AnyPtr, UnorderedChildList}, Action, Asset, CreateFolder, Folder, FolderTreeData, Ptr};
+use project::{alisa::{Action, AnyPtr, UnorderedChildList}, Asset, CreateFolder, Folder, FolderTreeData, Ptr, TransferFolder};
 
 use crate::EditorState;
 
 use super::Panel;
 
+#[derive(Clone)]
+struct AssetSelection {
+    folders: Vec<Ptr<Folder>>
+}
+
 #[derive(Default)]
 pub struct AssetsPanel {
     renaming_state: RefCell<Option<(AnyPtr, String)>>,
-    started_renaming: RefCell<bool>
+    started_renaming: RefCell<bool>,
+    asset_dnd_source: RefCell<pierro::DndSource>,
 }
 
 impl AssetsPanel {
@@ -73,12 +79,30 @@ impl AssetsPanel {
 
     fn render_folder(&self, ui: &mut pierro::UI, folder_ptr: Ptr<Folder>, state: &EditorState) {
         let Some(folder) = state.client.get(folder_ptr) else { return; };
-        let folder_response = pierro::collapsing_header(ui, |ui| {
-            self.renamable_asset_label(ui, &folder.name, folder_ptr, state);
-        }, |ui| {
-            self.render_folder_contents(ui, &folder.folders, state); 
+
+        let (_, moved_assets) = pierro::dnd_drop_zone::<AssetSelection, _>(ui, |ui| {
+            let folder_response = pierro::collapsing_header(ui, |ui| {
+                self.renamable_asset_label(ui, &folder.name, folder_ptr, state);
+            }, |ui| {
+                self.render_folder_contents(ui, &folder.folders, state); 
+            });
+            self.asset_label_context_menu(ui, state, folder_ptr, &folder.name, &folder_response); 
+
+            self.asset_dnd_source.borrow_mut().source(ui, &folder_response, AssetSelection {
+                folders: vec![folder_ptr],
+            });
         });
-        self.asset_label_context_menu(ui, state, folder_ptr, &folder.name, &folder_response); 
+
+        if let Some(moved_assets) = moved_assets {
+            let mut action = Action::new(); 
+            for moved_folder in moved_assets.folders {
+                state.client.perform(&mut action, TransferFolder {
+                    ptr: moved_folder,
+                    new_parent: folder_ptr
+                });
+            }
+            state.undo_redo.add(action);
+        }
     }
 
 }
@@ -112,6 +136,20 @@ impl Panel for AssetsPanel {
             self.render_folder_contents(ui, &state.client.folders, state); 
         });
 
+        self.asset_dnd_source.borrow_mut().display(ui, |ui| {
+            let Some(assets) = ui.memory().get_dnd_payload::<AssetSelection>() else {
+                ui.memory().clear_dnd_payload();
+                return;
+            };
+            let assets = assets.clone();
+            for folder_ptr in assets.folders {
+                let Some(folder) = state.client.get(folder_ptr) else { continue; };
+                pierro::horizontal_fit_centered(ui, |ui| {
+                    pierro::icon(ui, pierro::icons::FOLDER);
+                    pierro::label(ui, &folder.name)
+                });
+            }
+        });
     }
 
 }

@@ -1,5 +1,5 @@
 
-use crate::{CreateFolder, DeleteFolder, Folder, RenameFolder};
+use crate::{CreateFolder, DeleteFolder, Folder, RenameFolder, TransferFolder};
 
 #[derive(alisa::Serializable)]
 #[project(Project)]
@@ -50,6 +50,7 @@ impl alisa::Project for Project {
         alisa::OperationKind::from::<CreateFolder>(),
         alisa::OperationKind::from::<DeleteFolder>(),
         alisa::OperationKind::from::<RenameFolder>(),
+        alisa::OperationKind::from::<TransferFolder>(),
     ];
 
 }

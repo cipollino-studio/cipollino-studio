@@ -1,5 +1,7 @@
 
-use crate::{asset_operations, Action, Asset, Client, Objects, Project};
+use alisa::{Children, TreeObj};
+
+use crate::{asset_operations, rectify_name_duplication, Action, Asset, Client, Objects, Project};
 
 #[derive(alisa::Serializable, Clone)]
 #[project(Project)]
@@ -130,3 +132,92 @@ impl Asset for Folder {
 }
 
 asset_operations!(Folder);
+
+#[derive(alisa::Serializable)]
+#[project(Project)]
+pub struct TransferFolder {
+    pub ptr: alisa::Ptr<Folder>,
+    pub new_parent: alisa::Ptr<Folder>
+}
+
+impl Default for TransferFolder {
+
+    fn default() -> Self {
+        Self {
+            ptr: alisa::Ptr::null(),
+            new_parent: alisa::Ptr::null()
+        }
+    }
+
+}
+
+fn is_inside_folder(folders: &alisa::ObjList<Folder>, parent_ptr: alisa::Ptr<Folder>, child_ptr: alisa::Ptr<Folder>) -> bool {
+    if parent_ptr == child_ptr {
+        return true;
+    }
+    if let Some(child) = folders.get(child_ptr) {
+        return is_inside_folder(folders, parent_ptr, child.parent);
+    }
+    false
+}
+
+impl alisa::Operation for TransferFolder {
+
+    type Project = Project;
+    type Inverse = Self;
+    const NAME: &'static str = "TransferFolder";
+
+    fn perform(&self, recorder: &mut alisa::Recorder<'_, Project>) {
+
+        // Make sure we have everything we need
+        let Some(obj) = recorder.obj_list().get(self.ptr) else { return; };
+        let old_parent_ptr = obj.parent;
+        if Folder::child_list(old_parent_ptr, &recorder.context()).is_none() {
+            return;
+        }
+        let context = recorder.context();
+        let Some(new_child_list) = Folder::child_list(self.new_parent, &context) else { return; };
+        let sibling_names = Folder::get_sibling_names(new_child_list, recorder.obj_list(), Some(self.ptr));
+        if is_inside_folder(recorder.obj_list(), self.ptr, self.new_parent) {
+            return;
+        }
+
+        // Set the object's parent
+        let Some(obj) = recorder.obj_list_mut().get_mut(self.ptr) else { return; };
+        obj.parent = self.new_parent;
+        recorder.push_delta(alisa::SetParentDelta {
+            ptr: self.ptr,
+            new_parent: old_parent_ptr,
+        });
+
+        // Remove the object from the old parent's child list
+        if let Some(old_child_list) = Folder::child_list_mut(old_parent_ptr, recorder.context_mut()) {
+            old_child_list.remove(self.ptr);
+            recorder.push_delta(alisa::InsertChildDelta {
+                parent: old_parent_ptr,
+                ptr: self.ptr,
+                idx: (),
+            });
+        }
+
+        // Add the object to the new parent's child list
+        if let Some(new_child_list) = Folder::child_list_mut(self.new_parent, recorder.context_mut()) {
+            new_child_list.insert((), self.ptr);
+            recorder.push_delta(alisa::RemoveChildDelta {
+                parent: self.new_parent,
+                ptr: self.ptr,
+            });
+        }
+
+        // Fix the name of the folder
+        rectify_name_duplication(self.ptr, sibling_names, recorder);
+    }
+
+    fn inverse(&self, context: &alisa::ProjectContext<Project>) -> Option<Self> {
+        let folder = context.obj_list().get(self.ptr)?;
+        Some(Self {
+            ptr: self.ptr,
+            new_parent: folder.parent,
+        })
+    }
+}
