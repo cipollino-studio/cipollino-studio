@@ -35,7 +35,7 @@ impl pierro::App for App {
 
         match &mut self.state {
             AppState::SplashScreen(splash_screen) => splash_screen.tick(ui, &mut next_app_state, &mut self.systems),
-            AppState::Editor(editor) => editor.tick(ui),
+            AppState::Editor(editor) => editor.tick(ui, &mut self.systems),
         }
 
         if let Some(next_app_state) = next_app_state {
@@ -57,12 +57,12 @@ fn main() {
 
     rustls::crypto::aws_lc_rs::default_provider().install_default().unwrap();
 
-    let systems = AppSystems::new();
+    let mut systems = AppSystems::new();
 
     let args = Args::parse();
 
     let app = if let Some(path) = args.project {
-        let editor = Editor::local(path).expect("could not open project.");
+        let editor = Editor::local(path, &mut systems).expect("could not open project.");
         App {
             state: AppState::Editor(editor),
             systems
@@ -80,7 +80,7 @@ fn main() {
         }
         let welcome_msg = welcome_msg.unwrap();
 
-        let editor = Editor::collab(socket, &welcome_msg).expect("invalid server protocol");
+        let editor = Editor::collab(socket, &welcome_msg, &mut systems).expect("invalid server protocol");
 
         App {
             state: AppState::Editor(editor),

@@ -27,5 +27,5 @@ pub fn add_recent(prefs: &mut UserPrefs, path: PathBuf) {
     if recents.len() > 3 {
         recents.pop();
     }
-    prefs.set::<Recents>(recents);
+    prefs.set::<Recents>(&recents);
 }

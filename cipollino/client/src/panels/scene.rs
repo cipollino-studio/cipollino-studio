@@ -10,6 +10,8 @@ pub struct ScenePanel {
 
 impl Panel for ScenePanel {
 
+    const NAME: &'static str = "Scene";
+
     fn title(&self) -> String {
         "Scene".to_owned()
     }

@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use project::{alisa::rmpv, Ptr};
 use project::{Client, Clip};
 
-use crate::{AssetsPanel, EditorPanel, ScenePanel};
+use crate::{AppSystems, DockingLayoutPref, EditorPanel};
 
 mod socket;
 pub use socket::*;
@@ -31,7 +31,7 @@ pub struct Editor {
 
 impl Editor {
 
-    fn new(client: Client, socket: Option<Socket>) -> Self {
+    fn new(client: Client, socket: Option<Socket>, systems: &mut AppSystems) -> Self {
         Self {
             state: State {
                 project: ProjectState {
@@ -42,23 +42,20 @@ impl Editor {
                     open_clip: Ptr::null(),
                 },
             },
-            docking: pierro::DockingState::new(vec![
-                EditorPanel::new::<ScenePanel>(),
-                EditorPanel::new::<AssetsPanel>(),
-            ]),
+            docking: systems.prefs.get::<DockingLayoutPref>(),
             socket
         }
     }
 
-    pub fn local(path: PathBuf) -> Option<Self> {
-        Some(Self::new(Client::local(path)?, None))
+    pub fn local(path: PathBuf, systems: &mut AppSystems) -> Option<Self> {
+        Some(Self::new(Client::local(path)?, None, systems))
     }
 
-    pub fn collab(socket: Socket, welcome_msg: &rmpv::Value) -> Option<Self> {
-        Some(Self::new(Client::collab(welcome_msg)?, Some(socket)))
+    pub fn collab(socket: Socket, welcome_msg: &rmpv::Value, systems: &mut AppSystems) -> Option<Self> {
+        Some(Self::new(Client::collab(welcome_msg)?, Some(socket), systems))
     }
 
-    pub fn tick(&mut self, ui: &mut pierro::UI) {
+    pub fn tick(&mut self, ui: &mut pierro::UI, systems: &mut AppSystems) {
 
         pierro::menu_bar(ui, |ui| {
             pierro::menu_bar_item(ui, "File", |ui| {
@@ -86,7 +83,9 @@ impl Editor {
             }
         }
 
-        self.docking.render(ui, &mut self.state);
+        if self.docking.render(ui, &mut self.state) {
+            systems.prefs.set::<DockingLayoutPref>(&self.docking);
+        }
     }
 
 }

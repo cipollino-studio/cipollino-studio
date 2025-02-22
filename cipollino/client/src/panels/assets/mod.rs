@@ -80,6 +80,8 @@ pub struct AssetsPanel {
 
 impl Panel for AssetsPanel {
 
+    const NAME: &'static str = "Assets";
+
     fn title(&self) -> String {
         "Assets".to_owned()
     }

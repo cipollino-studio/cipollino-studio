@@ -33,7 +33,7 @@ pub(super) fn menu(ui: &mut pierro::UI, next_state: &mut Option<SplashScreenStat
                     if let Some(path) = rfd::FileDialog::new()
                         .add_filter("Cipollino Project", &["cip"])
                         .pick_file() {
-                            if let Some(editor) = Editor::local(path.clone()) {
+                            if let Some(editor) = Editor::local(path.clone(), systems) {
                                 add_recent(&mut systems.prefs, path);
                                 *next_app_state = Some(AppState::Editor(editor));
                             }
@@ -55,7 +55,7 @@ pub(super) fn menu(ui: &mut pierro::UI, next_state: &mut Option<SplashScreenStat
                 for recent in systems.prefs.get::<Recents>() {
                     if pierro::link(ui, cleanup_recent_path(&recent, systems)).mouse_clicked() {
                         add_recent(&mut systems.prefs, recent.clone());
-                        if let Some(editor) = Editor::local(recent) {
+                        if let Some(editor) = Editor::local(recent, systems) {
                             *next_app_state = Some(AppState::Editor(editor));
                         }
                     }

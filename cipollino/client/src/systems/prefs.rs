@@ -62,12 +62,12 @@ impl UserPrefs {
         if let Some(val) = self.get_existing::<P>() {
             val
         } else {
-            self.set::<P>(P::default());
+            self.set::<P>(&P::default());
             P::default()
         }
     }
 
-    pub fn set<P>(&mut self, val: P::Type) where P: UserPref {
+    pub fn set<P>(&mut self, val: &P::Type) where P: UserPref {
         self.prefs.insert(P::name().to_owned(), json!(val));
         write_json_file(&self.prefs_path, json!(self.prefs));
     }

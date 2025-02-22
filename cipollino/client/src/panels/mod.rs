@@ -5,47 +5,25 @@ pub use assets::*;
 mod scene;
 pub use scene::*;
 
-use crate::State;
+mod panel;
+pub use panel::*;
 
-pub trait Panel {
+use crate::UserPref;
 
-    fn title(&self) -> String;
-    fn render(&mut self, ui: &mut pierro::UI, state: &mut State);
+pub struct DockingLayoutPref;
 
-}
+impl UserPref for DockingLayoutPref {
+    type Type = pierro::DockingState<EditorPanel>;
 
-pub struct EditorPanel {
-    panel: Box<dyn Panel>
-}
-
-impl EditorPanel {
-
-    pub fn new<P: Panel + Default + 'static>() -> Self {
-        Self {
-            panel: Box::new(P::default())
-        }
+    fn default() -> Self::Type {
+        pierro::DockingState::new(vec![
+            EditorPanel::new::<ScenePanel>(),
+            EditorPanel::new::<AssetsPanel>(),
+        ])
     }
 
-}
-
-impl pierro::DockingTab for EditorPanel {
-    type Context = State;
-
-    fn title(&self) -> String {
-        self.panel.title() 
-    }
-
-    fn render(&mut self, ui: &mut pierro::UI, state: &mut State) {
-        self.panel.render(ui, state); 
-    }
-
-    fn add_tab_dropdown<F: FnMut(Self)>(ui: &mut pierro::UI, mut add_tab: F, _context: &mut State) {
-        if pierro::menu_button(ui, "Assets").mouse_clicked() {
-            add_tab(EditorPanel::new::<AssetsPanel>());
-        }
-        if pierro::menu_button(ui, "Scene").mouse_clicked() {
-            add_tab(EditorPanel::new::<ScenePanel>());
-        }
+    fn name() -> &'static str {
+        "docking_layout"
     }
 
 }

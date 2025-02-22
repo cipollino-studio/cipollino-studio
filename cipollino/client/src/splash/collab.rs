@@ -1,5 +1,5 @@
 
-use crate::{AppState, Editor, Socket};
+use crate::{AppState, AppSystems, Editor, Socket};
 
 use super::SplashScreenState;
 
@@ -32,7 +32,7 @@ impl CollabScreen {
         }
     }
 
-    pub fn render(&mut self, ui: &mut pierro::UI, next_state: &mut Option<SplashScreenState>, next_app_state: &mut Option<AppState>) {
+    pub fn render(&mut self, ui: &mut pierro::UI, next_state: &mut Option<SplashScreenState>, next_app_state: &mut Option<AppState>, systems: &mut AppSystems) {
 
         pierro::margin(ui, pierro::Margin::same(10.0), |ui| {
 
@@ -68,7 +68,7 @@ impl CollabScreen {
 
                     if let Some(welcome_msg) = socket.receive() {
                         let socket = self.socket.take().unwrap();
-                        if let Some(editor) = Editor::collab(socket, &welcome_msg) {
+                        if let Some(editor) = Editor::collab(socket, &welcome_msg, systems) {
                             *next_app_state = Some(AppState::Editor(editor));
                         } else {
                             self.error = "Invalid server protocol.".to_owned();

@@ -42,7 +42,7 @@ impl SplashScreen {
                     new_project.render(ui, &mut next_state, next_app_state, systems);
                 },
                 SplashScreenState::Collab(collab) => {
-                    collab.render(ui, &mut next_state, next_app_state);
+                    collab.render(ui, &mut next_state, next_app_state, systems);
                 },
             }
         });

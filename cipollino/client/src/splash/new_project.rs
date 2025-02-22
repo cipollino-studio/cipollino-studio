@@ -94,7 +94,7 @@ impl NewProjectScreen {
             if let Some(path) = project_path {
                 pierro::vertical_centered(ui, |ui| {
                     if pierro::button(ui, "Create").mouse_clicked() {
-                        if let Some(editor) = Editor::local(path.clone()) {
+                        if let Some(editor) = Editor::local(path.clone(), systems) {
                             add_recent(&mut systems.prefs, path);
                             *next_app_state = Some(AppState::Editor(editor));
                         }

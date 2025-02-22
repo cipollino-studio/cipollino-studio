@@ -6,7 +6,7 @@ edition = "2021"
 [dependencies]
 project = { path = "../project" }
 
-pierro = { path = "../../pierro" } 
+pierro = { path = "../../pierro", features = ["serde"] } 
 
 ewebsock = { version = "0.8.0", features = ["tls"] }
 rustls = "0.23.11"
@@ -17,5 +17,5 @@ rfd = "0.15.2"
 directories = "5.0"
 pathdiff = "0.2.1"
 
-serde = {version = "1.0.192", features = ["derive"]}
-serde_json = "1.0.108"
+serde = { workspace = true }
+serde_json = { workspace = true }
