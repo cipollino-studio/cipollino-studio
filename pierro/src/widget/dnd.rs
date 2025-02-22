@@ -28,13 +28,16 @@ impl DndSource {
     }
 
     pub fn source<T: Any, F: Fn() -> T>(&mut self, ui: &mut UI, source: &Response, get_payload: F) {
-        ui.set_sense_mouse(source.node_ref, true);
-
+        self.source_without_cursor_icon(ui, source, get_payload);
         if source.dragging() || source.mouse_down() {
             ui.set_cursor(CursorIcon::Grabbing);
         } else if source.hovered {
             ui.set_cursor(CursorIcon::Grab);
         }
+    }
+
+    pub fn source_without_cursor_icon<T: Any, F: Fn() -> T>(&mut self, ui: &mut UI, source: &Response, get_payload: F) {
+        ui.set_sense_mouse(source.node_ref, true);
 
         if source.drag_started() {
             ui.memory().set_dnd_payload(get_payload());
