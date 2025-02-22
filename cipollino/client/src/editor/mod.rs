@@ -1,21 +1,30 @@
 
 use std::path::PathBuf;
 
-use project::alisa::rmpv;
-use project::Client;
+use project::{alisa::rmpv, Ptr};
+use project::{Client, Clip};
 
 use crate::{AssetsPanel, EditorPanel, ScenePanel};
 
 mod socket;
 pub use socket::*;
 
-pub struct EditorState {
+pub struct ProjectState {
     pub client: project::Client,
     pub undo_redo: project::UndoRedoManager
 }
 
+pub struct EditorState {
+    pub open_clip: Ptr<Clip>
+}
+
+pub struct State {
+    pub project: ProjectState,
+    pub editor: EditorState
+}
+
 pub struct Editor {
-    state: EditorState,
+    state: State,
     docking: pierro::DockingState<EditorPanel>,
     socket: Option<Socket>
 }
@@ -24,9 +33,14 @@ impl Editor {
 
     fn new(client: Client, socket: Option<Socket>) -> Self {
         Self {
-            state: EditorState {
-                client,
-                undo_redo: project::UndoRedoManager::new(),
+            state: State {
+                project: ProjectState {
+                    client,
+                    undo_redo: project::UndoRedoManager::new(),
+                },
+                editor: EditorState {
+                    open_clip: Ptr::null(),
+                },
             },
             docking: pierro::DockingState::new(vec![
                 EditorPanel::new::<ScenePanel>(),
@@ -54,21 +68,21 @@ impl Editor {
             });
             pierro::menu_bar_item(ui, "Edit", |ui| {
                 if pierro::menu_button(ui, "Undo").mouse_clicked() {
-                    self.state.undo_redo.undo(&self.state.client);
+                    self.state.project.undo_redo.undo(&self.state.project.client);
                 }
                 if pierro::menu_button(ui, "Redo").mouse_clicked() {
-                    self.state.undo_redo.redo(&self.state.client);
+                    self.state.project.undo_redo.redo(&self.state.project.client);
                 }
             });
         });
-        self.state.client.tick(&mut ());
+        self.state.project.client.tick(&mut ());
 
         if let Some(socket) = &mut self.socket {
-            for to_send in self.state.client.take_messages() {
+            for to_send in self.state.project.client.take_messages() {
                 socket.send(to_send);
             }
             while let Some(msg) = socket.receive() {
-                self.state.client.receive_message(msg, &mut ());
+                self.state.project.client.receive_message(msg, &mut ());
             }
         }
 

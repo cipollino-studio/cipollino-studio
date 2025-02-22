@@ -1,55 +1,6 @@
-use std::collections::HashSet;
-
-use crate::{Action, Client, Folder, Project};
-
-pub trait Asset: alisa::TreeObj<ParentPtr = alisa::Ptr<Folder>, Project = Project, ChildList = alisa::UnorderedChildList<Self>> {
-
-    fn name(&self) -> &String;    
-    fn name_mut(&mut self) -> &mut String;
-
-    fn rename(client: &Client, action: &mut Action, ptr: alisa::Ptr<Self>, name: String);
-    fn delete(client: &Client, action: &mut Action, ptr: alisa::Ptr<Self>);
-
-    fn get_sibling_names(child_list: &Self::ChildList, objects: &alisa::ObjList<Self>, exclude: Option<alisa::Ptr<Self>>) -> HashSet<String> {
-        child_list.iter()
-            .filter(|ptr| Some(*ptr) != exclude)
-            .filter_map(|ptr| objects.get(ptr)).map(|asset| asset.name().clone())
-            .collect()
-    }
-
-}
-
-pub(crate) struct SetAssetNameDelta<A: Asset> {
-    pub ptr: alisa::Ptr<A>,
-    pub name: String
-}
-
-impl<A: Asset> alisa::Delta for SetAssetNameDelta<A> {
-    type Project = A::Project;
-
-    fn perform(&self, context: &mut alisa::ProjectContextMut<'_, Self::Project>) {
-        let Some(asset) = context.obj_list_mut().get_mut(self.ptr) else { return; };
-        *asset.name_mut() = self.name.clone();
-    }
-}
-
-pub(crate) fn rectify_name_duplication<A: Asset>(ptr: alisa::Ptr<A>, sibling_names: HashSet<String>, recorder: &mut alisa::Recorder<Project>) {
-    let Some(asset) = recorder.obj_list_mut().get_mut(ptr) else { return; };
-    let asset_name = asset.name().as_str(); 
-    if sibling_names.contains(asset_name) {
-        let old_name = asset_name.to_owned();
-        let mut potential_names = (1..).map(|idx| format!("{} ({})", asset_name, idx));
-        let new_name = potential_names.find(|name| !sibling_names.contains(name.as_str())).unwrap();
-        *asset.name_mut() = new_name;
-        recorder.push_delta(SetAssetNameDelta {
-            ptr,
-            name: old_name,
-        });
-    }
-} 
 
 #[macro_export]
-macro_rules! asset_operations {
+macro_rules! asset_creation_operations {
     ($asset: ty) => {
         alisa::paste::paste! {
 
@@ -144,61 +95,6 @@ macro_rules! asset_operations {
                         ptr: self.ptr,
                         parent,
                         data
-                    })
-                }
-
-            }
-
-            #[derive(alisa::Serializable)]
-            #[project(crate::Project)]
-            pub struct [< Rename $asset:camel >] {
-                pub ptr: alisa::Ptr<$asset>,
-                pub name: String
-            }
-
-            impl Default for [< Rename $asset:camel >] {
-
-                fn default() -> Self {
-                    Self {
-                        ptr: alisa::Ptr::null(),
-                        name: stringify!($asset).to_owned()
-                    }
-                }
-
-            }
-
-            impl alisa::Operation for [< Rename $asset:camel >] {
-
-                type Project = crate::Project;
-                type Inverse = [< Rename $asset:camel >];
-                
-                const NAME: &'static str = stringify!([< Rename $asset:camel >]);
-
-                fn perform(&self, recorder: &mut alisa::Recorder<Self::Project>) {
-                    use alisa::TreeObj; 
-                    let Some(obj) = recorder.obj_list().get(self.ptr) else { return; };
-                    let context = recorder.context();
-                    let Some(child_list) = $asset::child_list(obj.parent(), &context) else { return; };
-                    let sibling_names = $asset::get_sibling_names(child_list, recorder.obj_list(), Some(self.ptr));
-
-                    if let Some(obj) = recorder.obj_list_mut().get_mut(self.ptr) {
-                        let old_name = obj.name().clone();
-                        *obj.name_mut() = self.name.clone();
-
-                        crate::rectify_name_duplication(self.ptr, sibling_names, recorder);
-
-                        recorder.push_delta(crate::SetAssetNameDelta {
-                            ptr: self.ptr,
-                            name: old_name
-                        });
-                    }
-                }
-
-                fn inverse(&self, context: &alisa::ProjectContext<Self::Project>) -> Option<Self::Inverse> {
-                    let object = context.obj_list().get(self.ptr)?; 
-                    Some(Self {
-                        ptr: self.ptr,
-                        name: object.name().clone()
                     })
                 }
 

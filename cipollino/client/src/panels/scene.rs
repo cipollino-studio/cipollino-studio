@@ -1,5 +1,5 @@
 
-use crate::EditorState;
+use crate::State;
 
 use super::Panel;
 
@@ -14,8 +14,14 @@ impl Panel for ScenePanel {
         "Scene".to_owned()
     }
 
-    fn render(&mut self, ui: &mut pierro::UI, _state: &mut EditorState) {
-        pierro::label(ui, "Scene!");
+    fn render(&mut self, ui: &mut pierro::UI, state: &mut State) {
+        let Some(clip) = state.project.client.get(state.editor.open_clip) else {
+            pierro::centered(ui, |ui| {
+                pierro::label(ui, "No clip open.");
+            });
+            return;
+        };
+        pierro::label(ui, &clip.name);
     }
 
 }

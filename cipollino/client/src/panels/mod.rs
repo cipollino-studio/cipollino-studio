@@ -5,12 +5,12 @@ pub use assets::*;
 mod scene;
 pub use scene::*;
 
-use crate::EditorState;
+use crate::State;
 
 pub trait Panel {
 
     fn title(&self) -> String;
-    fn render(&mut self, ui: &mut pierro::UI, state: &mut EditorState);
+    fn render(&mut self, ui: &mut pierro::UI, state: &mut State);
 
 }
 
@@ -29,17 +29,17 @@ impl EditorPanel {
 }
 
 impl pierro::DockingTab for EditorPanel {
-    type Context = EditorState;
+    type Context = State;
 
     fn title(&self) -> String {
         self.panel.title() 
     }
 
-    fn render(&mut self, ui: &mut pierro::UI, state: &mut EditorState) {
+    fn render(&mut self, ui: &mut pierro::UI, state: &mut State) {
         self.panel.render(ui, state); 
     }
 
-    fn add_tab_dropdown<F: FnMut(Self)>(ui: &mut pierro::UI, mut add_tab: F, _context: &mut EditorState) {
+    fn add_tab_dropdown<F: FnMut(Self)>(ui: &mut pierro::UI, mut add_tab: F, _context: &mut State) {
         if pierro::menu_button(ui, "Assets").mouse_clicked() {
             add_tab(EditorPanel::new::<AssetsPanel>());
         }
