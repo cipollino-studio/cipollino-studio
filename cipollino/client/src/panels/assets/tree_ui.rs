@@ -61,7 +61,7 @@ impl AssetsPanel {
                 self.renamable_asset_label(ui, asset.name(), asset_ptr, project);
             });
 
-            self.asset_dnd_source.borrow_mut().source(ui, &response, || AssetSelection::single(asset_ptr));
+            self.asset_dnd_source.borrow_mut().source_without_cursor_icon(ui, &response, || AssetSelection::single(asset_ptr));
             
             self.asset_label_context_menu(ui, project, asset_ptr, asset.name(), &response);
 
@@ -83,7 +83,7 @@ impl AssetsPanel {
             });
             self.asset_label_context_menu(ui, project, folder_ptr, &folder.name, &folder_response); 
 
-            self.asset_dnd_source.borrow_mut().source(ui, &folder_response, || AssetSelection::single(folder_ptr));
+            self.asset_dnd_source.borrow_mut().source_without_cursor_icon(ui, &folder_response, || AssetSelection::single(folder_ptr));
         });
 
         if let Some(moved_assets) = moved_assets {
