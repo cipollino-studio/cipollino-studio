@@ -96,6 +96,7 @@ pub trait TreeObj: Object + Send + Sync {
 
 mod creation;
 mod transfer;
+pub use transfer::*;
 
 #[macro_export]
 macro_rules! tree_object_operations {

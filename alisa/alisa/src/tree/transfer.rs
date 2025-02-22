@@ -1,4 +1,47 @@
 
+use crate::{Ptr, Recorder};
+
+use super::{Children, InsertChildDelta, RemoveChildDelta, SetParentDelta, TreeObj};
+
+pub fn transfer_tree_object<O: TreeObj>(recorder: &mut Recorder<O::Project>, ptr: Ptr<O>, new_parent: &O::ParentPtr, new_idx: &<O::ChildList as Children<O>>::Index) -> Option<()> {
+
+    // Make sure everything we need exists
+    let obj = recorder.obj_list_mut().get_mut(ptr)?;
+    let old_parent = obj.parent().clone();
+    O::child_list_mut(old_parent.clone(), recorder.context_mut())?;
+    O::child_list_mut(new_parent.clone(), recorder.context_mut())?;
+
+    // Set the object's parent
+    let obj = recorder.obj_list_mut().get_mut(ptr)?;
+    *obj.parent_mut() = new_parent.clone();
+    recorder.push_delta(SetParentDelta {
+        ptr: ptr,
+        new_parent: old_parent.clone()
+    });
+    
+    // Remove the object from the old parent's child list
+    if let Some(old_child_list) = O::child_list_mut(old_parent.clone(), recorder.context_mut()) {
+        if let Some(idx) = old_child_list.remove(ptr) {
+            recorder.push_delta(InsertChildDelta {
+                parent: old_parent,
+                ptr,
+                idx
+            });
+        }
+    }
+
+    // Add the object to the new parent's child list
+    if let Some(new_child_list) = O::child_list_mut(new_parent.clone(), recorder.context_mut()) {
+        new_child_list.insert(new_idx.clone(), ptr);
+        recorder.push_delta(RemoveChildDelta {
+            parent: new_parent.clone(),
+            ptr
+        });
+    }
+
+    Some(())
+}
+
 #[macro_export]
 macro_rules! tree_object_transfer_operation {
     ($object: ty) => {
@@ -32,46 +75,7 @@ macro_rules! tree_object_transfer_operation {
                 const NAME: &'static str = stringify!([< Transfer $object:camel >]);
 
                 fn perform(&self, recorder: &mut ::alisa::Recorder<Self::Project>) {
-                    use ::alisa::TreeObj;
-                    use ::alisa::Children;
-
-                    // Make sure everything we need exists
-                    let Some(obj) = recorder.obj_list_mut().get_mut(self.ptr) else { return; };
-                    let old_parent = obj.parent().clone();
-                    if $object::child_list_mut(old_parent.clone(), recorder.context_mut()).is_none() {
-                        return;
-                    }
-                    if $object::child_list_mut(self.new_parent.clone(), recorder.context_mut()).is_none() {
-                        return;
-                    }
-
-                    // Set the object's parent
-                    let Some(obj) = recorder.obj_list_mut().get_mut(self.ptr) else { return; };
-                    *obj.parent_mut() = self.new_parent.clone();
-                    recorder.push_delta(::alisa::SetParentDelta {
-                        ptr: self.ptr,
-                        new_parent: old_parent.clone()
-                    });
-                    
-                    // Remove the object from the old parent's child list
-                    if let Some(old_child_list) = $object::child_list_mut(old_parent.clone(), recorder.context_mut()) {
-                        if let Some(idx) = old_child_list.remove(self.ptr) {
-                            recorder.push_delta(::alisa::InsertChildDelta {
-                                parent: old_parent,
-                                ptr: self.ptr,
-                                idx
-                            });
-                        }
-                    }
-
-                    // Add the object to the new parent's child list
-                    if let Some(new_child_list) = $object::child_list_mut(self.new_parent.clone(), recorder.context_mut()) {
-                        new_child_list.insert(self.new_idx, self.ptr);
-                        recorder.push_delta(::alisa::RemoveChildDelta {
-                            parent: self.new_parent.clone(),
-                            ptr: self.ptr
-                        });
-                    }
+                    ::alisa::transfer_tree_object(recorder, self.ptr, &self.new_parent, &self.new_idx);
                 }
 
                 fn inverse(&self, context: &::alisa::ProjectContext<Self::Project>) -> Option<Self::Inverse> {
