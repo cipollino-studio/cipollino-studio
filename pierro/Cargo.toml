@@ -12,6 +12,9 @@ version = "0.1.0"
 edition = "2021"
 license = "MIT"
 
+[features]
+serde = ["dep:serde"]
+
 [dependencies]
 winit = "0.30.5"
 wgpu = "22.1.0"
@@ -22,3 +25,5 @@ cosmic-text = "0.12.1"
 ahash = { version = "0.8.11", features = ["std"], default_features = false }
 arboard = "3.4.1"
 image = "0.25.5"
+
+serde = { workspace = true, optional = true, features = ["derive"] }

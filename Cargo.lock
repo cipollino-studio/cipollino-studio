@@ -2795,6 +2795,7 @@ dependencies = [
  "etagere",
  "image",
  "pollster 0.3.0",
+ "serde",
  "wgpu",
  "winit",
 ]

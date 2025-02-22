@@ -4,6 +4,7 @@ use std::{fmt::Display, ops::{Add, AddAssign, Div, Mul, Neg, Sub, SubAssign}};
 use super::{map, Axis, Rect};
 
 #[derive(Clone, Copy)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Vec2 {
     pub x: f32,
     pub y: f32

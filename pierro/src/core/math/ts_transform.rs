@@ -4,6 +4,7 @@ use std::ops::Mul;
 use super::{Rect, Vec2};
 
 #[derive(Clone, Copy)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct TSTransform {
     // scale applied first around (0, 0)
     pub scale: f32,

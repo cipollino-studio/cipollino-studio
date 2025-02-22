@@ -199,24 +199,30 @@ impl<Tab: DockingTab> DockingTree<Tab> {
         Some(())
     }
 
-    fn render(&mut self, ui: &mut UI, context: &mut Tab::Context) {
+    /// Renders the docking tree. Returns if the layout was modified by the user.
+    fn render(&mut self, ui: &mut UI, context: &mut Tab::Context) -> bool {
         let mut commands = Vec::new();
 
         self.render_node(ui, self.root, &mut commands, context);
 
+        let modified = !commands.is_empty();
         for command in commands {
             self.execute_command(command);
         }
+
+        modified
     }
 
 }
 
 impl<Tab: DockingTab> DockingState<Tab> {
 
-    pub fn render(&mut self, ui: &mut UI, context: &mut Tab::Context) {
-        ui.with_node(UINodeParams::new(Size::fr(1.0), Size::fr(1.0)), |ui| {
-            self.tree.render(ui, context);
+    /// Renders the docking tree. Returns true if the layout was modified by the user
+    pub fn render(&mut self, ui: &mut UI, context: &mut Tab::Context) -> bool {
+        let (_, modified) = ui.with_node(UINodeParams::new(Size::fr(1.0), Size::fr(1.0)), |ui| {
+            self.tree.render(ui, context)
         });
+        modified
     }
 
 }

@@ -17,6 +17,7 @@ pub trait DockingTab: Sized {
     
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 struct Tabs<Tab: DockingTab> {
     tabs: Vec<Tab>,
     active_tab: usize
@@ -34,6 +35,7 @@ impl<Tab:DockingTab> Tabs<Tab> {
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 struct DockingNodeId(usize);
 
 impl DockingNodeId {
@@ -46,21 +48,25 @@ impl DockingNodeId {
 
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 struct Split {
     nodes: Vec<(f32, DockingNodeId)>,
     direction: Axis
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 enum DockingNodeKind<Tab: DockingTab> {
     Tabs(Tabs<Tab>),
     Split(Split) 
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 struct DockingNode<Tab: DockingTab> {
     parent: DockingNodeId,
     kind: DockingNodeKind<Tab>
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 struct DockingTree<Tab: DockingTab> {
     nodes: HashMap<DockingNodeId, DockingNode<Tab>>,
     curr_id: usize,
@@ -162,6 +168,7 @@ impl<Tab: DockingTab> DockingTree<Tab> {
 
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct DockingState<Tab: DockingTab> {
     tree: DockingTree<Tab>
 }

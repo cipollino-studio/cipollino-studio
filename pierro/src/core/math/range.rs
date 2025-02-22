@@ -1,5 +1,6 @@
 
 #[derive(Clone, Copy)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Range {
     pub min: f32,
     pub max: f32

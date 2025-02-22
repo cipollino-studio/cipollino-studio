@@ -2,6 +2,7 @@ use super::{vec2, Axis, Range, Rect, Vec2};
 
 
 #[derive(Clone, Copy)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Margin {
     /// The margin at the minimum corner of the rectange (left, top)
     pub min: Vec2,

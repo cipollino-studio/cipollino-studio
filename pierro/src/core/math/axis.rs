@@ -1,5 +1,6 @@
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum Axis {
     X,
     Y
@@ -19,6 +20,7 @@ impl Axis {
 }
 
 #[derive(Clone, Copy)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct PerAxis<T> {
     pub x: T,
     pub y: T

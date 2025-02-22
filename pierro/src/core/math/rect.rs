@@ -7,6 +7,7 @@ use crate::Animatable;
 use super::{vec2, Axis, Margin, Range, Vec2};
 
 #[derive(Clone, Copy)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Rect {
     min: Vec2,
     max: Vec2

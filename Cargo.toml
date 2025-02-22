@@ -10,3 +10,7 @@ members = [
     "cipollino/client",
     "cipollino/server"
 ]
+
+[workspace.dependencies]
+serde = {version = "1.0.192", features = ["derive"]}
+serde_json = "1.0.108"
