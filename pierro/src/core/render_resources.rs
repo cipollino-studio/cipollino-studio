@@ -33,6 +33,7 @@ impl RenderResources<'_> {
         let window_attributes = WindowAttributes::default()
             .with_min_inner_size(Size::Logical(LogicalSize::new(config.min_size.x as f64, config.min_size.y as f64)))
             .with_window_icon(icon)
+            .with_maximized(config.maximize)
             .with_title(config.title);
         let window = Arc::new(event_loop.create_window(window_attributes).ok()?);
         let size = window.inner_size();
