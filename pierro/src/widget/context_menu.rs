@@ -50,7 +50,7 @@ pub fn render_context_menu<F: FnOnce(&mut UI)>(ui: &mut UI, id: Id, body: F) {
         let position = context_menu_memory.position;
         let size = context_menu_memory.size;
         let theme = ui.style::<Theme>();
-        let fill = theme.bg_light;
+        let fill = theme.bg_popup;
         let stroke = theme.widget_stroke();
         let margin = theme.widget_margin;
 
