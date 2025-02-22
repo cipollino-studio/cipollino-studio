@@ -27,6 +27,7 @@ impl pierro::App for App {
 
     fn window_config() -> pierro::WindowConfig {
         pierro::WindowConfig::default()
+            .maximize_window()
             .with_title("Cipollino Studio")
     }
     
