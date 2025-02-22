@@ -27,7 +27,7 @@ impl DndSource {
         }
     }
 
-    pub fn source<T: Any>(&mut self, ui: &mut UI, source: &Response, payload: T) {
+    pub fn source<T: Any, F: Fn() -> T>(&mut self, ui: &mut UI, source: &Response, get_payload: F) {
         ui.set_sense_mouse(source.node_ref, true);
 
         if source.dragging() || source.mouse_down() {
@@ -37,7 +37,7 @@ impl DndSource {
         }
 
         if source.drag_started() {
-            ui.memory().set_dnd_payload(payload);
+            ui.memory().set_dnd_payload(get_payload());
             self.dragging = true;
             self.offset = ui.input().mouse_pos.unwrap_or_default();
         }
