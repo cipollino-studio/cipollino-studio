@@ -2,6 +2,8 @@
 use quote::{quote, ToTokens};
 use syn::{parse_macro_input, Attribute, DataStruct, DeriveInput, Ident, Generics};
 
+mod enum_serialization;
+
 fn has_attr(attrs: &Vec<Attribute>, query: &str) -> bool {
     attrs.iter().any(|attr| attr.path().is_ident(query))
 }
@@ -51,6 +53,8 @@ fn serializable_struct(strct: DataStruct, name: Ident, project_type: Option<syn:
     }
 }
 
+
+
 #[proc_macro_derive(Serializable, attributes(project, no_serialize))]
 pub fn serializable(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
@@ -62,8 +66,7 @@ pub fn serializable(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 
     match input.data {
         syn::Data::Struct(data_struct) => serializable_struct(data_struct, input.ident, project_type, input.generics),
-        syn::Data::Enum(_data_enum) => todo!(),
+        syn::Data::Enum(data_enum) => enum_serialization::serializable_enum(data_enum, input.ident, project_type, input.generics),
         syn::Data::Union(_data_union) => panic!("cannot serialize union."),
     }.into()
 }
- 

@@ -22,6 +22,7 @@ macro_rules! number_serializable_impl {
     };
 }
 
+number_serializable_impl!(bool, bool);
 number_serializable_impl!(i8,  i64);
 number_serializable_impl!(i16, i64);
 number_serializable_impl!(i32, i64);

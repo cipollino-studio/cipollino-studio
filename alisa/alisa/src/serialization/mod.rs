@@ -98,4 +98,12 @@ pub trait Serializable<P: Project>: Sized {
     fn serialize(&self, context: &SerializationContext<P>) -> rmpv::Value; 
     fn deserialize(data: &rmpv::Value, context: &mut DeserializationContext<P>) -> Option<Self>;
 
+    fn shallow_serialize(&self) -> rmpv::Value {
+        self.serialize(&SerializationContext::shallow())
+    }
+
+    fn data_deserialize(data: &rmpv::Value) -> Option<Self> {
+        Self::deserialize(data, &mut DeserializationContext::data())
+    }
+
 }
