@@ -12,6 +12,7 @@ struct ScrollAreaMemory {
 pub struct ScrollArea {
     width: Size,
     height: Size,
+    layout: Layout,
     show_scroll_bars: bool
 }
 
@@ -21,6 +22,7 @@ impl Default for ScrollArea {
         Self {
             width: Size::fr(1.0),
             height: Size::fr(1.0),
+            layout: Layout::vertical(),
             show_scroll_bars: true
         }
     }
@@ -60,6 +62,11 @@ impl ScrollArea {
         self
     }
 
+    pub fn with_layout(mut self, layout: Layout) -> Self {
+        self.layout = layout;
+        self
+    }
+
     pub fn hide_scroll_bars(mut self) -> Self {
         self.show_scroll_bars = false;
         self
@@ -89,7 +96,7 @@ impl ScrollArea {
 
                 let content_response = ui.node(
                     UINodeParams::new(Size::fit(), Size::fr(1.0))
-                        .with_layout(Layout::vertical().with_vertical_overflow().with_horizontal_overflow())
+                        .with_layout(self.layout.with_vertical_overflow().with_horizontal_overflow())
                 );
                 ui.with_parent(content_response.node_ref, contents);
 

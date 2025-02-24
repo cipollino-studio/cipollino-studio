@@ -1,5 +1,5 @@
 
-use crate::{Axis, Margin, PerAxis, Response, Size, UINodeParams, UI};
+use crate::{Axis, CursorIcon, Margin, PerAxis, Response, Size, UINodeParams, UI};
 
 use super::{h_spacing, horizontal, v_spacing, vertical, Theme};
 
@@ -43,18 +43,31 @@ pub fn v_divider(ui: &mut UI) {
 
 const INTERACTION_MARGIN: Margin = Margin::same(5.0);
 
-pub fn h_draggable_line(ui: &mut UI) -> Response {
-    let params = line_params(ui, Axis::X)
+pub fn draggable_line(ui: &mut UI, axis: Axis) -> Response {
+    let params = line_params(ui, axis)
         .with_interaction_margin(INTERACTION_MARGIN)
         .sense_mouse()
         .with_interaction_priority();
-    ui.node(params)
+    let response = ui.node(params);
+    if response.drag_started() {
+        response.request_focus(ui);
+    }
+    if response.drag_stopped() {
+        response.release_focus(ui);
+    }
+    if response.hovered || response.dragging() {
+        ui.set_cursor(match axis {
+            Axis::X => CursorIcon::NsResize,
+            Axis::Y => CursorIcon::EwResize,
+        });
+    }
+    response
+}
+
+pub fn h_draggable_line(ui: &mut UI) -> Response {
+    draggable_line(ui, Axis::X)
 }
 
 pub fn v_draggable_line(ui: &mut UI) -> Response {
-    let params = line_params(ui, Axis::Y)
-        .with_interaction_margin(INTERACTION_MARGIN)
-        .sense_mouse()
-        .with_interaction_priority();
-    ui.node(params)
+    draggable_line(ui, Axis::Y) 
 }

@@ -1,5 +1,5 @@
 
-use crate::{button_fill_animation, dnd_drop_zone_with_size, dnd_draggable, h_draggable_line, horizontal_fit, icon_text_style, icons, left_click_context_menu, menu_bar, tab, v_draggable_line, v_line, Axis, Color, CursorIcon, Layout, LayoutInfo, Margin, PaintRect, PerAxis, ScrollArea, Size, Stroke, Theme, UINodeParams, UI};
+use crate::{button_fill_animation, dnd_draggable, dnd_drop_zone_with_size, draggable_line, horizontal_fit, icon_text_style, icons, left_click_context_menu, menu_bar, tab, v_line, Axis, Color, Layout, LayoutInfo, Margin, PaintRect, PerAxis, ScrollArea, Size, Stroke, Theme, UINodeParams, UI};
 
 use super::{command::{DockingCommand, TabDragSource}, DockingNodeId, DockingNodeKind, DockingState, DockingTab, DockingTree, Tabs};
 
@@ -166,16 +166,7 @@ impl<Tab: DockingTab> DockingTree<Tab> {
                             }
                         );
                         if i < nodes.len() - 1 {
-                            let response = match direction {
-                                Axis::X => v_draggable_line(ui),
-                                Axis::Y => h_draggable_line(ui),
-                            };
-                            if response.drag_started() {
-                                response.request_focus(ui);
-                            }
-                            if response.drag_stopped() {
-                                response.release_focus(ui);
-                            }
+                            let response = draggable_line(ui, direction.other());
                             if response.dragging() {
                                 let drag = response.drag_delta(ui).on_axis(direction);
                                 commands.push(DockingCommand::MoveSplit {
@@ -183,12 +174,6 @@ impl<Tab: DockingTab> DockingTree<Tab> {
                                     child_idx: i,
                                     amount: total_splits_size * drag / size,
                                     min_size: total_splits_size * 30.0 / size
-                                });
-                            }
-                            if response.hovered || response.dragging() {
-                                ui.set_cursor(match direction {
-                                    Axis::X => CursorIcon::EwResize,
-                                    Axis::Y => CursorIcon::NsResize,
                                 });
                             }
                         }
