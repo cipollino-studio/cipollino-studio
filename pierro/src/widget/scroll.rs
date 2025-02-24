@@ -44,6 +44,14 @@ pub struct ScrollAreaResponse {
     v_scrollbar_spacers: Option<(UIRef, UIRef)>,
 }
 
+impl ScrollAreaResponse {
+
+    pub fn sync(&self, ui: &mut UI, state: &mut ScrollAreaState) {
+        state.update_ui(ui, self);
+    }
+
+}
+
 impl<'state> Default for ScrollArea<'state> {
 
     fn default() -> Self {
