@@ -1,6 +1,6 @@
 use crate::State;
 
-use super::{AssetsPanel, ScenePanel};
+use super::PANEL_KINDS;
 
 mod serialization;
 
@@ -42,7 +42,7 @@ pub struct PanelKind {
 
 impl PanelKind {
 
-    const fn from<P: Panel + Default + 'static>() -> Self {
+    pub const fn of<P: Panel + Default + 'static>() -> Self {
         Self {
             name: P::NAME,
             make_panel: || EditorPanel::new::<P>()
@@ -51,10 +51,6 @@ impl PanelKind {
 
 }
 
-pub const PANEL_KINDS: &'static [PanelKind] = &[
-    PanelKind::from::<AssetsPanel>(),
-    PanelKind::from::<ScenePanel>()
-];
 
 pub struct EditorPanel {
     panel: Box<dyn PanelDyn>

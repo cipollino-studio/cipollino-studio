@@ -4,6 +4,9 @@
 # cipollino test projects
 **/*.cip
 
+# cipollino builds
+build
+
 # alisa examples 
 **/*.project
 **/*.slips

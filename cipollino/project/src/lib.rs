@@ -5,6 +5,9 @@ pub use project::*;
 mod asset;
 pub use asset::*;
 
+mod layer;
+pub use layer::*;
+
 pub use alisa;
 
 pub use alisa::Ptr;

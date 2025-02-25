@@ -1,5 +1,7 @@
 
-use super::{EditorPanel, PANEL_KINDS};
+use crate::PANEL_KINDS;
+
+use super::EditorPanel;
 
 impl serde::Serialize for EditorPanel {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: serde::Serializer {

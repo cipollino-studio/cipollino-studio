@@ -1,12 +1,14 @@
 
-use crate::{asset_operations, Action, Asset, Client, Folder, Objects, Project};
+use crate::{asset_operations, Action, Asset, Client, Folder, LayerChildList, LayerChildListTreeData, LayerParent, Objects, Project};
 
 #[derive(alisa::Serializable, Clone)]
 #[project(Project)]
 pub struct Clip {
     pub folder: alisa::Ptr<Folder>,
 
-    pub name: String
+    pub name: String,
+    pub length: u32,
+    pub layers: LayerChildList
 }
 
 impl Default for Clip {
@@ -14,7 +16,9 @@ impl Default for Clip {
     fn default() -> Self {
         Self {
             folder: alisa::Ptr::null(),
-            name: "Clip".to_owned()
+            name: "Clip".to_owned(),
+            length: 100,
+            layers: LayerChildList::default()
         }
     }
 
@@ -38,14 +42,18 @@ impl alisa::Object for Clip {
 #[derive(alisa::Serializable)]
 #[project(Project)]
 pub struct ClipTreeData {
-    pub name: String
+    pub name: String,
+    pub length: u32,
+    pub layers: LayerChildListTreeData
 }
 
 impl Default for ClipTreeData {
 
     fn default() -> Self {
         Self {
-            name: "Clip".to_owned()
+            name: "Clip".to_owned(),
+            length: 100,
+            layers: Default::default()
         }
     }
 
@@ -82,18 +90,22 @@ impl alisa::TreeObj for Clip {
         use alisa::Object;
         let clip = Self {
             folder: parent,
-            name: data.name.clone() 
+            name: data.name.clone(),
+            length: data.length,
+            layers: data.layers.instance(LayerParent::Clip(ptr), recorder)
         };
         Self::add(recorder, ptr, clip);
     }
 
-    fn destroy(&self, _recorder: &mut alisa::Recorder<Project>) {
-
+    fn destroy(&self, recorder: &mut alisa::Recorder<Project>) {
+        self.layers.destroy(recorder);
     }
 
-    fn collect_data(&self, _objects: &Objects) -> Self::TreeData {
+    fn collect_data(&self, objects: &Objects) -> Self::TreeData {
         ClipTreeData {
-            name: self.name.clone()
+            name: self.name.clone(),
+            length: self.length,
+            layers: self.layers.collect_data(objects)
         }
     }
 }
