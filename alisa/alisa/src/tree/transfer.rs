@@ -20,6 +20,7 @@ pub fn transfer_tree_object<O: TreeObj>(recorder: &mut Recorder<O::Project>, ptr
     });
     
     // Remove the object from the old parent's child list
+    let mut old_idx = None;
     if let Some(old_child_list) = O::child_list_mut(old_parent.clone(), recorder.context_mut()) {
         if let Some(idx) = old_child_list.remove(ptr) {
             recorder.push_delta(InsertChildDelta {
@@ -27,8 +28,15 @@ pub fn transfer_tree_object<O: TreeObj>(recorder: &mut Recorder<O::Project>, ptr
                 ptr,
                 idx
             });
+            old_idx = Some(idx);
         }
     }
+
+    let new_idx = if let Some(old_idx) = old_idx {
+        <O::ChildList as Children<O>>::adjust_idx(*new_idx, old_idx)
+    } else {
+        *new_idx
+    };
 
     // Add the object to the new parent's child list
     if let Some(new_child_list) = O::child_list_mut(new_parent.clone(), recorder.context_mut()) {
@@ -88,7 +96,7 @@ macro_rules! tree_object_transfer_operation {
                     Some(Self {
                         ptr: self.ptr,
                         new_parent: parent,
-                        new_idx: idx
+                        new_idx: <<$object as ::alisa::TreeObj>::ChildList as ::alisa::Children<$object>>::unadjust_idx(idx, self.new_idx)
                     })
                 }
 

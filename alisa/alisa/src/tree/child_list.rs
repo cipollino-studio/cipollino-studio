@@ -77,6 +77,22 @@ impl<O: Object> Children<O> for ChildList<O> {
         None
     }
 
+    fn adjust_idx(idx: usize, removed_idx: usize) -> usize {
+        if idx > removed_idx {
+            idx - 1
+        } else {
+            idx
+        }
+    }
+
+    fn unadjust_idx(idx: usize, moved_to_idx: usize) -> usize {
+        if idx > moved_to_idx {
+            idx + 1
+        } else {
+            idx
+        }
+    }
+
 }
 
 pub struct ChildListTreeData<O: TreeObj> {

@@ -1,4 +1,4 @@
-use std::hash::Hash;
+use std::{fmt::Debug, hash::Hash};
 
 use crate::{Object, Ptr};
 
@@ -141,6 +141,14 @@ impl<O: Object> Hash for LoadingPtr<O> {
 
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.ptr.hash(state);
+    }
+
+}
+
+impl<O: Object> Debug for LoadingPtr<O> {
+
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.ptr().fmt(f)
     }
 
 }

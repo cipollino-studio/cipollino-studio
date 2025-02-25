@@ -17,6 +17,14 @@ pub trait Children<O: Object> {
     fn remove(&mut self, child: Ptr<O>) -> Option<Self::Index>;
     fn index_of(&self, child: Ptr<O>) -> Option<Self::Index>;
 
+    fn adjust_idx(idx: Self::Index, _removed_idx: Self::Index) -> Self::Index {
+        idx
+    }
+
+    fn unadjust_idx(idx: Self::Index, _moved_to_idx: Self::Index) -> Self::Index {
+        idx
+    }
+
 }
 
 pub struct RemoveChildDelta<O: TreeObj> {
