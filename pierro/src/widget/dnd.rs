@@ -117,19 +117,22 @@ pub fn dnd_draggable<T: Any, R, F: FnOnce(&mut UI) -> R>(ui: &mut UI, payload: T
 }
 
 pub fn dnd_receive_payload<T: Any>(ui: &mut UI, response: &Response) -> Option<T> {
-    ui.set_sense_mouse(response.node_ref, true);
-
-    if response.dnd_hovered && ui.memory().has_dnd_payload_of_type::<T>() {
-        let stroke_color = ui.style::<Theme>().text_active;
-        ui.set_stroke(response.node_ref, Stroke::new(stroke_color, 2.0));
-    }
-
+    ui.set_sense_dnd_hover(response.node_ref, true);
     if response.dnd_hovered && ui.input().l_mouse.released() {
         ui.request_redraw();
         ui.memory().take_dnd_payload() 
     } else {
         None
     }
+}
+
+pub fn dnd_receive_payload_with_highlight<T: Any>(ui: &mut UI, response: &Response) -> Option<T> {
+    if response.dnd_hovered && ui.memory().has_dnd_payload_of_type::<T>() {
+        let stroke_color = ui.style::<Theme>().text_active;
+        ui.set_stroke(response.node_ref, Stroke::new(stroke_color, 2.0));
+    }
+
+    dnd_receive_payload(ui, response)
 }
 
 pub fn dnd_drop_zone_with_size<T: Any, F: FnOnce(&mut UI)>(ui: &mut UI, width: Size, height: Size, body: F) -> (Response, Option<T>) {
@@ -139,7 +142,7 @@ pub fn dnd_drop_zone_with_size<T: Any, F: FnOnce(&mut UI)>(ui: &mut UI, width: S
         body
     );
 
-    (response, dnd_receive_payload(ui, &response))
+    (response, dnd_receive_payload_with_highlight(ui, &response))
 }
 
 pub fn dnd_drop_zone<T: Any, F: FnOnce(&mut UI)>(ui: &mut UI, body: F) -> (Response, Option<T>) {

@@ -21,6 +21,14 @@ pub fn horizontal_fill<R, F: FnOnce(&mut UI) -> R>(ui: &mut UI, body: F) -> (Res
     (container, ui.with_parent(container.node_ref, body))
 }
 
+pub fn horizontal_fill_centered<R, F: FnOnce(&mut UI) -> R>(ui: &mut UI, body: F) -> (Response, R) {
+    let container = ui.node(
+        UINodeParams::new(Size::fr(1.0), Size::fr(1.0))
+            .with_layout(Layout::horizontal().align_center())
+    );
+    (container, ui.with_parent(container.node_ref, body))
+}
+
 pub fn horizontal_centered<R, F: FnOnce(&mut UI) -> R>(ui: &mut UI, body: F) -> (Response, R) {
     let container = ui.node(
         UINodeParams::new(Size::fr(1.0), Size::fit())

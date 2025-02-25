@@ -29,6 +29,13 @@ impl Rect {
         }
     }
 
+    pub fn center_size(center: Vec2, size: Vec2) -> Self {
+        Self {
+            min: center - size / 2.0,
+            max: center + size / 2.0
+        }
+    }
+
     pub const fn from_ranges(x_range: Range, y_range: Range) -> Self {
         Self {
             min: vec2(x_range.min, y_range.min),

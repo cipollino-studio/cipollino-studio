@@ -11,7 +11,7 @@ pub struct ScrollAreaState {
 
 impl ScrollAreaState {
 
-    pub fn update_ui(&self, ui: &mut UI, response: &ScrollAreaResponse) {
+    pub fn update_ui<R>(&self, ui: &mut UI, response: &ScrollAreaResponse<R>) {
         ui.set_transform(response.content_node_ref, TSTransform::translation(-self.scroll * response.scroll_mask));
         if let Some((min_spacer, max_spacer)) = response.h_scrollbar_spacers {
             ui.set_size(min_spacer, Size::fr(self.scroll.x), Size::fr(1.0));
@@ -36,15 +36,16 @@ pub struct ScrollArea<'state> {
     set_max_scroll: bool
 }
 
-pub struct ScrollAreaResponse {
+pub struct ScrollAreaResponse<R> {
     pub scroll_area: Response,
     content_node_ref: UIRef,
     scroll_mask: Vec2,
     h_scrollbar_spacers: Option<(UIRef, UIRef)>,
     v_scrollbar_spacers: Option<(UIRef, UIRef)>,
+    pub inner: R
 }
 
-impl ScrollAreaResponse {
+impl<R> ScrollAreaResponse<R> {
 
     pub fn sync(&self, ui: &mut UI, state: &mut ScrollAreaState) {
         state.update_ui(ui, self);
@@ -140,7 +141,7 @@ impl<'state> ScrollArea<'state> {
         )
     }
 
-    pub fn render<F: FnOnce(&mut UI)>(self, ui: &mut UI, contents: F) -> ScrollAreaResponse {
+    pub fn render<R, F: FnOnce(&mut UI) -> R>(self, ui: &mut UI, contents: F) -> ScrollAreaResponse<R> {
 
         let scroll_area = ui.node(
             UINodeParams::new(self.width, self.height)
@@ -163,20 +164,20 @@ impl<'state> ScrollArea<'state> {
         let mut v_scrollbar_spacers = None;
 
         // Construct the UI tree of the scroll area
-        ui.with_parent(scroll_area.node_ref, |ui| {
+        let inner = ui.with_parent(scroll_area.node_ref, |ui| {
 
             let inner = ui.node(
                 UINodeParams::new(self.width, self.height)
                     .with_layout(Layout::vertical())
             );
 
-            ui.with_parent(inner.node_ref, |ui| {
+            let inner = ui.with_parent(inner.node_ref, |ui| {
 
                 let content_response = ui.node(
                     UINodeParams::new(Size::fit(), Size::fr(1.0))
                         .with_layout(self.layout.with_vertical_overflow().with_horizontal_overflow())
                 );
-                ui.with_parent(content_response.node_ref, contents);
+                let inner = ui.with_parent(content_response.node_ref, contents);
 
                 let layout_info = ui.memory().get::<LayoutInfo>(content_response.id);
                 max_scroll = (layout_info.children_base_size - layout_info.rect.size()).max(Vec2::ZERO);
@@ -203,8 +204,11 @@ impl<'state> ScrollArea<'state> {
                         h_scroll_thumb
                     });
                     h_scrollbar = Some((scroll_bar, scroll_thumb)); 
+                } else {
+                    ui.set_size(content_response.node_ref, Size::fr(1.0), Size::fr(1.0));
                 }
 
+                inner
             });
 
             if show_v_scrollbar {
@@ -225,6 +229,8 @@ impl<'state> ScrollArea<'state> {
                 });
                 v_scrollbar = Some((scroll_bar, scroll_thumb));
             } 
+
+            inner
         });
 
         let drag_delta_x = if let Some((bar, thumb)) = h_scrollbar {
@@ -258,6 +264,7 @@ impl<'state> ScrollArea<'state> {
             scroll_mask,
             h_scrollbar_spacers,
             v_scrollbar_spacers,
+            inner
         };
 
         let state = *state;
