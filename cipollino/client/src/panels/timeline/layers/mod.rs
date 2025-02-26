@@ -60,7 +60,11 @@ impl TimelinePanel {
         
         if let Some((curr_renaming, new_name)) = &mut self.renaming_state {
             if *curr_renaming == ptr.any() { 
-                let text_edit = pierro::text_edit(ui, new_name);
+
+                let text_edit = ui.with_style::<pierro::theme::WidgetMargin, _, _>(pierro::Margin::same(2.0), |ui| {
+                    pierro::text_edit(ui, new_name)
+                });
+
                 if self.started_renaming {
                     self.started_renaming = false;
                     text_edit.response.request_focus(ui);

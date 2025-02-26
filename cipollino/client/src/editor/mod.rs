@@ -15,7 +15,31 @@ pub struct ProjectState {
 }
 
 pub struct EditorState {
+    pub time: f32,
+    pub playing: bool,
+
     pub open_clip: Ptr<Clip>
+}
+
+impl EditorState {
+
+    pub fn jump_to(&mut self, time: f32) {
+        self.time = time;
+        self.playing = false;
+    }
+
+    fn tick_playback(&mut self, ui: &mut pierro::UI, clip: &Clip) {
+        if self.playing {
+            self.time += ui.input().delta_time;
+            ui.request_redraw();
+        }
+
+        if self.time > clip.duration() {
+            self.time = 0.0;
+        }
+        self.time = self.time.max(0.0);
+    }
+
 }
 
 pub struct State {
@@ -39,6 +63,9 @@ impl Editor {
                     undo_redo: project::UndoRedoManager::new(),
                 },
                 editor: EditorState {
+                    time: 0.0,
+                    playing: false,
+
                     open_clip: Ptr::null(),
                 },
             },
@@ -72,7 +99,6 @@ impl Editor {
                 }
             });
         });
-        self.state.project.client.tick(&mut ());
 
         if let Some(socket) = &mut self.socket {
             for to_send in self.state.project.client.take_messages() {
@@ -85,6 +111,11 @@ impl Editor {
 
         if self.docking.render(ui, &mut self.state) {
             systems.prefs.set::<DockingLayoutPref>(&self.docking);
+        }
+
+        self.state.project.client.tick(&mut ());
+        if let Some(clip) = self.state.project.client.get(self.state.editor.open_clip) {
+            self.state.editor.tick_playback(ui, clip);
         }
     }
 

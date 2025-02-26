@@ -64,9 +64,9 @@ impl Panel for TimelinePanel {
 
         let render_list = RenderList::make(&project.client, clip);
 
-        pierro::margin(ui, pierro::Margin::same(3.0), |ui| {
-            pierro::horizontal_fit_centered(ui, |ui| {
-                self.header(ui, editor.open_clip, clip, project);
+        pierro::margin_with_size(ui, pierro::Margin::same(3.0), pierro::Size::fr(1.0), pierro::Size::fit(), |ui| {
+            pierro::horizontal_centered(ui, |ui| {
+                self.header(ui, project, editor, editor.open_clip, clip);
             });
         });
         pierro::h_line(ui);
@@ -74,17 +74,20 @@ impl Panel for TimelinePanel {
         pierro::horizontal_fill(ui, |ui| {
             let mut layers_width = self.layers_width;
             let layers_scroll_response = pierro::resizable_panel(ui, pierro::Axis::X, &mut layers_width, |ui| {
-                let line_thickness = ui.style::<pierro::Theme>().widget_stroke_width;
-                pierro::v_spacing(ui, Self::FRAMEBAR_HEIGHT + line_thickness);
+                pierro::v_spacing(ui, Self::FRAMEBAR_HEIGHT);
                 self.layers(ui, project, &render_list)
             });
             self.layers_width = layers_width;
 
-            let (framebar_scroll_response, frame_area_scroll_response) = pierro::vertical_fill(ui, |ui| {
-                let framebar_response = self.framebar(ui, clip);
-                let frame_area_response = self.frame_area(ui, &render_list, clip);
+            let (frame_container, _) = pierro::vertical_fill(ui, |_| {});
+            let frame_container_width = ui.memory().get::<pierro::LayoutInfo>(frame_container.id).screen_rect.width();
+            let n_frames = clip.length + (frame_container_width / Self::FRAME_WIDTH).ceil() as u32;
+
+            let (framebar_scroll_response, frame_area_scroll_response) = ui.with_parent(frame_container.node_ref, |ui| {
+                let framebar_response = self.framebar(ui, editor, clip, n_frames);
+                let frame_area_response = self.frame_area(ui, editor, &render_list, clip, n_frames);
                 (framebar_response, frame_area_response)
-            }).1;
+            });
 
             layers_scroll_response.sync(ui, &mut self.scroll_state);
             framebar_scroll_response.sync(ui, &mut self.scroll_state);

@@ -7,7 +7,10 @@ pub struct Clip {
     pub folder: alisa::Ptr<Folder>,
 
     pub name: String,
+    /// The length of the clip in frames
     pub length: u32,
+    pub framerate: f32,
+
     pub layers: LayerChildList
 }
 
@@ -18,6 +21,7 @@ impl Default for Clip {
             folder: alisa::Ptr::null(),
             name: "Clip".to_owned(),
             length: 100,
+            framerate: 24.0,
             layers: LayerChildList::default()
         }
     }
@@ -44,6 +48,7 @@ impl alisa::Object for Clip {
 pub struct ClipTreeData {
     pub name: String,
     pub length: u32,
+    pub framerate: f32,
     pub layers: LayerChildListTreeData
 }
 
@@ -53,6 +58,7 @@ impl Default for ClipTreeData {
         Self {
             name: "Clip".to_owned(),
             length: 100,
+            framerate: 24.0,
             layers: Default::default()
         }
     }
@@ -92,6 +98,7 @@ impl alisa::TreeObj for Clip {
             folder: parent,
             name: data.name.clone(),
             length: data.length,
+            framerate: data.framerate,
             layers: data.layers.instance(LayerParent::Clip(ptr), recorder)
         };
         Self::add(recorder, ptr, clip);
@@ -105,6 +112,7 @@ impl alisa::TreeObj for Clip {
         ClipTreeData {
             name: self.name.clone(),
             length: self.length,
+            framerate: self.framerate,
             layers: self.layers.collect_data(objects)
         }
     }
@@ -136,3 +144,22 @@ impl Asset for Clip {
 }
 
 asset_operations!(Clip);
+
+impl Clip {
+
+    /// The length of a single frame, in seconds
+    pub fn frame_len(&self) -> f32 {
+        1.0 / self.framerate
+    }
+
+    /// The index of the frame at time t seconds
+    pub fn frame_idx(&self, t: f32) -> i32 {
+        ((t / self.frame_len()).floor() as i32).max(0)
+    }
+
+    /// The duration of the clip in seconds
+    pub fn duration(&self) -> f32 { 
+        (self.length as f32) * self.frame_len()
+    }
+
+}
