@@ -185,10 +185,11 @@ impl<'a, 'b> UI<'a, 'b> {
         self.style.get::<S>()
     }
 
-    pub fn with_style<S: Style, F: FnOnce(&mut Self)>(&mut self, style: S::Value, body: F) {
+    pub fn with_style<S: Style, R, F: FnOnce(&mut Self) -> R>(&mut self, style: S::Value, body: F) -> R {
         self.style.push::<S>(style);
-        body(self);
+        let result = body(self);
         self.style.pop();
+        result
     }
 
     pub fn set_size(&mut self, node: UIRef, width: Size, height: Size) {

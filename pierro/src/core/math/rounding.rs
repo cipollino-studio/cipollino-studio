@@ -42,20 +42,36 @@ impl Rounding {
         Self::new(0.0, rounding, 0.0, rounding)
     }
 
-    pub fn tl(&self) -> f32 {
+    pub const fn tl(&self) -> f32 {
         self.tl
     }
 
-    pub fn tr(&self) -> f32 {
+    pub const fn tr(&self) -> f32 {
         self.tr
     }
 
-    pub fn bl(&self) -> f32 {
+    pub const fn bl(&self) -> f32 {
         self.bl
     }
 
-    pub fn br(&self) -> f32 { 
+    pub const fn br(&self) -> f32 { 
         self.br
+    }
+
+    pub const fn top_side(&self) -> Self {
+        Self::new(self.tl(), self.tr(), 0.0, 0.0)
+    }
+
+    pub const fn bottom_side(&self) -> Self {
+        Self::new(0.0, 0.0, self.bl(), self.br())
+    }
+
+    pub const fn left_side(&self) -> Self {
+        Self::new(self.tl(), 0.0, self.bl(), 0.0)
+    }
+
+    pub const fn right_side(&self) -> Self {
+        Self::new(0.0, self.tr(), 0.0, self.br())
     }
 
     pub fn min(&self, rounding: Self) -> Self {
