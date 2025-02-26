@@ -2,45 +2,21 @@
 use std::path::PathBuf;
 
 use project::{alisa::rmpv, Ptr};
-use project::{Client, Clip};
+use project::Client;
 
 use crate::{AppSystems, DockingLayoutPref, EditorPanel};
 
 mod socket;
 pub use socket::*;
 
+mod state;
+pub use state::*;
+
 pub struct ProjectState {
     pub client: project::Client,
     pub undo_redo: project::UndoRedoManager
 }
 
-pub struct EditorState {
-    pub time: f32,
-    pub playing: bool,
-
-    pub open_clip: Ptr<Clip>
-}
-
-impl EditorState {
-
-    pub fn jump_to(&mut self, time: f32) {
-        self.time = time;
-        self.playing = false;
-    }
-
-    fn tick_playback(&mut self, ui: &mut pierro::UI, clip: &Clip) {
-        if self.playing {
-            self.time += ui.input().delta_time;
-            ui.request_redraw();
-        }
-
-        if self.time > clip.duration() {
-            self.time = 0.0;
-        }
-        self.time = self.time.max(0.0);
-    }
-
-}
 
 pub struct State {
     pub project: ProjectState,
@@ -67,6 +43,7 @@ impl Editor {
                     playing: false,
 
                     open_clip: Ptr::null(),
+                    active_layer: Ptr::null()
                 },
             },
             docking: systems.prefs.get::<DockingLayoutPref>(),

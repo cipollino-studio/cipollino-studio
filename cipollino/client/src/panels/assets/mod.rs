@@ -4,7 +4,7 @@ use std::{cell::RefCell, collections::HashSet};
 use project::{alisa::AnyPtr, Action, Asset, Client, Clip, ClipTreeData, CreateClip, CreateFolder, Folder, FolderTreeData, Ptr};
 use selection::AssetSelection;
 
-use crate::{EditorState, State};
+use crate::{EditorState, ProjectState, State};
 
 use super::Panel;
 
@@ -21,7 +21,7 @@ trait AssetUI: Asset {
     fn selection_list_mut(selection: &mut AssetSelection) -> &mut HashSet<Ptr<Self>>;
 
     /// Called when the asset is double-clicked in the UI
-    fn on_open(_ptr: Ptr<Self>, _state: &mut EditorState) {
+    fn on_open(_ptr: Ptr<Self>, _project: &ProjectState, _state: &mut EditorState) {
 
     }
 
@@ -66,8 +66,8 @@ impl AssetUI for Clip {
         &mut selection.clips
     }
 
-    fn on_open(clip: Ptr<Self>, state: &mut EditorState) {
-        state.open_clip = clip;
+    fn on_open(clip: Ptr<Self>, project: &ProjectState, state: &mut EditorState) {
+        state.open_clip(&project.client, clip);
     }
 }
 

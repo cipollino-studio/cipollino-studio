@@ -75,7 +75,7 @@ impl Panel for TimelinePanel {
             let mut layers_width = self.layers_width;
             let layers_scroll_response = pierro::resizable_panel(ui, pierro::Axis::X, &mut layers_width, |ui| {
                 pierro::v_spacing(ui, Self::FRAMEBAR_HEIGHT);
-                self.layers(ui, project, &render_list)
+                self.layers(ui, project, editor, &render_list)
             });
             self.layers_width = layers_width;
 

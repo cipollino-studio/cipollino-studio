@@ -3,7 +3,7 @@ use std::collections::HashSet;
 
 use project::{alisa::Object, Action, Client, Layer, Project, Ptr, SetLayerName};
 
-use crate::ProjectState;
+use crate::{EditorState, ProjectState};
 
 use super::{render_list::RenderLayerKind, RenderList, TimelinePanel};
 
@@ -113,7 +113,7 @@ impl TimelinePanel {
         }
     }
 
-    pub(super) fn layers(&mut self, ui: &mut pierro::UI, project: &ProjectState, render_list: &RenderList) -> pierro::ScrollAreaResponse<pierro::UIRef> {
+    pub(super) fn layers(&mut self, ui: &mut pierro::UI, project: &ProjectState, editor: &mut EditorState, render_list: &RenderList) -> pierro::ScrollAreaResponse<pierro::UIRef> {
 
         self.layer_dnd_hover_pos = None;
 
@@ -129,7 +129,7 @@ impl TimelinePanel {
                     for (idx, layer ) in render_list.iter().enumerate() {
                         match &layer.kind {
                             &RenderLayerKind::Layer(ptr, layer) => {
-                                self.render_layer(ui, project, idx, layer, ptr);
+                                self.render_layer(ui, project, editor, idx, layer, ptr);
                             },
                         }
                     }

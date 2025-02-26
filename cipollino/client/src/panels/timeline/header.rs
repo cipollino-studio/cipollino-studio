@@ -20,6 +20,7 @@ impl TimelinePanel {
                     },
                 });
                 project.undo_redo.add(action);
+                editor.active_layer = ptr;
             }
         }
 

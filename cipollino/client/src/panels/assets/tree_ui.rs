@@ -66,7 +66,7 @@ impl AssetsPanel {
             self.asset_label_context_menu(ui, project, asset_ptr, asset.name(), &response);
 
             if response.mouse_double_clicked() {
-                A::on_open(asset_ptr, editor);
+                A::on_open(asset_ptr, project, editor);
             }
         }
     }
