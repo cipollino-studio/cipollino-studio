@@ -1,5 +1,5 @@
 
-use crate::{Objects, Project};
+use crate::{Frame, Objects, Project};
 use super::{LayerChildPtr, LayerChildList, LayerParent, LayerType};
 
 
@@ -7,7 +7,10 @@ use super::{LayerChildPtr, LayerChildList, LayerParent, LayerType};
 #[project(Project)]
 pub struct Layer {
     pub parent: LayerParent,
-    pub name: String
+
+    pub name: String,
+
+    pub frames: alisa::UnorderedChildList<Frame>
 }
 
 impl Default for Layer {
@@ -15,7 +18,8 @@ impl Default for Layer {
     fn default() -> Self {
         Self {
             parent: LayerParent::Clip(alisa::Ptr::null()),
-            name: "Layer".to_owned() 
+            name: "Layer".to_owned(),
+            frames: alisa::UnorderedChildList::new()
         }
     }
 
@@ -36,14 +40,17 @@ impl alisa::Object for Layer {
 }
 
 #[derive(alisa::Serializable)]
+#[project(Project)]
 pub struct LayerTreeData {
-    pub name: String
+    pub name: String,
+    pub frames: alisa::UnorderedChildListTreeData<Frame>
 }
 
 impl Default for LayerTreeData {
     fn default() -> Self {
         Self {
-            name: "Layer".to_owned()
+            name: "Layer".to_owned(),
+            frames: alisa::UnorderedChildListTreeData::default()
         }
     }
 }
@@ -74,17 +81,19 @@ impl alisa::TreeObj for Layer {
         let layer = Layer {
             parent,
             name: data.name.clone(),
+            frames: data.frames.instance(ptr, recorder)
         };
         Self::add(recorder, ptr, layer);
     }
 
-    fn destroy(&self, _recorder: &mut alisa::Recorder<Self::Project>) {
-
+    fn destroy(&self, recorder: &mut alisa::Recorder<Self::Project>) {
+        self.frames.destroy(recorder);
     }
 
-    fn collect_data(&self, _objects: &Objects) -> Self::TreeData {
+    fn collect_data(&self, objects: &Objects) -> Self::TreeData {
         LayerTreeData {
             name: self.name.clone(),
+            frames: self.frames.collect_data(objects)
         }
     }
 

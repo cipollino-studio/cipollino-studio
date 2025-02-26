@@ -85,7 +85,7 @@ impl Panel for TimelinePanel {
 
             let (framebar_scroll_response, frame_area_scroll_response) = ui.with_parent(frame_container.node_ref, |ui| {
                 let framebar_response = self.framebar(ui, editor, clip, n_frames);
-                let frame_area_response = self.frame_area(ui, editor, &render_list, clip, n_frames);
+                let frame_area_response = self.frame_area(ui, editor, project, &render_list, clip, n_frames);
                 (framebar_response, frame_area_response)
             });
 

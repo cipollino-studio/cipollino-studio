@@ -1,5 +1,5 @@
 
-use crate::{Clip, CreateClip, CreateFolder, CreateLayer, DeleteClip, DeleteFolder, DeleteLayer, Folder, Layer, RenameClip, RenameFolder, SetLayerName, TransferClip, TransferFolder, TransferLayer};
+use crate::{Clip, CreateClip, CreateFolder, CreateFrame, CreateLayer, DeleteClip, DeleteFolder, DeleteFrame, DeleteLayer, Folder, Frame, Layer, RenameClip, RenameFolder, SetLayerName, TransferClip, TransferFolder, TransferLayer};
 
 #[derive(alisa::Serializable)]
 #[project(Project)]
@@ -23,7 +23,8 @@ impl Default for Project {
 pub struct Objects { 
     pub folders: alisa::ObjList<Folder>,
     pub clips: alisa::ObjList<Clip>,
-    pub layers: alisa::ObjList<Layer>
+    pub layers: alisa::ObjList<Layer>,
+    pub frames: alisa::ObjList<Frame>
 }
 
 impl alisa::Project for Project {
@@ -49,7 +50,8 @@ impl alisa::Project for Project {
     const OBJECTS: &'static [alisa::ObjectKind<Self>] = &[
         alisa::ObjectKind::from::<Folder>(),
         alisa::ObjectKind::from::<Clip>(),
-        alisa::ObjectKind::from::<Layer>()
+        alisa::ObjectKind::from::<Layer>(),
+        alisa::ObjectKind::from::<Frame>(),
     ];
 
     const OPERATIONS: &'static [alisa::OperationKind<Self>] = &[
@@ -67,6 +69,9 @@ impl alisa::Project for Project {
         alisa::OperationKind::from::<DeleteLayer>(),
         alisa::OperationKind::from::<TransferLayer>(),
         alisa::OperationKind::from::<SetLayerName>(),
+
+        alisa::OperationKind::from::<CreateFrame>(),
+        alisa::OperationKind::from::<DeleteFrame>(),
     ];
 
 }

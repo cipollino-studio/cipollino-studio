@@ -8,6 +8,9 @@ pub use asset::*;
 mod layer;
 pub use layer::*;
 
+mod frame;
+pub use frame::*;
+
 pub use alisa;
 
 pub use alisa::Ptr;
