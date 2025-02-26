@@ -121,13 +121,14 @@ fn sample(uv: vec2<f32>, tex: u32) -> vec4<f32> {
 
 fn rounded_rect_sdf(pos: vec2<f32>, rect_center: vec2<f32>, rect_half_size: vec2<f32>, corner_radii: vec4<f32>) -> f32 {
     let s = step(rect_center, pos);
-    var r = mix(
+    let r = mix(
         mix(corner_radii.x, corner_radii.y, s.x),
         mix(corner_radii.z, corner_radii.w, s.x),
         s.y
     );
-    let d2 = abs(rect_center - pos) - rect_half_size + vec2(r, r);
-    return min(max(d2.x, d2.y), 0.0) + length(max(d2, vec2(0.0, 0.0))) - r;
+
+    let position = abs(pos - rect_center) - rect_half_size + r;
+    return length(max(position, vec2(0.0))) + min(max(position.x, position.y), 0.0) - r;
 }
 
 @fragment

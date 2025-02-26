@@ -185,6 +185,14 @@ impl<'a, 'b> UI<'a, 'b> {
         self.style.get::<S>()
     }
 
+    pub fn push_style<S: Style>(&mut self, style: S::Value) {
+        self.style.push::<S>(style);
+    }
+
+    pub fn pop_style(&mut self) {
+        self.style.pop();
+    }
+
     pub fn with_style<S: Style, R, F: FnOnce(&mut Self) -> R>(&mut self, style: S::Value, body: F) -> R {
         self.style.push::<S>(style);
         let result = body(self);

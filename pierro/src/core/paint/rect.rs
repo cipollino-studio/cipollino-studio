@@ -218,7 +218,7 @@ impl RectResources {
     }
 
     fn push_rect(&mut self, rect: PaintRect, clip_rect: Rect, device: &wgpu::Device, queue: &wgpu::Queue, render_pass: &mut wgpu::RenderPass) {
-        let rounding = rect.rounding.min(Rounding::same(rect.rect.size().min_component() / 2.0));
+        let rounding = rect.rounding;
         let data = RectData {
             min: rect.rect.tl().into(),
             size: rect.rect.size().into(),
