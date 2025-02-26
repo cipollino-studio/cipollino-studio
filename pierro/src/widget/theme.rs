@@ -1,5 +1,5 @@
 
-use crate::{Color, Stroke, TextStyle, UI};
+use crate::{Color, Rounding, Stroke, TextStyle, UI};
 
 /// The color scheme used throughout the UI. Defaults to a dark theme.
 pub struct Theme {
@@ -20,7 +20,7 @@ pub struct Theme {
     pub label_font_size: f32,
 
     pub widget_margin: f32,
-    pub widget_rounding: f32,
+    pub widget_rounding: Rounding,
     pub widget_stroke_width: f32,
 
     pub window_margin: f32,
@@ -49,7 +49,7 @@ impl Default for Theme {
             label_font_size: 14.0,
 
             widget_margin: 5.0,
-            widget_rounding: 5.0,
+            widget_rounding: Rounding::same(5.0),
             widget_stroke_width: 1.0,
 
             window_margin: 7.5,

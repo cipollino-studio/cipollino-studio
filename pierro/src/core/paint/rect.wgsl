@@ -9,7 +9,7 @@ struct VertexOutput {
     @location(5)  clip_max: vec2<f32>,
     @location(6)  rect_center: vec2<f32>,
     @location(7)  rect_half_size: vec2<f32>,
-    @location(8)  rounding: f32,
+    @location(8)  rounding: vec4<f32>,
     @location(9)  stroke_color: vec4<f32>,
     @location(10) stroke_width: f32
 };
@@ -23,7 +23,7 @@ struct RectData {
     @location(5)  tex: u32,
     @location(6)  clip_min: vec2<f32>,
     @location(7)  clip_max: vec2<f32>,
-    @location(8)  rounding: f32,
+    @location(8)  rounding: vec4<f32>,
     @location(9)  stroke_color: vec4<f32>,
     @location(10) stroke_width: f32
 }
@@ -119,7 +119,13 @@ fn sample(uv: vec2<f32>, tex: u32) -> vec4<f32> {
     }
 }
 
-fn rounded_rect_sdf(pos: vec2<f32>, rect_center: vec2<f32>, rect_half_size: vec2<f32>, r: f32) -> f32 {
+fn rounded_rect_sdf(pos: vec2<f32>, rect_center: vec2<f32>, rect_half_size: vec2<f32>, corner_radii: vec4<f32>) -> f32 {
+    let s = step(rect_center, pos);
+    var r = mix(
+        mix(corner_radii.x, corner_radii.y, s.x),
+        mix(corner_radii.z, corner_radii.w, s.x),
+        s.y
+    );
     let d2 = abs(rect_center - pos) - rect_half_size + vec2(r, r);
     return min(max(d2.x, d2.y), 0.0) + length(max(d2, vec2(0.0, 0.0))) - r;
 }
@@ -141,7 +147,7 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     var color = in.color;
     if in.stroke_width > 0.0 {
         let inner_half_size = in.rect_half_size - vec2(in.stroke_width, in.stroke_width);
-        let inner_rounding = max(in.rounding - 2.0 * in.stroke_width, 0.0);
+        let inner_rounding = max(in.rounding - 2.0 * in.stroke_width, vec4(0.0));
         let inner_sdf = rounded_rect_sdf(in.pos, in.rect_center, inner_half_size, inner_rounding);
         let stroke_fac = smoothstep(-0.5, 0.5, inner_sdf);
         color = mix(color, in.stroke_color, stroke_fac);

@@ -1,7 +1,7 @@
 
 use wgpu::util::DeviceExt;
 
-use crate::{Color, Rect, Vec2};
+use crate::{Color, Rect, Rounding, Vec2};
 
 use super::{Painter, Stroke, Texture};
 
@@ -22,7 +22,7 @@ struct RectData {
     tex_idx: u32,
     clip_min: [f32; 2],
     clip_max: [f32; 2],
-    rounding: f32,
+    rounding: [f32; 4],
     stroke_color: [f32; 4],
     stroke_width: f32
 }
@@ -38,7 +38,7 @@ impl RectData {
         5 => Uint32,
         6 => Float32x2,
         7 => Float32x2,
-        8 => Float32,
+        8 => Float32x4,
         9 => Float32x4,
         10 => Float32
     ];
@@ -218,6 +218,7 @@ impl RectResources {
     }
 
     fn push_rect(&mut self, rect: PaintRect, clip_rect: Rect, device: &wgpu::Device, queue: &wgpu::Queue, render_pass: &mut wgpu::RenderPass) {
+        let rounding = rect.rounding.min(Rounding::same(rect.rect.size().min_component() / 2.0));
         let data = RectData {
             min: rect.rect.tl().into(),
             size: rect.rect.size().into(),
@@ -227,7 +228,7 @@ impl RectResources {
             tex_idx: rect.texture.map(|tex| self.get_texture_idx(tex, device, queue, render_pass) + 1).unwrap_or(0),
             clip_min: clip_rect.tl().into(), 
             clip_max: clip_rect.br().into(), 
-            rounding: rect.rounding.min(rect.rect.size().min_component() / 2.0),
+            rounding: [rounding.tl(), rounding.tr(), rounding.bl(), rounding.br()],
             stroke_color: rect.stroke.color.into(),
             stroke_width: rect.stroke.width
         };
@@ -320,7 +321,7 @@ pub struct PaintRect {
     texture: Option<Texture>,
     uv_min: Vec2,
     uv_max: Vec2,
-    rounding: f32,
+    rounding: Rounding,
     stroke: Stroke
 }
 
@@ -333,7 +334,7 @@ impl PaintRect {
             texture: None,
             uv_min: Vec2::ZERO,
             uv_max: Vec2::ONE,
-            rounding: 0.0,
+            rounding: Rounding::ZERO,
             stroke: Stroke::NONE
         }
     }
@@ -349,7 +350,7 @@ impl PaintRect {
         self
     }
 
-    pub fn with_rounding(mut self, rounding: f32) -> Self {
+    pub fn with_rounding(mut self, rounding: Rounding) -> Self {
         self.rounding = rounding;
         self
     }

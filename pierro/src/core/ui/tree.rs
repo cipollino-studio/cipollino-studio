@@ -1,7 +1,7 @@
 
 use std::{fmt::Debug, hash::Hash};
 
-use crate::{hash, Axis, Color, Margin, Painter, PerAxis, Rect, Stroke, TSTransform, TextStyle, Texture, Vec2};
+use crate::{hash, Axis, Color, Margin, Painter, PerAxis, Rect, Rounding, Stroke, TSTransform, TextStyle, Texture, Vec2};
 
 use super::{Id, Layout, Size};
 
@@ -47,7 +47,7 @@ pub struct UINodeParams {
 
     // Styling
     pub(crate) fill: Color,
-    pub(crate) rounding: f32,
+    pub(crate) rounding: Rounding,
     pub(crate) stroke: Stroke,
     pub(crate) clip: bool,
     pub(crate) texture: Option<Texture>,
@@ -79,7 +79,7 @@ impl UINodeParams {
             interaction_margin: Margin::ZERO,
             transform: TSTransform::IDENTITY,
             fill: Color::TRANSPARENT,
-            rounding: 0.0,
+            rounding: Rounding::ZERO,
             stroke: Stroke::NONE,
             clip: true,
             text: None,
@@ -129,7 +129,7 @@ impl UINodeParams {
         self
     }
 
-    pub fn with_rounding(mut self, rounding: f32) -> Self {
+    pub fn with_rounding(mut self, rounding: Rounding) -> Self {
         self.rounding = rounding;
         self
     }
