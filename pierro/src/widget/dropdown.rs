@@ -1,20 +1,19 @@
 
-use crate::{icons, Layout, LayoutInfo, Margin, PerAxis, Size, UINodeParams, UI};
+use crate::{icons, Layout, LayoutInfo, PerAxis, Size, UINodeParams, UI};
 
-use super::{button_fill_animation, close_context_menu, h_spacing, horizontal_fit_centered, icon_text_style, is_context_menu_open, label, label_text_style, open_context_menu, render_context_menu, Theme};
+use super::{button_fill_animation, close_context_menu, h_spacing, horizontal_fit_centered, icon_text_style, is_context_menu_open, label, open_context_menu, render_context_menu, theme::{self, label_text_style}};
 
 pub fn dropdown<S: Into<String>, F: FnOnce(&mut UI)>(ui: &mut UI, dropdown_text: S, contents: F) {
-    let theme = ui.style::<Theme>(); 
-    let bg = theme.bg_text_field;
-    let rounding = theme.widget_rounding;
-    let widget_margin = theme.widget_margin;
+    let bg = ui.style::<theme::BgTextField>(); 
+    let rounding = ui.style::<theme::WidgetRounding>(); 
+    let widget_margin = ui.style::<theme::WidgetMargin>();
     let label_text_style = label_text_style(ui);
     let icon_text_style = icon_text_style(ui);
 
     let (response, _) = ui.with_node(
         UINodeParams::new(Size::fit(), Size::fit())
             .with_layout(Layout::horizontal())
-            .with_margin(Margin::same(widget_margin))
+            .with_margin(widget_margin)
             .with_rounding(rounding)
             .sense_mouse(),
         |ui| {

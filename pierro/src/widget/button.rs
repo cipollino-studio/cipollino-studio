@@ -1,18 +1,17 @@
 
-use crate::{Color, Margin, Response, Size, TextStyle, UINodeParams, UIRef, UI};
+use crate::{Color, Response, Size, TextStyle, UINodeParams, UIRef, UI};
 
-use super::{animate, icon, icon_text_style, label_text_style, Theme};
+use super::{animate, icon, icon_text_style, theme::{self, hovered_color, label_text_style, pressed_color}};
 
 pub fn button_color_animation(ui: &mut UI, interaction: &Response, base_color: Color) -> Color {
-    let theme = ui.style::<Theme>();
     let target_color = if interaction.mouse_down() {
-        theme.pressed_color(base_color)
+        pressed_color(base_color)
     } else if interaction.hovered {
-        theme.hovered_color(base_color)
+        hovered_color(base_color)
     } else {
         base_color
     };
-    let rate = theme.color_transition_animation_rate;
+    let rate = ui.style::<theme::ColorTransitionRate>(); 
     animate(ui, interaction.id, target_color, rate)
 }
 
@@ -27,15 +26,14 @@ pub fn button_text_color_animation(ui: &mut UI, node: UIRef, interaction: &Respo
 }
 
 pub fn button_with_text_style<S: Into<String>>(ui: &mut UI, label: S, style: TextStyle) -> Response {
-    let theme = ui.style::<Theme>();
-    let bg = theme.bg_button;
-    let margin = theme.widget_margin;
-    let rounding = theme.widget_rounding;
+    let bg = ui.style::<theme::BgButton>();
+    let margin = ui.style::<theme::WidgetMargin>();
+    let rounding = ui.style::<theme::WidgetRounding>();
 
     let response = ui.node(
         UINodeParams::new(Size::text(), Size::text())
             .with_fill(bg)
-            .with_margin(Margin::same(margin))
+            .with_margin(margin)
             .with_text(label)
             .with_text_style(style)
             .with_rounding(rounding)
@@ -58,7 +56,7 @@ pub fn icon_button<S: Into<String>>(ui: &mut UI, icon: S) -> Response {
 }
 
 pub fn clickable_icon<S: Into<String>>(ui: &mut UI, icon_text: S) -> Response {
-    let base_color = ui.style::<Theme>().text;
+    let base_color = ui.style::<theme::TextColor>();
     let response = icon(ui, icon_text);
     ui.set_sense_mouse(response.node_ref, true);
     button_text_color_animation(ui, response.node_ref, &response, base_color);

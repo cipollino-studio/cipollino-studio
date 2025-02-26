@@ -1,6 +1,5 @@
 
-mod theme;
-pub use theme::*;
+pub mod theme;
 
 mod animation;
 pub use animation::*;

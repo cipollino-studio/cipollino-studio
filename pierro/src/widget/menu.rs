@@ -1,7 +1,7 @@
 
-use crate::{icons, vec2, Color, Id, Layout, LayoutInfo, Margin, PerAxis, Response, Size, UINodeParams, UI};
+use crate::{icons, vec2, Color, Id, Layout, LayoutInfo, PerAxis, Response, Size, UINodeParams, UI};
 
-use super::{close_context_menu, h_line, horizontal, icon, is_context_menu_open, label, label_text_style, open_context_menu, render_context_menu, Theme};
+use super::{close_context_menu, h_line, horizontal, icon, is_context_menu_open, label, open_context_menu, render_context_menu, theme::{self, label_text_style}};
 
 #[derive(Default)]
 struct MenuMemory {
@@ -9,8 +9,7 @@ struct MenuMemory {
 }
 
 pub fn menu_bar<F: FnOnce(&mut UI)>(ui: &mut UI, contents: F) {
-    let theme = ui.style::<Theme>();
-    let fill = theme.bg_dark;
+    let fill = ui.style::<theme::BgDark>(); 
     ui.with_node(
         UINodeParams::new(Size::fr(1.0), Size::fit())
             .with_fill(fill),
@@ -21,16 +20,15 @@ pub fn menu_bar<F: FnOnce(&mut UI)>(ui: &mut UI, contents: F) {
 }
 
 pub fn menu_bar_item<S: Into<String>, F: FnOnce(&mut UI)>(ui: &mut UI, label: S, contents: F) {
-    let theme = ui.style::<Theme>();
-    let margin = theme.widget_margin;
-    let rounding = theme.widget_rounding;
-    let open_fill = theme.bg_light;
+    let margin = ui.style::<theme::WidgetMargin>();
+    let rounding = ui.style::<theme::WidgetRounding>(); 
+    let open_fill = ui.style::<theme::BgLight>();
     let text_style = label_text_style(ui);
 
     let response = ui.node(
         UINodeParams::new(Size::text(), Size::text())
             .with_fill(Color::TRANSPARENT)
-            .with_margin(Margin::same(margin))
+            .with_margin(margin)
             .with_rounding(rounding)
             .with_text_style(text_style)
             .with_text(label)
@@ -62,15 +60,14 @@ pub fn menu_bar_item<S: Into<String>, F: FnOnce(&mut UI)>(ui: &mut UI, label: S,
 }
 
 fn menu_button_common<S: Into<String>, F: FnOnce(&mut UI)>(ui: &mut UI, label_text: S, contents: F) -> Response {
-    let theme = ui.style::<Theme>();
-    let bg_hover = theme.hovered_color(theme.bg_light); 
-    let margin = theme.widget_margin / 2.0;
-    let rounding = theme.widget_rounding;
+    let bg_hover = theme::hovered_color(ui.style::<theme::BgLight>()); 
+    let margin = ui.style::<theme::WidgetMargin>() / 2.0;
+    let rounding = ui.style::<theme::WidgetRounding>();
 
     let (response, _) = ui.with_node(
         UINodeParams::new(Size::fr(1.0), Size::fit())
             .with_layout(Layout::horizontal())
-            .with_margin(Margin::same(margin))
+            .with_margin(margin)
             .with_rounding(rounding)
             .sense_mouse(),
         |ui| {
@@ -112,7 +109,7 @@ pub fn menu_category<S: Into<String>, F: FnOnce(&mut UI)>(ui: &mut UI, label_tex
     
     render_context_menu(ui, response.id, contents);
     if open_menu_id != Some(response.id) && response.hovered {
-        let stroke_width = ui.style::<Theme>().widget_stroke_width;
+        let stroke_width = ui.style::<theme::WidgetStroke>().width;
         let button_rect = ui.memory().get::<LayoutInfo>(response.id).screen_rect;
         let parent_rect = ui.memory().get::<LayoutInfo>(parent_id).screen_rect;
         let position = vec2(parent_rect.right() - stroke_width, button_rect.top()); 

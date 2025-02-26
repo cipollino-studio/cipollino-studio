@@ -1,7 +1,7 @@
 
-use crate::{Id, LayoutInfo, Margin, PerAxis, Response, Size, TSTransform, UINodeParams, Vec2, UI};
+use crate::{Id, LayoutInfo, PerAxis, Response, Size, TSTransform, UINodeParams, Vec2, UI};
 
-use super::Theme;
+use super::theme;
 
 struct ContextMenuMemory {
     position: Vec2,
@@ -49,20 +49,19 @@ pub fn render_context_menu<F: FnOnce(&mut UI)>(ui: &mut UI, id: Id, body: F) {
     if let Some(context_menu_memory) = ui.memory().get_opt::<ContextMenuMemory>(id) {
         let position = context_menu_memory.position;
         let size = context_menu_memory.size;
-        let theme = ui.style::<Theme>();
-        let fill = theme.bg_popup;
-        let stroke = theme.widget_stroke();
-        let margin = theme.widget_margin;
+        let fill = ui.style::<theme::BgPopup>();
+        let stroke = ui.style::<theme::WidgetStroke>();
+        let margin = ui.style::<theme::WidgetMargin>();
 
-        let width = size.x.map(|size| Size::px(size - 2.0 * margin)).unwrap_or(Size::fit());
-        let height = size.y.map(|size| Size::px(size - 2.0 * margin)).unwrap_or(Size::fit());
+        let width = size.x.map(|size| Size::px(size - margin.h_total())).unwrap_or(Size::fit());
+        let height = size.y.map(|size| Size::px(size - margin.v_total())).unwrap_or(Size::fit());
 
         let (layer, menu) = ui.layer(|ui| {
             let (menu, _) = ui.with_node(
                 UINodeParams::new(width, height)
                     .with_fill(fill)
                     .with_stroke(stroke)
-                    .with_margin(Margin::same(margin)),
+                    .with_margin(margin),
                 body
             );
 

@@ -14,7 +14,7 @@ impl pierro::App for TestApp {
 
     fn tick(&mut self, ui: &mut pierro::UI) {
 
-        let bg_color = ui.style::<pierro::Theme>().bg_dark;
+        let bg_color = ui.style::<pierro::theme::BgDark>();
         let bg = ui.node(
             pierro::UINodeParams::new(pierro::Size::fr(1.0), pierro::Size::fr(1.0))
                 .with_layout(pierro::Layout::vertical().with_vertical_overflow())

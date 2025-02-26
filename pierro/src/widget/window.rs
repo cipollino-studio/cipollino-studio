@@ -1,12 +1,11 @@
 
 use crate::{Margin, Size, UINodeParams, UI};
 
-use super::{margin, Theme};
+use super::{margin, theme};
 
 pub fn window<F: FnOnce(&mut UI)>(ui: &mut UI, contents: F) {
-    let theme = ui.style::<Theme>();
-    let fill = theme.bg_popup;
-    let stroke = theme.widget_stroke();
+    let fill = ui.style::<theme::BgPopup>();
+    let stroke = ui.style::<theme::WidgetStroke>();
     ui.with_node(
         UINodeParams::new(Size::fit(), Size::fit())
             .with_fill(fill)

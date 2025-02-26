@@ -3,7 +3,7 @@ use cosmic_text::{Edit, FontSystem};
 
 use crate::{vec2, CursorIcon, Key, LayoutInfo, LogicalKey, PaintRect, PaintText, Rect, Response, Size, UINodeParams, Vec2, UI};
 
-use super::{label_text_style, Theme};
+use super::theme;
 
 struct TextEditMemory {
     editor: cosmic_text::Editor<'static>,
@@ -21,18 +21,17 @@ pub struct TextEditResponse {
 
 pub fn text_edit(ui: &mut UI, text: &mut String) -> TextEditResponse {
 
-    let theme = ui.style::<Theme>();
-    let color = theme.bg_text_field;
-    let widget_margin = theme.widget_margin;
-    let widget_rounding = theme.widget_rounding;
-    let font_size = theme.label_font_size;
-    let font_color = theme.text;
-    let text_style = label_text_style(ui);
+    let color = ui.style::<theme::BgTextField>(); 
+    let widget_margin = ui.style::<theme::WidgetMargin>(); 
+    let widget_rounding = ui.style::<theme::WidgetRounding>(); 
+    let font_size = ui.style::<theme::LabelFontSize>();
+    let font_color = ui.style::<theme::TextColor>(); 
+    let text_style = theme::label_text_style(ui);
 
     let size = 200.0;
 
     let text_edit = ui.node(
-        UINodeParams::new(Size::px(size), Size::px(font_size + 2.0 * widget_margin))
+        UINodeParams::new(Size::px(size), Size::px(font_size + widget_margin.v_total()))
             .sense_mouse()
             .with_fill(color)
             .with_rounding(widget_rounding)
@@ -56,11 +55,10 @@ pub fn text_edit(ui: &mut UI, text: &mut String) -> TextEditResponse {
     let mut done_editing = false;
 
     let focused = text_edit.is_focused(ui); 
-    let theme = ui.style::<Theme>();
     let target_color = if focused {
-        theme.pressed_color(color)
+        theme::pressed_color(color)
     } else if text_edit.hovered {
-        theme.hovered_color(color)
+        theme::hovered_color(color)
     } else {
         color
     };
@@ -193,7 +191,7 @@ pub fn text_edit(ui: &mut UI, text: &mut String) -> TextEditResponse {
 
         // Mouse interactions
         if let Some(mouse_pos) = text_edit.mouse_pos(ui) {
-            let mouse_pos = mouse_pos - Vec2::splat(widget_margin);
+            let mouse_pos = mouse_pos - widget_margin.min;
             if text_edit.mouse_pressed() {
                 if !ui.input().key_down(Key::SHIFT) {
                     memory.editor.set_selection(cosmic_text::Selection::None);
@@ -224,9 +222,9 @@ pub fn text_edit(ui: &mut UI, text: &mut String) -> TextEditResponse {
         }).unwrap_or_default();
 
         ui.set_on_paint(text_edit.node_ref, move |painter, rect| {
-            painter.text(PaintText::new(paint_text, text_style, Rect::to_infinity(rect.tl() + Vec2::splat(widget_margin) - Vec2::X * scroll)));
+            painter.text(PaintText::new(paint_text, text_style, Rect::to_infinity(rect.tl() + widget_margin.min - Vec2::X * scroll)));
 
-            let origin = rect.tl() + Vec2::splat(widget_margin);
+            let origin = rect.tl() + widget_margin.min;
             if let Some((cursor_x, cursor_y)) = cursor_pos {
                 let cursor_rect = Rect::min_size(
                     origin + vec2(cursor_x as f32 - scroll, cursor_y as f32),
@@ -238,7 +236,7 @@ pub fn text_edit(ui: &mut UI, text: &mut String) -> TextEditResponse {
             for (from_x, width) in ranges {
                 painter.rect(PaintRect::new(
                     Rect::min_size(
-                        rect.tl() + vec2(from_x - scroll + widget_margin, widget_margin),
+                        rect.tl() + vec2(from_x - scroll + widget_margin.min.x, widget_margin.min.y),
                         vec2(width, font_size) 
                     ),
                     font_color.with_alpha(0.2))
@@ -254,7 +252,7 @@ pub fn text_edit(ui: &mut UI, text: &mut String) -> TextEditResponse {
         // Paint text
         let paint_text = text.clone();
         ui.set_on_paint(text_edit.node_ref, move |painter, rect| {
-            painter.text(PaintText::new(paint_text, text_style, Rect::to_infinity(rect.tl() + Vec2::splat(widget_margin))));
+            painter.text(PaintText::new(paint_text, text_style, Rect::to_infinity(rect.tl() + widget_margin.min)));
         });
 
     }

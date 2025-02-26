@@ -1,7 +1,7 @@
 
 use crate::{vec2, Axis, Id, Layout, LayoutInfo, Response, Size, TSTransform, UINodeParams, UIRef, Vec2, UI};
 
-use super::{button_fill_animation, v_spacing, Theme};
+use super::{button_fill_animation, v_spacing, theme};
 
 #[derive(Clone, Copy, Default)]
 pub struct ScrollAreaState {
@@ -80,8 +80,7 @@ fn handle_scroll_bar_dragging(ui: &mut UI, axis: Axis, thumb: Response, bar_id: 
         thumb.release_focus(ui);
     }
 
-    let theme = ui.style::<Theme>();
-    let base_color = theme.bg_button;
+    let base_color = ui.style::<theme::BgButton>();
 
     button_fill_animation(ui, thumb.node_ref, &thumb, base_color);
 
@@ -149,8 +148,7 @@ impl<'state> ScrollArea<'state> {
                 .with_layout(Layout::horizontal())
         );
 
-        let theme = ui.style::<Theme>();
-        let scroll_thumb_color = theme.bg_button;
+        let scroll_thumb_color = ui.style::<theme::BgButton>();
         let scroll_bar_size = 10.0;
         let scroll_thumb_size = 500.0;
 

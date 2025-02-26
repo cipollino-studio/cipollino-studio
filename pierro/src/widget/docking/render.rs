@@ -1,5 +1,5 @@
 
-use crate::{button_fill_animation, dnd_draggable, dnd_drop_zone_with_size, draggable_line, horizontal_fit, icon_text_style, icons, left_click_context_menu, menu_bar, tab, v_line, Axis, Color, Layout, LayoutInfo, Margin, PaintRect, PerAxis, ScrollArea, Size, Stroke, Theme, UINodeParams, UI};
+use crate::{button_fill_animation, dnd_draggable, dnd_drop_zone_with_size, draggable_line, horizontal_fit, icon_text_style, icons, left_click_context_menu, menu_bar, tab, v_line, widget::theme, Axis, Color, Layout, LayoutInfo, PaintRect, PerAxis, ScrollArea, Size, Stroke, UINodeParams, UI};
 
 use super::{command::{DockingCommand, TabDragSource}, DockingNodeId, DockingNodeKind, DockingState, DockingTab, DockingTree, Tabs};
 
@@ -7,8 +7,7 @@ impl<Tab: DockingTab> Tabs<Tab> {
 
     fn render_tab(&mut self, ui: &mut UI, node_id: DockingNodeId, tab_idx: usize, commands: &mut Vec<DockingCommand<Tab>>) {
         let selected = self.active_tab == tab_idx;
-        let theme = ui.style::<Theme>();
-        let base_color = if selected { theme.bg_light } else { theme.bg_dark };
+        let base_color = if selected { ui.style::<theme::BgLight>() } else { ui.style::<theme::BgDark>() };
         let (dnd_response, tab_response) = dnd_draggable(ui, TabDragSource { node_id, tab_idx }, |ui| {
             let tab_response = tab(ui, self.tabs[tab_idx].title(), selected);
             if tab_response.close_button.mouse_released() {
@@ -25,10 +24,9 @@ impl<Tab: DockingTab> Tabs<Tab> {
 
     fn render(&mut self, ui: &mut UI, node_id: DockingNodeId, commands: &mut Vec<DockingCommand<Tab>>, context: &mut Tab::Context) {
 
-        let theme = ui.style::<Theme>();
-        let window_bg = theme.bg_light;
-        let margin = theme.widget_margin;
-        let split_overlay_stroke_color = theme.text_active;
+        let window_bg = ui.style::<theme::BgLight>();
+        let margin = ui.style::<theme::WidgetMargin>();
+        let split_overlay_stroke_color = ui.style::<theme::ActiveTextColor>();
 
         menu_bar(ui, |ui| {
 
@@ -56,7 +54,7 @@ impl<Tab: DockingTab> Tabs<Tab> {
                 UINodeParams::new(Size::text().no_shrink(), Size::text())
                     .with_text(icons::PLUS)
                     .with_text_style(icon_text_style)
-                    .with_margin(Margin::same(margin))
+                    .with_margin(margin)
                     .sense_mouse()
             );
             button_fill_animation(ui, add_tab_button.node_ref, &add_tab_button, window_bg);

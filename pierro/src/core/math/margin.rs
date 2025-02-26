@@ -1,3 +1,5 @@
+use std::ops::{Div, Mul};
+
 use super::{vec2, Axis, Range, Rect, Vec2};
 
 
@@ -41,6 +43,19 @@ impl Margin {
         (self.min.on_axis(axis), self.max.on_axis(axis))
     }
 
+    pub fn total_on_axis(&self, axis: Axis) -> f32 {
+        let (min, max) = self.on_axis(axis);
+        min + max
+    }
+
+    pub fn h_total(&self) -> f32 {
+        self.total_on_axis(Axis::X)
+    }
+
+    pub fn v_total(&self) -> f32 {
+        self.total_on_axis(Axis::Y)
+    }
+
     pub fn apply_on_axis(&self, space: Range, axis: Axis) -> Range {
         let (margin_min, margin_max) = self.on_axis(axis);
         if space.size() > margin_min + margin_max {
@@ -57,4 +72,34 @@ impl Margin {
         )
     }
 
+}
+
+impl Mul<f32> for Margin {
+    type Output = Margin;
+
+    fn mul(self, rhs: f32) -> Margin {
+        Self {
+            min: self.min * rhs,
+            max: self.max * rhs,
+        }
+    }
+}
+
+impl Mul<Margin> for f32 {
+    type Output = Margin;
+
+    fn mul(self, rhs: Margin) -> Margin {
+        rhs * self
+    }
+}
+
+impl Div<f32> for Margin {
+    type Output = Margin;
+
+    fn div(self, rhs: f32) -> Margin {
+        Self {
+            min: self.min / rhs,
+            max: self.max / rhs,
+        }
+    }
 }

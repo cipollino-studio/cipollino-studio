@@ -1,12 +1,14 @@
 
 use crate::{Response, Size, TextStyle, UINodeParams, UI};
-use super::Theme;
+
+use super::theme;
 
 pub fn icon_text_style(ui: &mut UI) -> TextStyle {
-    let theme = ui.style::<Theme>(); 
+    let color = ui.style::<theme::TextColor>();
+    let font_size = ui.style::<theme::LabelFontSize>();
     TextStyle {
-        color: theme.text,
-        font_size: theme.label_font_size,
+        color,
+        font_size,
         line_height: 1.0,
         font: ui.icon_font(),
     }

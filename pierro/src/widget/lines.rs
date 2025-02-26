@@ -1,14 +1,12 @@
 
 use crate::{Axis, CursorIcon, Margin, PerAxis, Response, Size, UINodeParams, UI};
 
-use super::{h_spacing, horizontal_fit, v_spacing, vertical_fit, Theme};
+use super::{h_spacing, horizontal_fit, v_spacing, vertical_fit, theme};
 
 fn line_params(ui: &mut UI, axis: Axis) -> UINodeParams {
-    let theme = ui.style::<Theme>(); 
-    let stroke_color = theme.stroke;
-    let stroke_width = theme.widget_stroke_width;
-    UINodeParams::new_per_axis(PerAxis::along_across(axis, Size::fr(1.0), Size::px(stroke_width).no_shrink()))
-        .with_fill(stroke_color)
+    let stroke = ui.style::<theme::WidgetStroke>(); 
+    UINodeParams::new_per_axis(PerAxis::along_across(axis, Size::fr(1.0), Size::px(stroke.width).no_shrink()))
+        .with_fill(stroke.color)
 }
 
 pub fn h_line(ui: &mut UI) {
@@ -22,22 +20,20 @@ pub fn v_line(ui: &mut UI) {
 }
 
 pub fn h_divider(ui: &mut UI) {
-    let theme = ui.style::<Theme>();
-    let margin = theme.widget_margin;
+    let gap = ui.style::<theme::DividerLineGap>(); 
     horizontal_fit(ui, |ui| {
-        h_spacing(ui, margin);
+        h_spacing(ui, gap);
         h_line(ui);
-        h_spacing(ui, margin);
+        h_spacing(ui, gap);
     });
 }
 
 pub fn v_divider(ui: &mut UI) {
-    let theme = ui.style::<Theme>();
-    let margin = theme.widget_margin;
+    let gap = ui.style::<theme::DividerLineGap>(); 
     vertical_fit(ui, |ui| {
-        v_spacing(ui, margin);
+        v_spacing(ui, gap);
         v_line(ui);
-        v_spacing(ui, margin);
+        v_spacing(ui, gap);
     });
 }
 

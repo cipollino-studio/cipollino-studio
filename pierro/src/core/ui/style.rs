@@ -1,12 +1,18 @@
 
 use std::{any::{Any, TypeId}, collections::HashMap};
 
-pub(crate) struct Style {
+pub trait Style: Any {
+    type Value: Clone;
+
+    fn default() -> Self::Value;
+}
+
+pub(crate) struct StyleStack {
     styles: HashMap<TypeId, Box<dyn Any>>,
     stack: Vec<(TypeId, Box<dyn Any>)>
 }
 
-impl Style {
+impl StyleStack {
 
     pub(crate) fn new() -> Self {
         Self {
@@ -15,17 +21,17 @@ impl Style {
         }
     }
 
-    pub(crate) fn get<T: Default + Any>(&mut self) -> &T {
-        let id = TypeId::of::<T>();
+    pub(crate) fn get<S: Style>(&mut self) -> S::Value {
+        let id = TypeId::of::<S>();
         if !self.styles.contains_key(&id) {
-            self.styles.insert(id,Box::new(T::default()));
+            self.styles.insert(id, Box::new(S::default()));
         }
-        self.styles.get(&id).unwrap().downcast_ref().unwrap()
+        self.styles.get(&id).unwrap().downcast_ref::<S::Value>().unwrap().clone()
     }
 
-    pub(crate) fn push<T: Default + Any>(&mut self, style: T) {
-        let id = TypeId::of::<T>();
-        let old_style = self.styles.insert(id, Box::new(style)).unwrap_or(Box::new(T::default()));
+    pub(crate) fn push<S: Style>(&mut self, style: S::Value) {
+        let id = TypeId::of::<S>();
+        let old_style = self.styles.insert(id, Box::new(style)).unwrap_or(Box::new(S::default()));
         self.stack.push((id, old_style));
     } 
 
@@ -34,4 +40,19 @@ impl Style {
         self.styles.insert(id, style); 
     }
 
+}
+
+#[macro_export]
+macro_rules! style {
+    ($name: ident, $t: ty, $default: expr) => {
+        pub struct $name;
+
+        impl ::alisa::Style for $name {
+            type Value = $t;
+
+            fn default() -> Self::Value {
+                $default
+            }
+        }
+    };
 }

@@ -1,14 +1,14 @@
 
 pub mod layout;
-use std::{any::Any, collections::HashMap, hash::Hash};
+use std::{collections::HashMap, hash::Hash};
 
 pub use layout::*;
 
 pub mod memory;
 pub use memory::*;
 
-pub mod style;
-use style::*;
+mod style;
+pub use style::*;
 
 pub mod input;
 pub use input::*;
@@ -32,7 +32,7 @@ use super::{hash, text::FontId, Margin, Painter, PerAxis, RenderResources, Strok
 pub struct UI<'a, 'b> {
     input: &'a Input,
     memory: &'a mut Memory,
-    style: Style,
+    style: StyleStack,
 
     render_resources: &'a mut RenderResources<'b>,
     clipboard: Option<&'a mut arboard::Clipboard>,
@@ -58,7 +58,7 @@ impl<'a, 'b> UI<'a, 'b> {
         Self {
             input,
             memory,
-            style: Style::new(),
+            style: StyleStack::new(),
             render_resources,
             textures,
             clipboard,
@@ -181,12 +181,12 @@ impl<'a, 'b> UI<'a, 'b> {
         &mut self.memory
     }
 
-    pub fn style<T: Default + Any>(&mut self) -> &T {
-        self.style.get()
+    pub fn style<S: Style>(&mut self) -> S::Value {
+        self.style.get::<S>()
     }
 
-    pub fn with_style<T: Default + Any, F: FnOnce(&mut Self)>(&mut self, style: T, body: F) {
-        self.style.push(style);
+    pub fn with_style<S: Style, F: FnOnce(&mut Self)>(&mut self, style: S::Value, body: F) {
+        self.style.push::<S>(style);
         body(self);
         self.style.pop();
     }

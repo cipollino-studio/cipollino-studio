@@ -3,7 +3,7 @@ use std::any::Any;
 
 use crate::{CursorIcon, LayoutInfo, Response, Size, Stroke, TSTransform, UINodeParams, Vec2, UI};
 
-use super::Theme;
+use super::theme;
 
 pub struct DndSource {
     dragging: bool,
@@ -128,7 +128,7 @@ pub fn dnd_receive_payload<T: Any>(ui: &mut UI, response: &Response) -> Option<T
 
 pub fn dnd_receive_payload_with_highlight<T: Any>(ui: &mut UI, response: &Response) -> Option<T> {
     if response.dnd_hovered && ui.memory().has_dnd_payload_of_type::<T>() {
-        let stroke_color = ui.style::<Theme>().text_active;
+        let stroke_color = ui.style::<theme::ActiveTextColor>();
         ui.set_stroke(response.node_ref, Stroke::new(stroke_color, 2.0));
     }
 
