@@ -1,5 +1,5 @@
 
-use crate::{Response, Size, TextStyle, UINodeParams, UI};
+use crate::{icons, Color, Response, Size, TextStyle, UINodeParams, UI};
 
 use super::theme;
 
@@ -25,3 +25,17 @@ pub fn icon<S: Into<String>>(ui: &mut UI, icon: S) -> Response {
 
 }
 
+/// A gap the size of an icon. Useful for aligning things
+pub fn icon_gap(ui: &mut UI) -> Response {
+    let text_style = TextStyle {
+        color: Color::TRANSPARENT,
+        ..icon_text_style(ui)
+    };
+
+    ui.node(
+        UINodeParams::new(Size::text(), Size::text())
+            .with_text(icons::ACORN)
+            .with_text_style(text_style)
+    )
+
+}
