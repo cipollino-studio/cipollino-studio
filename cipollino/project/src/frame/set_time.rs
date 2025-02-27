@@ -25,6 +25,8 @@ impl alisa::Operation for SetFrameTime {
 
         use alisa::TreeObj;
 
+        let new_time = self.new_time.max(0);
+
         let Some(frame) = recorder.obj_list().get(self.frame) else { return; };
         let layer = frame.layer;
 
@@ -36,14 +38,16 @@ impl alisa::Operation for SetFrameTime {
         // If there's already a frame at the time we're moving this frame to, delete it
         let context = recorder.context();
         let Some(child_list) = Frame::child_list(layer, &context) else { return; };
-        if let Some(other_frame) = find_frame_at_time(&context, child_list, self.new_time) {
-            alisa::delete_tree_object(recorder, other_frame);
+        if let Some(other_frame) = find_frame_at_time(&context, child_list, new_time) {
+            if other_frame != self.frame {
+                alisa::delete_tree_object(recorder, other_frame);
+            }
         }
 
         // Update the frame's time
         let Some(frame) = recorder.obj_list_mut().get_mut(self.frame) else { return; };
         let old_time = frame.time;
-        frame.time = self.new_time;
+        frame.time = new_time;
         recorder.push_delta(SetFrameTimeDelta {
             ptr: self.frame,
             time_value: old_time,
@@ -62,6 +66,11 @@ impl alisa::Operation for SetFrameTime {
         // If we're going to delete a frame when we move this frame, we need to collect its tree data to recreate it
         let child_list = Frame::child_list(layer, context)?;
         let recreated_frame = find_frame_at_time(&context, child_list, self.new_time).unwrap_or_default();
+        let recreated_frame = if recreated_frame == self.frame {
+            alisa::Ptr::null()
+        } else {
+            recreated_frame
+        };
         let recreate_data = context.obj_list().get(recreated_frame).map(|frame| frame.collect_data(context.objects()));
 
         Some(SetFrameTime {
