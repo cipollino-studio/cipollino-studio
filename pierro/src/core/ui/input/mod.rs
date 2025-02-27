@@ -216,7 +216,7 @@ impl MouseButton {
     }
 
     pub fn clicked(&self) -> bool {
-        self.state.clicked()
+        self.state.clicked() && !self.drag_stopped()
     }
 
     pub fn double_clicked(&self) -> bool {
