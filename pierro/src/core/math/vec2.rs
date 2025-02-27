@@ -1,5 +1,5 @@
 use core::f32;
-use std::{fmt::Display, ops::{Add, AddAssign, Div, Mul, Neg, Sub, SubAssign}};
+use std::ops::{Add, AddAssign, Div, Mul, Neg, Sub, SubAssign};
 
 use super::{map, Axis, Rect};
 
@@ -186,7 +186,7 @@ impl From<Vec2> for [f32; 2] {
     
 }
 
-impl Display for Vec2 {
+impl std::fmt::Display for Vec2 {
 
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str("[")?;
@@ -195,6 +195,14 @@ impl Display for Vec2 {
         self.y.fmt(f)?;
         f.write_str("]")?;
         Ok(())
+    }
+
+}
+
+impl std::fmt::Debug for Vec2 {
+
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        <Self as std::fmt::Display>::fmt(self, f)
     }
 
 }

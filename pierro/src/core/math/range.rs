@@ -46,6 +46,10 @@ impl Range {
         )
     }
 
+    pub fn intersects(&self, other: Range) -> bool {
+        self.max > other.min && self.min < other.max
+    }
+
     pub fn center(&self) -> f32 {
         (self.min + self.max) / 2.0
     }

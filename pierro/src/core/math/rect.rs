@@ -138,6 +138,10 @@ impl Rect {
         )
     }
 
+    pub fn intersects(&self, other: Rect) -> bool {
+        self.x_range().intersects(other.x_range()) && self.y_range().intersects(other.y_range())
+    }
+
     pub fn shift(&self, offset: Vec2) -> Rect {
         Self::min_max(self.min + offset, self.max + offset)
     }
