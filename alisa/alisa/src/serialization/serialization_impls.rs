@@ -60,6 +60,27 @@ impl<P: Project> Serializable<P> for String {
 
 }
 
+impl<P: Project, T: Serializable<P>> Serializable<P> for Option<T> {
+
+    fn serialize(&self, context: &SerializationContext<P>) -> rmpv::Value {
+        match self {
+            Some(value) => rmpv::Value::Array(vec![value.serialize(context)]),
+            None => rmpv::Value::Nil,
+        }
+    }
+
+    fn deserialize(data: &rmpv::Value, context: &mut DeserializationContext<P>) -> Option<Self> {
+        if data.is_nil() {
+            return Some(None);
+        }
+
+        let data = data.as_array()?;
+        let data = data.get(0)?;
+        Some(T::deserialize(data, context))
+    }
+
+}
+
 impl<P: Project, T: Serializable<P>> Serializable<P> for Vec<T> {
 
     fn deserialize(data: &rmpv::Value, context: &mut DeserializationContext<P>) -> Option<Self> {
