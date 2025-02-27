@@ -1,6 +1,6 @@
 
 
-use crate::{Layer, Project};
+use crate::{frame::find_frame_at_time, Layer, Project};
 use super::{Frame, FrameTreeData};
 
 #[derive(alisa::Serializable, Default)]
@@ -17,16 +17,6 @@ pub struct DeleteFrame {
     pub ptr: alisa::Ptr<Frame>
 }
 
-fn find_frame_at_time(context: &alisa::ProjectContext<'_, Project>, frames: &alisa::UnorderedChildList<Frame>, time: i32) -> Option<alisa::Ptr<Frame>> {
-    for frame_ptr in frames.iter() {
-        if let Some(frame) = context.obj_list().get(frame_ptr) {
-            if frame.time == time {
-                return Some(frame_ptr);
-            }
-        }
-    }
-    None
-}
 
 impl alisa::Operation for CreateFrame {
     type Project = Project;

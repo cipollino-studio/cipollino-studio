@@ -4,6 +4,9 @@ use crate::{Layer, Objects, Project};
 mod creation;
 pub use creation::*;
 
+mod set_time;
+pub use set_time::*;
+
 #[derive(alisa::Serializable, Clone)]
 #[project(Project)]
 pub struct Frame {
@@ -90,4 +93,15 @@ impl alisa::TreeObj for Frame {
         }
     }
 
+}
+
+fn find_frame_at_time(context: &alisa::ProjectContext<'_, Project>, frames: &alisa::UnorderedChildList<Frame>, time: i32) -> Option<alisa::Ptr<Frame>> {
+    for frame_ptr in frames.iter() {
+        if let Some(frame) = context.obj_list().get(frame_ptr) {
+            if frame.time == time {
+                return Some(frame_ptr);
+            }
+        }
+    }
+    None
 }

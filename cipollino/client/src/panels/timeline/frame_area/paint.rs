@@ -17,9 +17,9 @@ impl PaintCommands {
         }
     }
 
-    pub fn paint(self, painter: &mut pierro::Painter, rect: pierro::Rect, text_color: pierro::Color) {
+    pub fn paint(self, painter: &mut pierro::Painter, rect: pierro::Rect, text_color: pierro::Color, accent_color: pierro::Color) {
         for frame_dot in self.frame_dots {
-            frame_dot.paint(painter, rect, text_color);
+            frame_dot.paint(painter, rect, text_color, accent_color);
         }
     }
 

@@ -1,3 +1,4 @@
+use frame_area::FrameSelection;
 use layers::{LayerDropLocation, LayerSelection};
 use project::alisa::AnyPtr;
 use render_list::RenderList;
@@ -21,7 +22,10 @@ pub struct TimelinePanel {
 
     layer_dnd_source: pierro::DndSource,
     layer_dnd_hover_pos: Option<LayerDropLocation>,
-    layer_dnd_dropped_payload: Option<LayerSelection>
+    layer_dnd_dropped_payload: Option<LayerSelection>,
+
+    frame_selection: FrameSelection,
+    frame_drag_x: f32
 }
 
 impl Default for TimelinePanel {
@@ -36,7 +40,10 @@ impl Default for TimelinePanel {
 
             layer_dnd_source: pierro::DndSource::new(),
             layer_dnd_hover_pos: None,
-            layer_dnd_dropped_payload: None
+            layer_dnd_dropped_payload: None,
+
+            frame_selection: FrameSelection::new(),
+            frame_drag_x: 0.0
         }
     }
 
