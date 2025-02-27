@@ -284,6 +284,12 @@ impl<T: App> ApplicationHandler for AppHandler<'_, T> {
                 }
             },
 
+            WindowEvent::Focused(focused) => {
+                if !focused {
+                    self.raw_input.lost_focus = true;
+                } 
+            }
+
             WindowEvent::Ime(Ime::Preedit(preedit, _)) => {
                 self.raw_input.ime_preedit = preedit;
             },

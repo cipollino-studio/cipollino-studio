@@ -141,6 +141,9 @@ pub(crate) struct RawInput {
     /// What keys were released this frame?
     pub(crate) keys_released: Vec<Key>,
 
+    /// Did this app window lose focus?
+    pub(crate) lost_focus: bool,
+
     /// What is the current IME preedit?
     pub(crate) ime_preedit: String,
     /// What IME text input was commited this frame?
@@ -158,6 +161,7 @@ impl RawInput {
             scroll: Vec2::ZERO,
             keys_pressed: Vec::new(),
             keys_released: Vec::new(),
+            lost_focus: false,
             ime_preedit: String::new(),
             ime_commit: None
         }
@@ -415,6 +419,24 @@ impl Input {
 
         self.ime_preedit = raw_input.ime_preedit.clone();
         self.ime_commit = std::mem::replace(&mut raw_input.ime_commit, None);
+
+        if raw_input.lost_focus {
+
+            self.mouse_pos = None;
+            self.l_mouse.update(false, None, 0.0);
+            self.r_mouse.update(false, None, 0.0);
+
+            self.scroll = Vec2::ZERO;
+
+            self.keys_pressed.clear();
+            self.keys_released.clear();
+            for (key, _) in &self.keys {
+                self.keys_released.push(key.clone());
+            }
+            self.keys.clear();
+            
+            raw_input.lost_focus = false;
+        }
 
     }
 
