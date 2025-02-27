@@ -13,7 +13,7 @@ pub(super) struct RenderLayer<'proj> {
 }
 
 pub(super) struct RenderList<'proj> {
-    layers: Vec<RenderLayer<'proj>>
+    pub layers: Vec<RenderLayer<'proj>>
 }
 
 fn add_layers<'proj>(render_layers: &mut Vec<RenderLayer<'proj>>, layers: &'proj LayerChildList, client: &'proj Client) {

@@ -3,7 +3,9 @@ use std::collections::HashSet;
 
 use project::{alisa::Action, Frame, Ptr, SetFrameTime};
 
-use crate::{ProjectState, TimelinePanel};
+use crate::ProjectState;
+
+use super::FrameArea;
 
 pub struct FrameSelection {
     frames: HashSet<Ptr<Frame>>
@@ -21,6 +23,12 @@ impl FrameSelection {
         self.frames.insert(frame);
     }
 
+    pub fn invert_select_frame(&mut self, frame: Ptr<Frame>) {
+        if !self.frames.remove(&frame) {
+            self.frames.insert(frame);
+        }
+    }
+
     pub fn is_frame_selected(&mut self, frame: Ptr<Frame>) -> bool {
         self.frames.contains(&frame)
     }
@@ -32,7 +40,7 @@ impl FrameSelection {
     pub fn move_selected(&self, project: &ProjectState, drag: f32) {
         let mut action = Action::new();
 
-        let frame_offset = TimelinePanel::drag_to_frame_offset(drag);
+        let frame_offset = FrameArea::drag_to_frame_offset(drag);
 
         for frame_ptr in &self.frames {
             if let Some(frame) = project.client.get(*frame_ptr) {

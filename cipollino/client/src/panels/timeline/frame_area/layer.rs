@@ -3,7 +3,7 @@ use project::Layer;
 
 use crate::{ProjectState, TimelinePanel};
 
-use super::PaintCommands;
+use super::{DragState, FrameArea, PaintCommands};
 
 pub(super) struct FrameDot {
     pub layer_idx: usize, 
@@ -22,6 +22,7 @@ impl FrameDot {
             painter.rect(
                 pierro::PaintRect::new(frame_rect, pierro::Color::TRANSPARENT)
                     .with_stroke(pierro::Stroke::new(accent_color, 1.5))
+                    .with_rounding(pierro::Rounding::same(3.0))
             );
         }
 
@@ -34,21 +35,40 @@ impl FrameDot {
 
 }
 
-impl TimelinePanel {
+impl FrameArea {
     
     pub(super) fn drag_to_frame_offset(drag: f32) -> i32 {
-        (drag / Self::FRAME_WIDTH).round() as i32
+        (drag / TimelinePanel::FRAME_WIDTH).round() as i32
     }
 
-    pub(super) fn render_layer_contents(&mut self, ui: &mut pierro::UI, project: &ProjectState, frame_area: &pierro::Response, paint_commands: &mut PaintCommands, layer_idx: usize, layer: &Layer) {
+    pub(super) fn render_layer_contents(
+        &mut self,
+        ui: &mut pierro::UI,
+        project: &ProjectState,
+        frame_area: &pierro::Response,
+        paint_commands: &mut PaintCommands,
+        layer_idx: usize,
+        layer: &Layer
+    ) {
 
         for frame_ptr in layer.frames.iter() {
             if let Some(frame) = project.client.get(frame_ptr) {
 
-                let selected = self.frame_selection.is_frame_selected(frame_ptr);
+                let frame_interaction_rect = pierro::Rect::min_size(
+                    pierro::vec2((frame.time as f32) * TimelinePanel::FRAME_WIDTH, (layer_idx as f32) * TimelinePanel::LAYER_HEIGHT),
+                    TimelinePanel::FRAME_SIZE 
+                );
+
+                let selected = self.selection.is_frame_selected(frame_ptr);
+                
+                let in_selection_rect = if let Some(selection_rect) = self.drag_state.selection_rect() {
+                    selection_rect.intersects(frame_interaction_rect)
+                } else {
+                    false
+                };
 
                 let display_time = frame.time + if selected {
-                    Self::drag_to_frame_offset(self.frame_drag_x)
+                    Self::drag_to_frame_offset(self.drag_state.move_offset())
                 } else {
                     0
                 };
@@ -57,21 +77,24 @@ impl TimelinePanel {
                 paint_commands.frame_dots.push(FrameDot {
                     layer_idx,
                     time: display_time,
-                    selected
+                    selected: selected || in_selection_rect
                 });
                 
+                
                 if let Some(mouse_pos) = frame_area.mouse_pos(ui) {
-                    let frame_interaction_rect = pierro::Rect::min_size(
-                        pierro::vec2((frame.time as f32) * Self::FRAME_WIDTH, (layer_idx as f32) * Self::LAYER_HEIGHT),
-                        Self::FRAME_SIZE 
-                    );
+                    
                     if frame_interaction_rect.contains(mouse_pos) {
                         if frame_area.mouse_clicked() {
-                            self.frame_selection.select_frame(frame_ptr);
+                            self.selection.invert_select_frame(frame_ptr);
                             frame_area.request_focus(ui);
                         }
                         if frame_area.drag_started() {
-                            self.frame_selection.select_frame(frame_ptr);
+                            if !self.selection.is_frame_selected(frame_ptr) && !ui.input().key_down(pierro::Key::SHIFT){
+                                self.selection.clear();
+                            }
+                            self.selection.select_frame(frame_ptr);
+                            self.drag_consumed = true;
+                            self.drag_state = DragState::Move { offset: 0.0 };
                             frame_area.request_focus(ui);
                         }
                     }

@@ -84,6 +84,7 @@ impl TimelinePanel {
             painter.rect(
                 pierro::PaintRect::new(playback_head_rect, accent_color.with_alpha(0.2))
                     .with_stroke(pierro::Stroke::new(accent_color, 1.5))
+                    .with_rounding(pierro::Rounding::same(3.0))
             );
         });
 
