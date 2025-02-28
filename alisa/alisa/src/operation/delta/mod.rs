@@ -4,6 +4,8 @@ pub use common::*;
 
 use crate::{ObjList, Object, Project, ProjectContext, ProjectContextMut};
 
+use super::OperationSource;
+
 /// A tiny change to the project. Used for moving backwards in time for the collaboration conflict resolution system. 
 pub trait Delta: Send + Sync {
     type Project: Project;
@@ -15,14 +17,17 @@ pub struct Recorder<'a, P: Project> {
     pub(crate) context: ProjectContextMut<'a, P>,
     /// The reversed changes recorded while the operation was being executed 
     pub(crate) deltas: Vec<Box<dyn Delta<Project = P>>>,
+    /// Where the operation in question originated
+    pub(crate) source: OperationSource,
 }
 
 impl<'a, P: Project> Recorder<'a, P> {
 
-    pub(crate) fn new(context: ProjectContextMut<'a, P>) -> Self {
+    pub(crate) fn new(context: ProjectContextMut<'a, P>, source: OperationSource) -> Self {
         Self {
             context,
             deltas: Vec::new(),
+            source
         }
     }
 
@@ -55,6 +60,10 @@ impl<'a, P: Project> Recorder<'a, P> {
 
     pub fn obj_list_mut<O: Object<Project = P>>(&mut self) -> &mut ObjList<O> {
         self.context.obj_list_mut()
+    }
+
+    pub fn source(&self) -> OperationSource {
+        self.source
     }
 
 }

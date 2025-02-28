@@ -42,12 +42,13 @@ macro_rules! project_set_property_operation {
 
                 const NAME: &'static str = stringify!([< SetProject $property:camel >]);
 
-                fn perform(&self, recorder: &mut ::alisa::Recorder<Self::Project>) {
+                fn perform(&self, recorder: &mut ::alisa::Recorder<Self::Project>) -> bool {
                     let old_val = recorder.project().$property.clone();
                     recorder.project_mut().$property = self.$property.clone();
                     recorder.push_delta([<Set $property:camel Delta>] {
                         $property: old_val 
-                    })
+                    });
+                    true
                 }
 
                 fn inverse(&self, context: &::alisa::ProjectContext<Self::Project>) -> Option<Self::Inverse> {
@@ -108,15 +109,17 @@ macro_rules! object_set_property_operation {
 
                 const NAME: &'static str = stringify!([< Set $object:camel $property:camel >]);
 
-                fn perform(&self, recorder: &mut ::alisa::Recorder<Self::Project>) {
-                    if let Some(obj) = recorder.obj_list_mut().get_mut(self.ptr) {
-                        let old_val = obj.$property.clone();
-                        obj.$property = self.[< $property:snake _value >].clone();
-                        recorder.push_delta([< Set $object:camel $property:camel Delta >] {
-                            ptr: self.ptr,
-                            [< $property:snake _value >]: old_val
-                        });
-                    }
+                fn perform(&self, recorder: &mut ::alisa::Recorder<Self::Project>) -> bool {
+                    let Some(obj) = recorder.obj_list_mut().get_mut(self.ptr) else {
+                        return false;
+                    };
+                    let old_val = obj.$property.clone();
+                    obj.$property = self.[< $property:snake _value >].clone();
+                    recorder.push_delta([< Set $object:camel $property:camel Delta >] {
+                        ptr: self.ptr,
+                        [< $property:snake _value >]: old_val
+                    });
+                    true
                 }
 
                 fn inverse(&self, context: &::alisa::ProjectContext<Self::Project>) -> Option<Self::Inverse> {

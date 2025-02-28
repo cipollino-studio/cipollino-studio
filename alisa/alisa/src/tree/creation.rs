@@ -3,26 +3,29 @@ use crate::{Ptr, Recorder, RecreateObjectDelta};
 
 use super::{Children, InsertChildDelta, RemoveChildDelta, TreeObj};
 
-pub fn create_tree_object<O: TreeObj>(recorder: &mut Recorder<O::Project>, ptr: Ptr<O>, parent: O::ParentPtr, idx: <O::ChildList as Children<O>>::Index, data: &O::TreeData) {
+pub fn create_tree_object<O: TreeObj>(recorder: &mut Recorder<O::Project>, ptr: Ptr<O>, parent: O::ParentPtr, idx: <O::ChildList as Children<O>>::Index, data: &O::TreeData) -> bool {
     // Make sure the parent we're creating the object in exists 
     if O::child_list_mut(parent.clone(), recorder.context_mut()).is_none() {
-        return;
+        return false;
     }
 
     // Instance the object and its children
     O::instance(data, ptr, parent.clone(), recorder);
 
     // Add it to the parent's child list
-    if let Some(child_list) = O::child_list_mut(parent.clone(), recorder.context_mut()) {
-        child_list.insert(idx, ptr);
-        recorder.push_delta(RemoveChildDelta {
-            parent: parent.clone(),
-            ptr: ptr
-        });
-    }
+    let Some(child_list) = O::child_list_mut(parent.clone(), recorder.context_mut()) else {
+        return false;
+    };
+    child_list.insert(idx, ptr);
+    recorder.push_delta(RemoveChildDelta {
+        parent: parent.clone(),
+        ptr: ptr
+    });
+
+    true
 }
 
-pub fn delete_tree_object<O: TreeObj>(recorder: &mut Recorder<O::Project>, ptr: Ptr<O>) {
+pub fn delete_tree_object<O: TreeObj>(recorder: &mut Recorder<O::Project>, ptr: Ptr<O>) -> bool {
     if let Some(obj) = recorder.obj_list_mut().delete(ptr) {
         obj.destroy(recorder);
         let parent = obj.parent(); 
@@ -37,9 +40,11 @@ pub fn delete_tree_object<O: TreeObj>(recorder: &mut Recorder<O::Project>, ptr: 
                     ptr,
                     idx
                 });
+                return true;
             }
         }
     }
+    false 
 }
 
 #[macro_export]
@@ -76,8 +81,8 @@ macro_rules! tree_object_creation_operations {
 
                 const NAME: &'static str = stringify!([< Create $object:camel >]);
 
-                fn perform(&self, recorder: &mut ::alisa::Recorder<Self::Project>) {
-                    ::alisa::create_tree_object(recorder, self.ptr, self.parent.clone(), self.idx.clone(), &self.data);                    
+                fn perform(&self, recorder: &mut ::alisa::Recorder<Self::Project>) -> bool {
+                    ::alisa::create_tree_object(recorder, self.ptr, self.parent.clone(), self.idx.clone(), &self.data)
                 }
 
                 fn inverse(&self, context: &::alisa::ProjectContext<Self::Project>) -> Option<Self::Inverse> {
@@ -111,13 +116,21 @@ macro_rules! tree_object_creation_operations {
 
                 const NAME: &'static str = stringify!([< Delete $object:camel >]);
 
-                fn perform(&self, recorder: &mut ::alisa::Recorder<Self::Project>) {
-                    ::alisa::delete_tree_object(recorder, self.ptr); 
+                fn perform(&self, recorder: &mut ::alisa::Recorder<Self::Project>) -> bool {
+                    use ::alisa::TreeObj;
+                    if !$object::can_delete(self.ptr, &recorder.context(), recorder.source()) {
+                        return false;
+                    }
+                    ::alisa::delete_tree_object(recorder, self.ptr)
                 }
 
                 fn inverse(&self, context: &::alisa::ProjectContext<Self::Project>) -> Option<Self::Inverse> {
                     use ::alisa::Children;
                     use ::alisa::Object;
+                    use ::alisa::TreeObj;
+                    if !$object::can_delete(self.ptr, context, ::alisa::OperationSource::Local) {
+                        return None;
+                    }
                     let object = context.obj_list().get(self.ptr)?; 
                     let data = <$object as ::alisa::TreeObj>::collect_data(&object, context.objects());
                     let parent = <$object as ::alisa::TreeObj>::parent(&object);

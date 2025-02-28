@@ -3,7 +3,7 @@ use std::cell::RefCell;
 
 use keychain::KeyChain;
 
-use crate::{rmpv_get, Delta, DeserializationContext, OperationDyn, Project, ProjectContextMut, Recorder, UnconfirmedOperation};
+use crate::{rmpv_get, Delta, DeserializationContext, OperationDyn, OperationSource, Project, ProjectContextMut, Recorder, UnconfirmedOperation};
 
 use super::{Client, ClientKind};
 
@@ -94,11 +94,15 @@ impl<P: Project> Client<P> {
         })
     }
 
-    pub(crate) fn handle_operation_message(&mut self, operation_name: &str, data: &rmpv::Value, context: &mut P::Context) -> Option<()> {
+    pub(crate) fn handle_operation_message(&mut self, operation_name: &str, data: &rmpv::Value, context: &mut P::Context) -> bool {
         // Find the type of operation being performed
-        let operation_kind = P::OPERATIONS.iter().find(|kind| kind.name == operation_name)?;
+        let Some(operation_kind) = P::OPERATIONS.iter().find(|kind| kind.name == operation_name) else {
+            return false;
+        };
         // Deserialize the operation from the message
-        let operation = (operation_kind.deserialize)(data)?; 
+        let Some(operation) = (operation_kind.deserialize)(data) else {
+            return false;
+        };
 
         let mut project_context = ProjectContextMut {
             project: &mut self.project,
@@ -117,8 +121,8 @@ impl<P: Project> Client<P> {
         }
 
         // Apply the newly-received operation
-        let mut recorder = Recorder::new(project_context);
-        (operation_kind.perform)(operation, &mut recorder);
+        let mut recorder = Recorder::new(project_context, OperationSource::Server);
+        let success = (operation_kind.perform)(operation, &mut recorder);
 
         // Reapply the operations we've done on top of the inserted operation
         if let Some(collab) = self.kind.as_collab() {
@@ -128,12 +132,12 @@ impl<P: Project> Client<P> {
                     objects: &mut self.objects,
                     context,
                     project_modified: &mut self.project_modified,
-                });
+                }, OperationSource::Local);
                 unconfirmed_operation.operation.perform(&mut recorder);
             }
         }
 
-        Some(())
+        success
     }
 
     pub fn receive_message(&mut self, msg: rmpv::Value, context: &mut P::Context) -> Option<()> {
@@ -206,6 +210,13 @@ impl<P: Project> Client<P> {
                     }
                 }
             },
+            "load_failed" => {
+                for object_kind in P::OBJECTS {
+                    if object_kind.name == object {
+                        (object_kind.load_failed)(&mut self.objects, load_key); 
+                    }
+                } 
+            }
             _ => {}
         }
 

@@ -2,7 +2,7 @@
 
 use std::{any::{type_name, TypeId}, cell::RefCell, ops::Deref};
 
-use crate::{Act, Action, Object, Operation, OperationDyn, Project, ProjectContext, ProjectContextMut, Ptr, Recorder};
+use crate::{Act, Action, Object, Operation, OperationDyn, OperationSource, Project, ProjectContext, ProjectContextMut, Ptr, Recorder};
 
 mod local;
 use local::*;
@@ -123,12 +123,24 @@ impl<P: Project> Client<P> {
                 objects: &mut self.objects,
                 context,
                 project_modified: &mut self.project_modified,
-            });
-            operation.perform(&mut recorder);
+            }, OperationSource::Local);
+            let success = operation.perform(&mut recorder);
             let deltas = recorder.deltas;
 
-            if let Some(collab) = self.kind.as_collab() {
-                collab.perform_operation(operation, deltas); 
+            if success {
+                if let Some(collab) = self.kind.as_collab() {
+                    collab.perform_operation(operation, deltas); 
+                }
+            } else {
+                // If the operation failed, undo the mess it made
+                for delta in deltas.iter().rev() {
+                    delta.perform(&mut ProjectContextMut {
+                        project: &mut self.project,
+                        objects: &mut self.objects,
+                        context,
+                        project_modified: &mut self.project_modified,
+                    });
+                }
             }
         }
 
@@ -159,8 +171,13 @@ impl<P: Project> Client<P> {
     }
 
     pub fn request_load<O: Object<Project = P>>(&self, ptr: Ptr<O>) {
+        if O::list(&self.objects).tried_loading.borrow().contains(&ptr) {
+            return;
+        }
+        O::list(&self.objects).to_load.borrow_mut().insert(ptr);
+        O::list(&self.objects).tried_loading.borrow_mut().insert(ptr);
         match &self.kind {
-            ClientKind::Local(_) => { O::list(&self.objects).to_load.borrow_mut().insert(ptr); },
+            ClientKind::Local(_) => {  },
             ClientKind::Collab(collab) => {
                 collab.send_message(rmpv::Value::Map(vec![
                     ("type".into(), "load".into()),
@@ -169,6 +186,12 @@ impl<P: Project> Client<P> {
                 ]));
             },
         }
+    }
+
+    pub fn has_load_failed<O: Object<Project = P>>(&self, ptr: Ptr<O>) -> bool {
+        let tried_loading = O::list(&self.objects).tried_loading.borrow().contains(&ptr);
+        let to_load = O::list(&self.objects).to_load.borrow().contains(&ptr);
+        tried_loading && !to_load
     }
 
     pub(crate) fn context(&self) -> ProjectContext<P> {

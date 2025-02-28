@@ -70,11 +70,12 @@ impl alisa::Operation for IncrN {
 
     const NAME: &'static str = "IncrN";
 
-    fn perform(&self, recorder: &mut alisa::Recorder<'_, Self::Project>) {
+    fn perform(&self, recorder: &mut alisa::Recorder<'_, Self::Project>) -> bool {
         recorder.push_delta(SetNDelta {
             n: recorder.project().n,
         });
         recorder.project_mut().n += 1;
+        true
     }
 
     fn inverse(&self, _context: &alisa::ProjectContext<Project>) -> Option<Self::Inverse> {
@@ -89,11 +90,12 @@ impl alisa::Operation for DecrN {
 
     const NAME: &'static str = "DecrN";
 
-    fn perform(&self, recorder: &mut alisa::Recorder<'_, Self::Project>) {
+    fn perform(&self, recorder: &mut alisa::Recorder<'_, Self::Project>) -> bool {
         recorder.push_delta(SetNDelta {
             n: recorder.project().n,
         });
         recorder.project_mut().n -= 1;
+        true
     }
 
     fn inverse(&self, _context: &alisa::ProjectContext<Project>) -> Option<Self::Inverse> {

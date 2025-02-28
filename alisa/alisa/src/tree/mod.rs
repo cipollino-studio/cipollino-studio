@@ -1,5 +1,5 @@
 
-use crate::{Delta, Object, Project, ProjectContext, ProjectContextMut, Ptr, Recorder, Serializable};
+use crate::{Delta, Object, OperationSource, Project, ProjectContext, ProjectContextMut, Ptr, Recorder, Serializable};
 
 mod child_list;
 pub use child_list::*;
@@ -99,6 +99,11 @@ pub trait TreeObj: Object + Send + Sync {
     fn destroy(&self, recorder: &mut Recorder<Self::Project>);
     /// Get the tree data for this object and its children
     fn collect_data(&self, objects: &<Self::Project as Project>::Objects) -> Self::TreeData;
+
+    // Can this object be deleted right now?
+    fn can_delete(_ptr: Ptr<Self>, _project: &ProjectContext<Self::Project>, _source: OperationSource) -> bool {
+        true
+    }
 
 }
 

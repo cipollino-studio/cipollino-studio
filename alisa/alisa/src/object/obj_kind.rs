@@ -12,6 +12,7 @@ pub struct ObjectKind<P: Project> {
     pub(crate) load_objects: fn(&mut File, &mut P::Objects),
     pub(crate) load_object: fn(&mut File, &mut P::Objects, u64),
     pub(crate) load_object_from_message: fn(&mut P::Objects, u64, &rmpv::Value),
+    pub(crate) load_failed: fn(&mut P::Objects, u64),
     pub(crate) serialize_object: fn(&mut P::Objects, u64) -> Option<rmpv::Value>,
 
     #[cfg(debug_assertions)]
@@ -58,6 +59,9 @@ impl<P: Project> ObjectKind<P> {
                 if let Some(obj) = O::deserialize(data, &mut DeserializationContext::collab(objects)) {
                     O::list_mut(objects).insert(Ptr::from_key(key), obj);
                 }
+            },
+            load_failed: |objects, key| {
+                O::list_mut(objects).to_load.borrow_mut().remove(&Ptr::from_key(key)); 
             },
             serialize_object: |objects, key| {
                 O::list(objects).get(Ptr::from_key(key)).map(|data| data.serialize(&SerializationContext::deep(objects).with_stored(key)))

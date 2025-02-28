@@ -113,7 +113,7 @@ impl<P: Project> Server<P> {
         match msg_type {
             "operation" => {
                 if let Some(data) = data {
-                    if self.client.handle_operation_message(operation_name, data, &mut self.context).is_some() {
+                    if self.client.handle_operation_message(operation_name, data, &mut self.context) {
                         self.broadcast(&rmpv::Value::Map(vec![
                             ("type".into(), "operation".into()),
                             ("operation".into(), operation_name.into()),
@@ -146,6 +146,12 @@ impl<P: Project> Server<P> {
                                 ("object".into(), object.into()),
                                 ("key".into(), load_key.into()),
                                 ("data".into(), data)
+                            ]));
+                        } else {
+                            self.send(client_id, rmpv::Value::Map(vec![
+                                ("type".into(), "load_failed".into()),
+                                ("object".into(), object.into()),
+                                ("key".into(), load_key.into()),
                             ]));
                         }
                         break;
