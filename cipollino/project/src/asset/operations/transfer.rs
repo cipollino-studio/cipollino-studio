@@ -29,14 +29,18 @@ macro_rules! asset_transfer_operation {
 
                 const NAME: &'static str = stringify!([< Transfer $asset:camel >]);
 
-                fn perform(&self, recorder: &mut alisa::Recorder<Self::Project>) {
+                fn perform(&self, recorder: &mut alisa::Recorder<Self::Project>) -> bool {
                     use alisa::TreeObj;
-                    if alisa::transfer_tree_object(recorder, self.ptr, &self.new_folder, &()).is_some() {
+                    if alisa::transfer_tree_object(recorder, self.ptr, &self.new_folder, &()) {
                         // Fix the name of the folder
                         let context = recorder.context();
-                        let Some(child_list) = $asset::child_list(self.new_folder, &context) else { return; };
+                        let Some(child_list) = $asset::child_list(self.new_folder, &context) else { return false; };
                         let sibling_names = $asset::get_sibling_names(child_list, recorder.obj_list(), Some(self.ptr));
                         crate::rectify_name_duplication(self.ptr, sibling_names, recorder);
+
+                        true
+                    } else {
+                        false
                     }
                 }
 

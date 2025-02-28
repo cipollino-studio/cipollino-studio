@@ -1,10 +1,11 @@
 
+use std::cell::RefCell;
 use std::path::PathBuf;
 
 use project::{alisa::rmpv, Ptr};
-use project::Client;
+use project::{deep_load_clip, Client};
 
-use crate::{AppSystems, DockingLayoutPref, EditorPanel};
+use crate::{AppSystems, AssetSelection, DockingLayoutPref, EditorPanel};
 
 mod socket;
 pub use socket::*;
@@ -14,9 +15,28 @@ pub use state::*;
 
 pub struct ProjectState {
     pub client: project::Client,
-    pub undo_redo: project::UndoRedoManager
+    pub undo_redo: project::UndoRedoManager,
+
+    assets_to_delete: RefCell<Vec<AssetSelection>>
 }
 
+impl ProjectState {
+
+    pub fn delete_assets(&self, selection: AssetSelection) {
+        self.assets_to_delete.borrow_mut().push(selection);
+    }
+
+    pub fn tick(&self) {
+        let to_delete = self.assets_to_delete.borrow_mut().pop();
+        if let Some(to_delete) = to_delete {
+            if !to_delete.try_delete(&self.client, &self.undo_redo) {
+                to_delete.deep_load_all(&self.client);
+                self.assets_to_delete.borrow_mut().push(to_delete);
+            }
+        }
+    }
+
+}
 
 pub struct State {
     pub project: ProjectState,
@@ -37,6 +57,7 @@ impl Editor {
                 project: ProjectState {
                     client,
                     undo_redo: project::UndoRedoManager::new(),
+                    assets_to_delete: RefCell::new(Vec::new())
                 },
                 editor: EditorState {
                     time: 0.0,
@@ -57,7 +78,7 @@ impl Editor {
 
     pub fn collab(socket: Socket, welcome_msg: &rmpv::Value, systems: &mut AppSystems) -> Option<Self> {
         Some(Self::new(Client::collab(welcome_msg)?, Some(socket), systems))
-    }
+    } 
 
     pub fn tick(&mut self, ui: &mut pierro::UI, systems: &mut AppSystems) {
 
@@ -90,10 +111,16 @@ impl Editor {
             systems.prefs.set::<DockingLayoutPref>(&self.docking);
         }
 
-        self.state.project.client.tick(&mut ());
         if let Some(clip) = self.state.project.client.get(self.state.editor.open_clip) {
-            self.state.editor.tick_playback(ui, clip);
+            if let Some(clip_inner) = self.state.project.client.get(clip.inner) {
+                self.state.editor.tick_playback(ui, clip_inner);
+            } else {
+                deep_load_clip(self.state.editor.open_clip, &self.state.project.client);
+            }
         }
+
+        self.state.project.tick();
+        self.state.project.client.tick(&mut ());
     }
 
 }

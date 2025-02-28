@@ -1,5 +1,5 @@
 
-use project::Clip;
+use project::ClipInner;
 
 use crate::EditorState;
 
@@ -33,7 +33,7 @@ impl TimelinePanel {
         });
     }
 
-    pub(super) fn framebar(&mut self, ui: &mut pierro::UI, editor: &mut EditorState, clip: &Clip, n_frames: u32) -> pierro::ScrollAreaResponse<pierro::Response> {
+    pub(super) fn framebar(&mut self, ui: &mut pierro::UI, editor: &mut EditorState, clip: &ClipInner, n_frames: u32) -> pierro::ScrollAreaResponse<pierro::Response> {
         let fill = ui.style::<pierro::theme::BgDark>();
         let framebar_scroll_response = ui.with_node(
             pierro::UINodeParams::new(pierro::Size::fr(1.0), pierro::Size::fit())

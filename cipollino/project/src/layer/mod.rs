@@ -21,13 +21,20 @@ impl LayerParent {
 
     fn child_list<'a>(&self, context: &'a alisa::ProjectContext<Project>) -> Option<&'a LayerChildList> {
         match self {
-            LayerParent::Clip(ptr) => context.obj_list().get(*ptr).map(|clip| &clip.layers),
+            LayerParent::Clip(ptr) => context.obj_list()
+                .get(*ptr)
+                .and_then(|clip| context.obj_list().get(clip.inner))
+                .map(|inner| &inner.layers),
         }
     }
 
     fn child_list_mut<'a>(&self, context: &'a mut alisa::ProjectContextMut<Project>) -> Option<&'a mut LayerChildList> {
         match self {
-            LayerParent::Clip(ptr) => context.obj_list_mut().get_mut(*ptr).map(|clip| &mut clip.layers),
+            LayerParent::Clip(ptr) => context.obj_list()
+                .get(*ptr)
+                .map(|clip| clip.inner)
+                .and_then(|inner| context.obj_list_mut().get_mut(inner))
+                .map(|inner| &mut inner.layers),
         }
     }
 

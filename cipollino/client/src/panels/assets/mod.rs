@@ -2,7 +2,6 @@
 use std::{cell::RefCell, collections::HashSet};
 
 use project::{alisa::AnyPtr, Action, Asset, Client, Clip, ClipTreeData, CreateClip, CreateFolder, Folder, FolderTreeData, Ptr};
-use selection::AssetSelection;
 
 use crate::{EditorState, ProjectState, State};
 
@@ -11,8 +10,9 @@ use super::Panel;
 mod tree_ui;
 mod menu_bar;
 mod selection;
+pub use selection::*;
 
-trait AssetUI: Asset {
+pub trait AssetUI: Asset {
 
     const ICON: &'static str;
 

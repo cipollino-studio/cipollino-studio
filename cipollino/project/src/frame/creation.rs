@@ -24,30 +24,32 @@ impl alisa::Operation for CreateFrame {
 
     const NAME: &'static str = "CreateFrame";
 
-    fn perform(&self, recorder: &mut alisa::Recorder<'_, Project>) {
+    fn perform(&self, recorder: &mut alisa::Recorder<'_, Project>) -> bool {
 
         use alisa::Children;
         use alisa::TreeObj;
 
         // Make sure the parent we're creating the object in exists 
         let context = recorder.context();
-        let Some(frames) = Frame::child_list(self.layer, &context) else { return; };
+        let Some(frames) = Frame::child_list(self.layer, &context) else { return false; };
 
         // If there's already a frame here, do nothing
         if find_frame_at_time(&context, frames, self.data.time).is_some() {
-            return;
+            return true;
         }
 
         // Instance the frame and its children
         Frame::instance(&self.data, self.ptr, self.layer, recorder);
 
         // Add it to the layer's frame list
-        let Some(frames) = Frame::child_list_mut(self.layer, recorder.context_mut()) else { return; };
+        let Some(frames) = Frame::child_list_mut(self.layer, recorder.context_mut()) else { return false; };
         frames.insert((), self.ptr);
         recorder.push_delta(alisa::RemoveChildDelta {
             parent: self.layer,
             ptr: self.ptr,
         });
+
+        true
 
     }
 
@@ -73,26 +75,8 @@ impl alisa::Operation for DeleteFrame {
 
     const NAME: &'static str = "DeleteFrame";
 
-    fn perform(&self, recorder: &mut alisa::Recorder<'_, Project>) {
-        use alisa::TreeObj;
-        use alisa::Children;
-
-        if let Some(frame) = recorder.obj_list_mut().delete(self.ptr) {
-            frame.destroy(recorder);
-            let layer = frame.layer;
-            recorder.push_delta(alisa::RecreateObjectDelta {
-                ptr: self.ptr,
-                obj: frame,
-            });
-            if let Some(child_list) = Frame::child_list_mut(layer, recorder.context_mut()) {
-                child_list.remove(self.ptr);
-                recorder.push_delta(alisa::InsertChildDelta {
-                    parent: layer,
-                    ptr: self.ptr,
-                    idx: (),
-                });
-            }
-        }
+    fn perform(&self, recorder: &mut alisa::Recorder<'_, Project>) -> bool {
+        alisa::delete_tree_object(recorder, self.ptr)
     }
 
     fn inverse(&self, context: &alisa::ProjectContext<Project>) -> Option<Self::Inverse> {

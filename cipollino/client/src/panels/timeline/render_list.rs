@@ -1,5 +1,5 @@
 
-use project::{Client, Clip, Layer, LayerChildList, LayerParent, Ptr};
+use project::{Client, ClipInner, Layer, LayerChildList, LayerParent, Ptr};
 
 use super::layers::LayerDropLocation;
 
@@ -34,7 +34,7 @@ fn add_layers<'proj>(render_layers: &mut Vec<RenderLayer<'proj>>, layers: &'proj
 
 impl<'proj> RenderList<'proj> {
 
-    pub fn make(client: &'proj Client, clip: &'proj Clip) -> Self {
+    pub fn make(client: &'proj Client, clip: &'proj ClipInner) -> Self {
         let mut layers = Vec::new();
 
         add_layers(&mut layers, &clip.layers, &client);

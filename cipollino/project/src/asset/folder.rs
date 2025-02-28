@@ -3,6 +3,8 @@ use alisa::TreeObj;
 
 use crate::{asset_creation_operations, asset_rename_operation, rectify_name_duplication, Action, Asset, Client, Clip, Objects, Project};
 
+use super::deep_load_clip;
+
 #[derive(alisa::Serializable, Clone)]
 #[project(Project)]
 pub struct Folder {
@@ -111,6 +113,23 @@ impl alisa::TreeObj for Folder {
         }
     }
 
+    fn can_delete(ptr: alisa::Ptr<Self>, project: &alisa::ProjectContext<Project>, source: alisa::OperationSource) -> bool {
+        let Some(folder) = project.obj_list().get(ptr) else {
+            return false;
+        };
+        for folder_ptr in folder.folders.iter() {
+            if !Folder::can_delete(folder_ptr, project, source) {
+                return false;
+            }
+        }
+        for clip_ptr in folder.clips.iter() {
+            if !Clip::can_delete(clip_ptr, project, source) {
+                return false;
+            }
+        }
+        true
+    }
+
 }
 
 impl Asset for Folder {
@@ -179,19 +198,23 @@ impl alisa::Operation for TransferFolder {
     type Inverse = Self;
     const NAME: &'static str = "TransferFolder";
 
-    fn perform(&self, recorder: &mut alisa::Recorder<'_, Project>) {
+    fn perform(&self, recorder: &mut alisa::Recorder<'_, Project>) -> bool {
 
         // Make sure we're not moving the folder somewhere inside itself
         if is_inside_folder(recorder.obj_list(), self.ptr, self.new_parent) {
-            return;
+            return false;
         }
 
-        if alisa::transfer_tree_object(recorder, self.ptr, &self.new_parent, &()).is_some() {
+        if alisa::transfer_tree_object(recorder, self.ptr, &self.new_parent, &()) {
             // Fix the name of the folder
             let context = recorder.context();
-            let Some(child_list) = Folder::child_list(self.new_parent, &context) else { return; };
+            let Some(child_list) = Folder::child_list(self.new_parent, &context) else { return false; };
             let sibling_names = Folder::get_sibling_names(child_list, recorder.obj_list(), Some(self.ptr));
             rectify_name_duplication(self.ptr, sibling_names, recorder);
+
+            true
+        } else {
+            false
         }
 
     }
@@ -202,5 +225,18 @@ impl alisa::Operation for TransferFolder {
             ptr: self.ptr,
             new_parent: folder.parent,
         })
+    }
+}
+
+pub fn deep_load_folder(folder_ptr: alisa::Ptr<Folder>, client: &Client) {
+    let Some(folder) = client.get(folder_ptr) else {
+        return;
+    };
+    
+    for subfolder in folder.folders.iter() {
+        deep_load_folder(subfolder, client);
+    }
+    for clip in folder.clips.iter() {
+        deep_load_clip(clip, client);
     }
 }

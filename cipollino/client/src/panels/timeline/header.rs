@@ -1,5 +1,5 @@
 
-use project::{Action, Clip, CreateFrame, CreateLayer, FrameTreeData, LayerParent, LayerTreeData, Ptr};
+use project::{Action, Clip, ClipInner, CreateFrame, CreateLayer, FrameTreeData, LayerParent, LayerTreeData, Ptr};
 
 use crate::{EditorState, ProjectState};
 
@@ -7,7 +7,7 @@ use super::TimelinePanel;
 
 impl TimelinePanel {
 
-    pub(super) fn header(&mut self, ui: &mut pierro::UI, project: &ProjectState, editor: &mut EditorState, clip_ptr: Ptr<Clip>, clip: &Clip) {
+    pub(super) fn header(&mut self, ui: &mut pierro::UI, project: &ProjectState, editor: &mut EditorState, clip_ptr: Ptr<Clip>, clip: &ClipInner) {
         if pierro::icon_button(ui, pierro::icons::PLUS).mouse_clicked() {
             if let Some(ptr) = project.client.next_ptr() {
                 let mut action = Action::new();

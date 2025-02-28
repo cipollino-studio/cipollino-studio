@@ -1,5 +1,8 @@
 
-use crate::{asset_operations, Action, Asset, Client, Folder, LayerChildList, LayerChildListTreeData, LayerParent, Objects, Project};
+use crate::{asset_operations, Action, Asset, Client, Folder, LayerChildListTreeData, LayerParent, Objects, Project};
+
+mod inner;
+pub use inner::*;
 
 #[derive(alisa::Serializable, Clone)]
 #[project(Project)]
@@ -7,11 +10,8 @@ pub struct Clip {
     pub folder: alisa::Ptr<Folder>,
 
     pub name: String,
-    /// The length of the clip in frames
-    pub length: u32,
-    pub framerate: f32,
 
-    pub layers: LayerChildList
+    pub inner: alisa::Ptr<ClipInner>
 }
 
 impl Default for Clip {
@@ -20,9 +20,7 @@ impl Default for Clip {
         Self {
             folder: alisa::Ptr::null(),
             name: "Clip".to_owned(),
-            length: 100,
-            framerate: 24.0,
-            layers: LayerChildList::default()
+            inner: alisa::Ptr::null()
         }
     }
 
@@ -49,6 +47,8 @@ pub struct ClipTreeData {
     pub name: String,
     pub length: u32,
     pub framerate: f32,
+    
+    pub inner_ptr: alisa::Ptr<ClipInner>,
     pub layers: LayerChildListTreeData
 }
 
@@ -59,6 +59,7 @@ impl Default for ClipTreeData {
             name: "Clip".to_owned(),
             length: 100,
             framerate: 24.0,
+            inner_ptr: alisa::Ptr::null(),
             layers: Default::default()
         }
     }
@@ -94,28 +95,59 @@ impl alisa::TreeObj for Clip {
 
     fn instance(data: &Self::TreeData, ptr: alisa::Ptr<Self>, parent: alisa::Ptr<Folder>, recorder: &mut alisa::Recorder<Project>) {
         use alisa::Object;
+
+        let clip_inner = ClipInner {
+            layers: data.layers.instance(LayerParent::Clip(ptr), recorder),
+            length: data.length,
+            framerate: data.framerate,
+        };
+        ClipInner::add(recorder, data.inner_ptr, clip_inner);
+
         let clip = Self {
             folder: parent,
             name: data.name.clone(),
-            length: data.length,
-            framerate: data.framerate,
-            layers: data.layers.instance(LayerParent::Clip(ptr), recorder)
+            inner: data.inner_ptr 
         };
         Self::add(recorder, ptr, clip);
     }
 
     fn destroy(&self, recorder: &mut alisa::Recorder<Project>) {
-        self.layers.destroy(recorder);
+        if let Some(clip_inner) = recorder.obj_list_mut().delete(self.inner) {
+            clip_inner.layers.clone().destroy(recorder);
+            recorder.push_delta(alisa::RecreateObjectDelta {
+                ptr: self.inner,
+                obj: clip_inner,
+            });
+        }
     }
 
     fn collect_data(&self, objects: &Objects) -> Self::TreeData {
+        let clip_inner = objects.clip_inners.get(self.inner);
+        let length = clip_inner.map(|inner| inner.length).unwrap_or(100);
+        let framerate = clip_inner.map(|inner| inner.framerate).unwrap_or(24.0);
+        let layers = clip_inner
+            .map(|clip_inner| clip_inner.layers.collect_data(objects))
+            .unwrap_or_default();
+
         ClipTreeData {
             name: self.name.clone(),
-            length: self.length,
-            framerate: self.framerate,
-            layers: self.layers.collect_data(objects)
+            length,
+            framerate,
+            inner_ptr: self.inner,
+            layers 
         }
     }
+
+    fn can_delete(ptr: alisa::Ptr<Self>, project: &alisa::ProjectContext<Project>, source: alisa::OperationSource) -> bool {
+        // If the server tells us to delete the clip, we should probably do that
+        if source == alisa::OperationSource::Server {
+            return true;
+        }
+        let Some(clip) = project.obj_list().get(ptr) else { return false; };
+        let inner_loaded = project.obj_list().get(clip.inner).is_some();
+        inner_loaded
+    }
+
 }
 
 impl Asset for Clip {
@@ -145,21 +177,19 @@ impl Asset for Clip {
 
 asset_operations!(Clip);
 
-impl Clip {
-
-    /// The length of a single frame, in seconds
-    pub fn frame_len(&self) -> f32 {
-        1.0 / self.framerate
+pub fn deep_load_clip(clip_ptr: alisa::Ptr<Clip>, client: &Client) {
+    let Some(clip) = client.get(clip_ptr) else {
+        return;
+    };
+    
+    if client.has_load_failed(clip.inner) {
+        if let Some(inner) = client.next_ptr() {
+            client.perform(&mut Action::new(), CreateClipInner {
+                clip: clip_ptr, 
+                inner,
+            });
+        }
+    } else {
+        client.request_load(clip.inner);
     }
-
-    /// The index of the frame at time t seconds
-    pub fn frame_idx(&self, t: f32) -> i32 {
-        ((t / self.frame_len()).floor() as i32).max(0)
-    }
-
-    /// The duration of the clip in seconds
-    pub fn duration(&self) -> f32 { 
-        (self.length as f32) * self.frame_len()
-    }
-
 }

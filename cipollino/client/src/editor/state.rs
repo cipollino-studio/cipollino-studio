@@ -1,5 +1,5 @@
 
-use project::{Client, Clip, Layer, LayerChildList, LayerChildPtr, Ptr};
+use project::{Client, Clip, ClipInner, Layer, Ptr};
 
 pub struct EditorState {
     pub time: f32,
@@ -16,7 +16,7 @@ impl EditorState {
         self.playing = false;
     }
 
-    pub(super) fn tick_playback(&mut self, ui: &mut pierro::UI, clip: &Clip) {
+    pub(super) fn tick_playback(&mut self, ui: &mut pierro::UI, clip: &ClipInner) {
         if self.playing {
             self.time += ui.input().delta_time;
             ui.request_redraw();
@@ -28,23 +28,12 @@ impl EditorState {
         self.time = self.time.max(0.0);
     }
 
-    fn find_first_layer(_client: &Client, layers: &LayerChildList) -> Ptr<Layer> {
-        for child in layers.iter() {
-            match child {
-                LayerChildPtr::Layer(layer) => {
-                    return layer.ptr();
-                },
-            }
-        } 
-
-        Ptr::null()
-    }
-
     pub fn open_clip(&mut self, client: &Client, clip_ptr: Ptr<Clip>) {
-        let Some(clip) = client.get(clip_ptr) else { return; };
+        if client.get(clip_ptr).is_none() {
+            return;
+        } 
         self.open_clip = clip_ptr;
         self.jump_to(0.0);
-        self.active_layer = Self::find_first_layer(client, &clip.layers);
     }
 
 }

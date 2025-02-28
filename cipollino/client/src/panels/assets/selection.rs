@@ -1,7 +1,7 @@
 
 use std::collections::HashSet;
 
-use project::{Action, Client, Clip, Folder, Ptr, TransferClip, TransferFolder};
+use project::{alisa::{self, Action, TreeObj}, deep_load_clip, deep_load_folder, Client, Clip, DeleteClip, DeleteFolder, Folder, Ptr, TransferClip, TransferFolder, UndoRedoManager};
 
 use crate::ProjectState;
 
@@ -14,6 +14,45 @@ pub struct AssetSelection {
 }
 
 impl AssetSelection {
+
+    pub fn deep_load_all(&self, client: &Client) {
+        for folder in self.folders.iter() {
+            deep_load_folder(*folder, client);
+        }
+        for clip in self.clips.iter() {
+            deep_load_clip(*clip, client);
+        }
+    }
+
+    pub fn try_delete(&self, client: &Client, undo_redo: &UndoRedoManager) -> bool {
+        // Check to make sure we can delete the selection
+        for folder in self.folders.iter() {
+            if !Folder::can_delete(*folder, &client.context(), alisa::OperationSource::Local) {
+                return false;
+            }
+        }
+        for clip in self.clips.iter() {
+            if !Clip::can_delete(*clip, &client.context(), alisa::OperationSource::Local) {
+                return false;
+            }
+        }
+
+        let mut action = Action::new();
+        for folder in self.folders.iter() {
+            client.perform(&mut action, DeleteFolder {
+                ptr: *folder,
+            });
+        }
+        for clip in self.clips.iter() {
+            client.perform(&mut action, DeleteClip {
+                ptr: *clip,
+            });
+        }
+
+        undo_redo.add(action);
+
+        true
+    }
 
     pub fn transfer(self, new_parent: Ptr<Folder>, state: &ProjectState) {
         let mut action = Action::new(); 

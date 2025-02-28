@@ -66,12 +66,18 @@ impl Panel for TimelinePanel {
             });
             return;
         };
+        let Some(clip_inner) = project.client.get(clip.inner) else {
+            pierro::centered(ui, |ui| {
+                pierro::label(ui, "Clip loading...");
+            });
+            return;
+        };
 
-        let render_list = RenderList::make(&project.client, clip);
+        let render_list = RenderList::make(&project.client, clip_inner);
 
         pierro::margin_with_size(ui, pierro::Margin::same(3.0), pierro::Size::fr(1.0), pierro::Size::fit(), |ui| {
             pierro::horizontal_centered(ui, |ui| {
-                self.header(ui, project, editor, editor.open_clip, clip);
+                self.header(ui, project, editor, editor.open_clip, clip_inner);
             });
         });
         pierro::h_line(ui);
@@ -86,11 +92,11 @@ impl Panel for TimelinePanel {
 
             let (frame_container, _) = pierro::vertical_fill(ui, |_| {});
             let frame_container_width = ui.memory().get::<pierro::LayoutInfo>(frame_container.id).screen_rect.width();
-            let n_frames = clip.length + (frame_container_width / Self::FRAME_WIDTH).ceil() as u32;
+            let n_frames = clip_inner.length + (frame_container_width / Self::FRAME_WIDTH).ceil() as u32;
 
             let (framebar_scroll_response, frame_area_scroll_response) = ui.with_parent(frame_container.node_ref, |ui| {
-                let framebar_response = self.framebar(ui, editor, clip, n_frames);
-                let frame_area_response = self.frame_area(ui, editor, project, &render_list, clip, n_frames);
+                let framebar_response = self.framebar(ui, editor, clip_inner, n_frames);
+                let frame_area_response = self.frame_area(ui, editor, project, &render_list, clip_inner, n_frames);
                 (framebar_response, frame_area_response)
             });
 

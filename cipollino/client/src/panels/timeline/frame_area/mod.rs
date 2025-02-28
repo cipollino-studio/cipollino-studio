@@ -1,6 +1,6 @@
 
 use paint::PaintCommands;
-use project::Clip;
+use project::ClipInner;
 
 use crate::{EditorState, ProjectState};
 
@@ -68,7 +68,7 @@ impl FrameArea {
         }
     }
     
-    fn frame_area_contents(&mut self, ui: &mut pierro::UI, editor: &mut EditorState, project: &ProjectState, render_list: &RenderList, clip: &Clip, n_frames: u32) {
+    fn frame_area_contents(&mut self, ui: &mut pierro::UI, editor: &mut EditorState, project: &ProjectState, render_list: &RenderList, clip: &ClipInner, n_frames: u32) {
         let bg_base_color = ui.style::<pierro::theme::BgDark>();
         let bg = bg_base_color.darken(0.2);
         let column_highlight = bg_base_color.darken(0.1);
@@ -158,7 +158,7 @@ impl TimelinePanel {
     
     pub const FRAME_SIZE: pierro::Vec2 = pierro::vec2(Self::FRAME_WIDTH, Self::LAYER_HEIGHT);
 
-    pub(super) fn frame_area(&mut self, ui: &mut pierro::UI, editor: &mut EditorState, project: &ProjectState, render_list: &RenderList, clip: &Clip, n_frames: u32) -> pierro::ScrollAreaResponse<()> {
+    pub(super) fn frame_area(&mut self, ui: &mut pierro::UI, editor: &mut EditorState, project: &ProjectState, render_list: &RenderList, clip: &ClipInner, n_frames: u32) -> pierro::ScrollAreaResponse<()> {
         let mut scroll_state = self.scroll_state;
         let response = pierro::ScrollArea::default()
             .with_state(&mut scroll_state)

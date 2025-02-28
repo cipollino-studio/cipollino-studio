@@ -6,6 +6,7 @@ pub use editor::*;
 
 mod panels;
 pub use panels::*;
+
 use splash::SplashScreen;
 
 mod systems;

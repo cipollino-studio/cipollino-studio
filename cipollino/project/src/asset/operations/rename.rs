@@ -29,24 +29,32 @@ macro_rules! asset_rename_operation {
                 
                 const NAME: &'static str = stringify!([< Rename $asset:camel >]);
 
-                fn perform(&self, recorder: &mut alisa::Recorder<Self::Project>) {
+                fn perform(&self, recorder: &mut alisa::Recorder<Self::Project>) -> bool {
                     use alisa::TreeObj; 
-                    let Some(obj) = recorder.obj_list().get(self.ptr) else { return; };
+                    let Some(obj) = recorder.obj_list().get(self.ptr) else {
+                        return false;
+                    };
                     let context = recorder.context();
-                    let Some(child_list) = $asset::child_list(obj.parent(), &context) else { return; };
+                    let Some(child_list) = $asset::child_list(obj.parent(), &context) else {
+                        return false;
+                    };
                     let sibling_names = $asset::get_sibling_names(child_list, recorder.obj_list(), Some(self.ptr));
 
-                    if let Some(obj) = recorder.obj_list_mut().get_mut(self.ptr) {
-                        let old_name = obj.name().clone();
-                        *obj.name_mut() = self.name.clone();
+                    let Some(obj) = recorder.obj_list_mut().get_mut(self.ptr) else {
+                        return false;
+                    };
 
-                        crate::rectify_name_duplication(self.ptr, sibling_names, recorder);
+                    let old_name = obj.name().clone();
+                    *obj.name_mut() = self.name.clone();
 
-                        recorder.push_delta(crate::SetAssetNameDelta {
-                            ptr: self.ptr,
-                            name: old_name
-                        });
-                    }
+                    crate::rectify_name_duplication(self.ptr, sibling_names, recorder);
+
+                    recorder.push_delta(crate::SetAssetNameDelta {
+                        ptr: self.ptr,
+                        name: old_name
+                    });
+
+                    true
                 }
 
                 fn inverse(&self, context: &alisa::ProjectContext<Self::Project>) -> Option<Self::Inverse> {

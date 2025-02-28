@@ -38,16 +38,15 @@ impl AssetsPanel {
         *self.started_renaming.borrow_mut() = true;
     }
 
-    fn asset_label_context_menu<A: Asset>(&self, ui: &mut pierro::UI, state: &ProjectState, ptr: Ptr<A>, name: &String, response: &pierro::Response) {
+    fn asset_label_context_menu<A: AssetUI>(&self, ui: &mut pierro::UI, state: &ProjectState, ptr: Ptr<A>, name: &String, response: &pierro::Response) {
         pierro::context_menu(ui, response, |ui| {
             if pierro::menu_button(ui, "Rename").mouse_clicked() {
                 self.start_rename(name, ptr);
                 pierro::close_context_menu(ui, response.id);
             }
             if pierro::menu_button(ui, "Delete").mouse_clicked() {
-                let mut action = Action::new();
-                <A as Asset>::delete(&state.client, &mut action, ptr);
-                state.undo_redo.add(action);
+                let selection = AssetSelection::single(ptr);
+                state.delete_assets(selection);
                 pierro::close_context_menu(ui, response.id);
             }
         });
