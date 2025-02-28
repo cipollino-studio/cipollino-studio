@@ -166,6 +166,13 @@ impl<P: Project> Client<P> {
         &self.project
     }
 
+    pub fn context(&self) -> ProjectContext<P> {
+        ProjectContext {
+            project: &self.project,
+            objects: &self.objects
+        }
+    }
+
     pub fn get<O: Object<Project = P>>(&self, ptr: Ptr<O>) -> Option<&O> {
         O::list(&self.objects).get(ptr)
     }
@@ -192,13 +199,6 @@ impl<P: Project> Client<P> {
         let tried_loading = O::list(&self.objects).tried_loading.borrow().contains(&ptr);
         let to_load = O::list(&self.objects).to_load.borrow().contains(&ptr);
         tried_loading && !to_load
-    }
-
-    pub(crate) fn context(&self) -> ProjectContext<P> {
-        ProjectContext {
-            project: &self.project,
-            objects: &self.objects,
-        }
     }
 
 }
