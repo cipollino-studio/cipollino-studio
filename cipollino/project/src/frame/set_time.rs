@@ -1,5 +1,5 @@
 
-use crate::{frame::find_frame_at_time, Project};
+use crate::{frame::find_frame_at_time, Layer, Project};
 
 use super::{Frame, FrameTreeData};
 
@@ -28,7 +28,7 @@ impl alisa::Operation for SetFrameTime {
         let new_time = self.new_time.max(0);
 
         let Some(frame) = recorder.obj_list().get(self.frame) else { return false; };
-        let layer = frame.layer;
+        let layer: alisa::Ptr<Layer> = frame.layer;
 
         // Recreated a previously deleted frame if necessary 
         if let Some(data) = &self.frame_recreation_data {

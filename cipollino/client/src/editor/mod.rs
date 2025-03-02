@@ -15,7 +15,6 @@ pub use state::*;
 
 pub struct ProjectState {
     pub client: project::Client,
-    pub undo_redo: project::UndoRedoManager,
 
     assets_to_delete: RefCell<Vec<AssetSelection>>
 }
@@ -29,7 +28,7 @@ impl ProjectState {
     pub fn tick(&self) {
         let to_delete = self.assets_to_delete.borrow_mut().pop();
         if let Some(to_delete) = to_delete {
-            if !to_delete.try_delete(&self.client, &self.undo_redo) {
+            if !to_delete.try_delete(&self.client) {
                 to_delete.deep_load_all(&self.client);
                 self.assets_to_delete.borrow_mut().push(to_delete);
             }
@@ -56,7 +55,6 @@ impl Editor {
             state: State {
                 project: ProjectState {
                     client,
-                    undo_redo: project::UndoRedoManager::new(),
                     assets_to_delete: RefCell::new(Vec::new())
                 },
                 editor: EditorState {
@@ -90,10 +88,10 @@ impl Editor {
             });
             pierro::menu_bar_item(ui, "Edit", |ui| {
                 if pierro::menu_button(ui, "Undo").mouse_clicked() {
-                    self.state.project.undo_redo.undo(&self.state.project.client);
+                    self.state.project.client.undo();
                 }
                 if pierro::menu_button(ui, "Redo").mouse_clicked() {
-                    self.state.project.undo_redo.redo(&self.state.project.client);
+                    self.state.project.client.redo();
                 }
             });
         });

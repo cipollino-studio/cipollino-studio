@@ -22,8 +22,8 @@ impl AssetsPanel {
                 }
                 if text_edit.done_editing {
                     let mut action = Action::new();
-                    A::rename(&state.client, &mut action, ptr, new_name.clone());
-                    state.undo_redo.add(action);
+                    A::rename(&mut action, ptr, new_name.clone());
+                    state.client.queue_action(action);
                     *renaming_state = None;
                 }
             }

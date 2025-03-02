@@ -36,9 +36,9 @@ impl LayerSelection {
         self.render_contents_of_layer::<Layer>(ui, client);
     }
 
-    pub fn transfer(&self, client: &Client, action: &mut Action, new_parent: LayerParent, new_idx: usize) {
+    pub fn transfer(&self, action: &mut Action, new_parent: LayerParent, new_idx: usize) {
         for layer in &self.layers {
-            client.perform(action, TransferLayer {
+            action.push(TransferLayer {
                 ptr: *layer,
                 new_parent,
                 new_idx,

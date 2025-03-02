@@ -10,21 +10,18 @@ impl TimelinePanel {
     pub(super) fn header(&mut self, ui: &mut pierro::UI, project: &ProjectState, editor: &mut EditorState, clip_ptr: Ptr<Clip>, clip: &ClipInner) {
         if pierro::icon_button(ui, pierro::icons::PLUS).mouse_clicked() {
             if let Some(ptr) = project.client.next_ptr() {
-                let mut action = Action::new();
-                project.client.perform(&mut action, CreateFrame {
+                project.client.queue_action(Action::single(CreateFrame {
                     ptr,
                     layer: editor.active_layer,
                     data: FrameTreeData {
                         time: clip.frame_idx(editor.time),
                     },
-                });
-                project.undo_redo.add(action);
+                }));
             }
         }
         if pierro::icon_button(ui, pierro::icons::FILE_PLUS).mouse_clicked() {
             if let Some(ptr) = project.client.next_ptr() {
-                let mut action = Action::new();
-                project.client.perform(&mut action, CreateLayer {
+                project.client.queue_action(Action::single(CreateLayer {
                     ptr,
                     parent: LayerParent::Clip(clip_ptr),
                     idx: clip.layers.n_children(),
@@ -32,8 +29,7 @@ impl TimelinePanel {
                         name: "Layer".to_owned(),
                         ..Default::default()
                     },
-                });
-                project.undo_redo.add(action);
+                }));
                 editor.active_layer = ptr;
             }
         }

@@ -1,7 +1,7 @@
 
 use std::collections::HashSet;
 
-use project::{alisa::{self, Action, TreeObj}, deep_load_clip, deep_load_folder, Client, Clip, DeleteClip, DeleteFolder, Folder, Ptr, TransferClip, TransferFolder, UndoRedoManager};
+use project::{alisa::{self, Action, TreeObj}, deep_load_clip, deep_load_folder, Client, Clip, DeleteClip, DeleteFolder, Folder, Ptr, TransferClip, TransferFolder};
 
 use crate::ProjectState;
 
@@ -24,7 +24,7 @@ impl AssetSelection {
         }
     }
 
-    pub fn try_delete(&self, client: &Client, undo_redo: &UndoRedoManager) -> bool {
+    pub fn try_delete(&self, client: &Client) -> bool {
         // Check to make sure we can delete the selection
         for folder in self.folders.iter() {
             if !Folder::can_delete(*folder, &client.context(), alisa::OperationSource::Local) {
@@ -39,17 +39,17 @@ impl AssetSelection {
 
         let mut action = Action::new();
         for folder in self.folders.iter() {
-            client.perform(&mut action, DeleteFolder {
+            action.push(DeleteFolder {
                 ptr: *folder,
             });
         }
         for clip in self.clips.iter() {
-            client.perform(&mut action, DeleteClip {
+            action.push(DeleteClip {
                 ptr: *clip,
             });
         }
 
-        undo_redo.add(action);
+        client.queue_action(action);
 
         true
     }
@@ -57,18 +57,18 @@ impl AssetSelection {
     pub fn transfer(self, new_parent: Ptr<Folder>, state: &ProjectState) {
         let mut action = Action::new(); 
         for moved_folder in self.folders {
-            state.client.perform(&mut action, TransferFolder {
+            action.push(TransferFolder {
                 ptr: moved_folder,
                 new_parent: new_parent 
             });
         }
         for moved_clip in self.clips {
-            state.client.perform(&mut action, TransferClip {
+            action.push(TransferClip {
                 ptr: moved_clip,
                 new_folder: new_parent,
             });
         }
-        state.undo_redo.add(action);
+        state.client.queue_action(action);
     }
 
     pub fn select<A: AssetUI>(&mut self, asset: Ptr<A>) {

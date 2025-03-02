@@ -142,15 +142,15 @@ impl Asset for Folder {
         &mut self.name
     }
     
-    fn rename(client: &Client, action: &mut Action, ptr: alisa::Ptr<Self>, name: String) {
-        client.perform(action, RenameFolder {
+    fn rename(action: &mut Action, ptr: alisa::Ptr<Self>, name: String) {
+        action.push(RenameFolder {
             ptr,
             name,
         });
     }
 
-    fn delete(client: &Client, action: &mut Action, ptr: alisa::Ptr<Self>) {
-        client.perform(action, DeleteFolder {
+    fn delete(action: &mut Action, ptr: alisa::Ptr<Self>) {
+        action.push(DeleteFolder {
             ptr
         }); 
     }

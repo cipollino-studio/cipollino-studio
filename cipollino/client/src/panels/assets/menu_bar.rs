@@ -11,8 +11,8 @@ impl AssetsPanel {
         if pierro::icon_button(ui, A::ICON).mouse_clicked() {
             if let Some(ptr) = state.client.next_ptr() {
                 let mut action = Action::new();
-                A::create(ptr, Ptr::null(), &state.client, &mut action); 
-                state.undo_redo.add(action);
+                A::create(ptr, Ptr::null(), &mut action); 
+                state.client.queue_action(action);
             }
         }
     }

@@ -1,7 +1,7 @@
 
 use std::collections::HashSet;
 
-use crate::{Action, Client, Project};
+use crate::{Action, Project};
 
 mod operations;
 pub(crate) use operations::*;
@@ -17,8 +17,8 @@ pub trait Asset: alisa::TreeObj<ParentPtr = alisa::Ptr<Folder>, Project = Projec
     fn name(&self) -> &String;    
     fn name_mut(&mut self) -> &mut String;
 
-    fn rename(client: &Client, action: &mut Action, ptr: alisa::Ptr<Self>, name: String);
-    fn delete(client: &Client, action: &mut Action, ptr: alisa::Ptr<Self>);
+    fn rename(action: &mut Action, ptr: alisa::Ptr<Self>, name: String);
+    fn delete(action: &mut Action, ptr: alisa::Ptr<Self>);
 
     fn get_sibling_names(child_list: &Self::ChildList, objects: &alisa::ObjList<Self>, exclude: Option<alisa::Ptr<Self>>) -> HashSet<String> {
         child_list.iter()

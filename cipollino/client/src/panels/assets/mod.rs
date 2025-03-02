@@ -1,7 +1,7 @@
 
 use std::{cell::RefCell, collections::HashSet};
 
-use project::{alisa::AnyPtr, Action, Asset, Client, Clip, ClipTreeData, CreateClip, CreateFolder, Folder, FolderTreeData, Ptr};
+use project::{alisa::AnyPtr, Action, Asset, Clip, ClipTreeData, CreateClip, CreateFolder, Folder, FolderTreeData, Ptr};
 
 use crate::{EditorState, ProjectState, State};
 
@@ -16,7 +16,7 @@ pub trait AssetUI: Asset {
 
     const ICON: &'static str;
 
-    fn create(ptr: Ptr<Self>, parent: Ptr<Folder>, client: &Client, action: &mut Action);
+    fn create(ptr: Ptr<Self>, parent: Ptr<Folder>, action: &mut Action);
     fn selection_list(selection: &AssetSelection) -> &HashSet<Ptr<Self>>;
     fn selection_list_mut(selection: &mut AssetSelection) -> &mut HashSet<Ptr<Self>>;
 
@@ -30,8 +30,8 @@ pub trait AssetUI: Asset {
 impl AssetUI for Folder {
     const ICON: &'static str = pierro::icons::FOLDER;
 
-    fn create(ptr: Ptr<Self>, parent: Ptr<Folder>, client: &Client, action: &mut Action) {
-        client.perform(action, CreateFolder {
+    fn create(ptr: Ptr<Self>, parent: Ptr<Folder>, action: &mut Action) {
+        action.push(CreateFolder {
             ptr,
             parent,
             data: FolderTreeData::default(),
@@ -50,8 +50,8 @@ impl AssetUI for Folder {
 impl AssetUI for Clip {
     const ICON: &'static str = pierro::icons::FILM_STRIP;
 
-    fn create(ptr: Ptr<Self>, parent: Ptr<Folder>, client: &Client, action: &mut Action) {
-        client.perform(action, CreateClip {
+    fn create(ptr: Ptr<Self>, parent: Ptr<Folder>, action: &mut Action) {
+        action.push(CreateClip {
             ptr,
             parent,
             data: ClipTreeData::default(),

@@ -42,17 +42,25 @@ impl FrameSelection {
 
         let frame_offset = FrameArea::drag_to_frame_offset(drag);
 
+        let mut selected_frames = Vec::new();
         for frame_ptr in &self.frames {
             if let Some(frame) = project.client.get(*frame_ptr) {
-                project.client.perform(&mut action, SetFrameTime {
-                    frame: *frame_ptr,
-                    new_time: (frame.time + frame_offset).max(0),
-                    ..Default::default()
-                });
+                selected_frames.push((frame.time, *frame_ptr));
             }
         }
-
-        project.undo_redo.add(action);
+        selected_frames.sort_by_key(|(time, _)| *time);
+        if frame_offset > 0 {
+            selected_frames.reverse();
+        }
+        for (time, frame) in selected_frames {
+            action.push(SetFrameTime {
+                frame,
+                new_time: time + frame_offset,
+                ..Default::default()
+            });
+        } 
+         
+        project.client.queue_action(action);
     }
 
 }

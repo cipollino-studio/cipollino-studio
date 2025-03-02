@@ -160,15 +160,15 @@ impl Asset for Clip {
         &mut self.name
     }
 
-    fn rename(client: &Client, action: &mut Action, ptr: alisa::Ptr<Self>, name: String) {
-        client.perform(action, RenameClip {
+    fn rename(action: &mut Action, ptr: alisa::Ptr<Self>, name: String) {
+        action.push(RenameClip {
             ptr,
             name,
         });
     }
 
-    fn delete(client: &Client, action: &mut Action, ptr: alisa::Ptr<Self>) {
-        client.perform(action, DeleteClip {
+    fn delete(action: &mut Action, ptr: alisa::Ptr<Self>) {
+        action.push(DeleteClip {
             ptr,
         });
     }
@@ -184,7 +184,7 @@ pub fn deep_load_clip(clip_ptr: alisa::Ptr<Clip>, client: &Client) {
     
     if client.has_load_failed(clip.inner) {
         if let Some(inner) = client.next_ptr() {
-            client.perform(&mut Action::new(), CreateClipInner {
+            client.queue_operation(CreateClipInner {
                 clip: clip_ptr, 
                 inner,
             });
