@@ -18,7 +18,6 @@ fn main() {
             ClientTab {
                 client_id,
                 client,
-                actions: alisa::UndoRedoManager::new(),
                 outgoing_msgs: Vec::new()
             }
         ])

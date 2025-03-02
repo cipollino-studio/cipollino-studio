@@ -1,7 +1,7 @@
 
 use alisa::Children;
 
-use crate::project::{folder::{CreateFolder, Folder, FolderTreeData, SetFolderName, TransferFolder}, DecrN, IncrN, Project, SetN};
+use crate::project::{folder::Folder, Project};
 
 pub struct Context {
     pub server: alisa::Server<Project>
@@ -10,7 +10,6 @@ pub struct Context {
 pub struct ClientTab {
     pub client_id: alisa::ClientId,
     pub client: alisa::Client<Project>,
-    pub actions: alisa::UndoRedoManager<Project>,
     pub outgoing_msgs: Vec<rmpv::Value> 
 }
 
@@ -18,30 +17,28 @@ impl ClientTab {
 
     fn render_folder(&self, ui: &mut pierro::UI, folder_ptr: alisa::Ptr<Folder>) {
         let Some(folder) = self.client.get(folder_ptr) else { return; };
-        let (response, _) = pierro::dnd_source(ui, folder_ptr, |ui| {
+        let (_, _) = pierro::dnd_source(ui, folder_ptr, |ui| {
             pierro::collapsing_header(ui, &folder.name, |ui| {
                 if pierro::button(ui, "Rename").mouse_clicked() {
-                    let mut action = alisa::Action::new();
-                    self.client.perform(&mut action, SetFolderName {
-                        ptr: folder_ptr,
-                        name_value: folder.name.clone() + "!",
-                    });
-                    self.actions.add(action);
+                    // self.client.perform(&mut action, SetFolderName {
+                    //     ptr: folder_ptr,
+                    //     name_value: folder.name.clone() + "!",
+                    // });
+                    // self.actions.add(action);
                 }
                 for subfolder in folder.folders.iter() {
                     self.render_folder(ui, subfolder);
                 }
             });
         });
-        if let Some(moved_folder) = pierro::dnd_receive_payload::<alisa::Ptr<Folder>>(ui, &response) {
-            let mut action = alisa::Action::new();
-            self.client.perform(&mut action, TransferFolder {
-                ptr: moved_folder,
-                new_parent: folder_ptr,
-                new_idx: (),
-            });
-            self.actions.add(action);
-        }
+        // if let Some(moved_folder) = pierro::dnd_receive_payload::<alisa::Ptr<Folder>>(ui, &response) {
+            // self.client.perform(&mut action, TransferFolder {
+            //     ptr: moved_folder,
+            //     new_parent: folder_ptr,
+            //     new_idx: (),
+            // });
+            // self.actions.add(action);
+        // }
     }
 
 }
@@ -58,23 +55,22 @@ impl pierro::DockingTab for ClientTab {
         pierro::label(ui, format!("n: {}", self.client.project().n));
 
         if pierro::button(ui, "Set to 50").mouse_clicked() {
-            let mut action = alisa::Action::new();
-            self.client.perform(&mut action, SetN {
-                n: 50,
-            });
-            self.actions.add(action);
+            // let mut action = alisa::Action::new();
+            // self.client.perform(&mut action, SetN {
+            //     n: 50,
+            // });
+            // self.actions.add(action);
         }
 
         pierro::horizontal(ui, |ui| { 
             if pierro::icon_button(ui, pierro::icons::PLUS).mouse_clicked() {
-                let mut action = alisa::Action::new();
-                self.client.perform(&mut action, IncrN);
-                self.actions.add(action);
+                // self.client.perform(&mut action, IncrN);
+                // self.actions.add(action);
             }
             if pierro::icon_button(ui, pierro::icons::MINUS).mouse_clicked() {
-                let mut action = alisa::Action::new();
-                self.client.perform(&mut action, DecrN);
-                self.actions.add(action);
+                // let mut action = alisa::Action::new();
+                // self.client.perform(&mut action, DecrN);
+                // self.actions.add(action);
             }
         });
 
@@ -86,24 +82,24 @@ impl pierro::DockingTab for ClientTab {
         }
         pierro::horizontal(ui, |ui| { 
             if pierro::icon_button(ui, pierro::icons::PLUS).mouse_clicked() {
-                if let Some(ptr) = self.client.next_ptr() {
-                    let mut action = alisa::Action::new();
-                    self.client.perform(&mut action, CreateFolder {
-                        ptr,
-                        parent: alisa::Ptr::null(),
-                        idx: (),
-                        data: FolderTreeData {
-                            name: "Folder".to_string(),
-                            folders: alisa::UnorderedChildListTreeData::default(),
-                        } 
-                    });
-                    self.actions.add(action);
-                }
+                // if let Some(ptr) = self.client.next_ptr() {
+                    // let mut action = alisa::Action::new();
+                    // self.client.perform(&mut action, CreateFolder {
+                    //     ptr,
+                    //     parent: alisa::Ptr::null(),
+                    //     idx: (),
+                    //     data: FolderTreeData {
+                    //         name: "Folder".to_string(),
+                    //         folders: alisa::UnorderedChildListTreeData::default(),
+                    //     } 
+                    // });
+                    // self.actions.add(action);
+                // }
             }
             if pierro::icon_button(ui, pierro::icons::MINUS).mouse_clicked() {
-                let mut action = alisa::Action::new();
-                self.client.perform(&mut action, DecrN);
-                self.actions.add(action);
+                // let mut action = alisa::Action::new();
+                // self.client.perform(&mut action, DecrN);
+                // self.actions.add(action);
             }
         });
 
@@ -111,10 +107,10 @@ impl pierro::DockingTab for ClientTab {
 
         pierro::horizontal(ui, |ui| {
             if pierro::button(ui, "<").mouse_clicked() {
-                self.actions.undo(&self.client);
+                // self.actions.undo(&self.client);
             }
             if pierro::button(ui, ">").mouse_clicked() {
-                self.actions.redo(&self.client);
+                // self.actions.redo(&self.client);
             }
         });
 
@@ -151,7 +147,6 @@ impl pierro::DockingTab for ClientTab {
                 add_tab(ClientTab {
                     client_id,
                     client,
-                    actions: alisa::UndoRedoManager::new(),
                     outgoing_msgs: Vec::new()
                 });
             }

@@ -1,5 +1,3 @@
-use alisa::Children;
-
 
 #[derive(alisa::Serializable)]
 #[project(SlipsProject)]
@@ -270,22 +268,22 @@ fn main() {
 
     let mut client = alisa::Client::<SlipsProject>::local("my_cool_path.slips").unwrap();
 
-    let mut action = alisa::Action::new();
-    client.perform(&mut action, SetName {
-        name: "My Cool Name".to_string(),
-    });
+    // let mut action = alisa::Action::new();
+    // client.perform(&mut action, SetName {
+    //     name: "My Cool Name".to_string(),
+    // });
 
-    if let Some(ptr) = client.next_ptr() {
-        client.perform(&mut action, CreateSlide {
-            ptr,
-            parent: (),
-            idx: client.project().slides.n_children(),
-            data: SlideTreeData {
-                title: "New Slide".to_owned(),
-                text_boxes: alisa::UnorderedChildListTreeData::default()
-            },
-        });
-    }
+    // if let Some(ptr) = client.next_ptr() {
+    //     client.perform(&mut action, CreateSlide {
+    //         ptr,
+    //         parent: (),
+    //         idx: client.project().slides.n_children(),
+    //         data: SlideTreeData {
+    //             title: "New Slide".to_owned(),
+    //             text_boxes: alisa::UnorderedChildListTreeData::default()
+    //         },
+    //     });
+    // }
 
     client.tick(&mut ());
 
@@ -295,13 +293,13 @@ fn main() {
         }
     }
     
-    let mut undo_redo = alisa::UndoRedoManager::new();
+    // let mut undo_redo = alisa::UndoRedoManager::new();
 
     // Add the action to the list of undo's 
-    undo_redo.add(action);
+    // undo_redo.add(action);
 
     // If there's an action to undo, undo it
-    undo_redo.undo(&client);
+    // undo_redo.undo(&client);
 
     client.tick(&mut ());
 

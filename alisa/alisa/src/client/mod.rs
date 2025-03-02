@@ -2,7 +2,7 @@
 
 use std::{any::{type_name, TypeId}, cell::RefCell, ops::Deref};
 
-use crate::{Act, Action, Object, Operation, OperationDyn, OperationSource, Project, ProjectContext, ProjectContextMut, Ptr, Recorder};
+use crate::{Act, Action, Object, Operation, OperationSource, Project, ProjectContext, ProjectContextMut, Ptr, Recorder};
 
 mod local;
 use local::*;
@@ -47,12 +47,21 @@ impl<P: Project> ClientKind<P> {
 
 }
 
+enum OperationToPerform<P: Project> {
+    Operation(Act<P>),
+    Action(Action<P>),
+    Undo,
+    Redo
+}
+
 pub struct Client<P: Project> {
     pub(crate) kind: ClientKind<P>,
     pub(crate) project: P,
     pub(crate) objects: P::Objects,
-    operations_to_perform: RefCell<Vec<Box<dyn OperationDyn<Project = P>>>>,
-    project_modified: bool
+    operations_to_perform: RefCell<Vec<OperationToPerform<P>>>,
+    project_modified: bool,
+    undo_stack: Vec<Action<P>>,
+    redo_stack: Vec<Action<P>>
 }
 
 impl<P: Project> Client<P> {
@@ -79,69 +88,112 @@ impl<P: Project> Client<P> {
         self.kind.has_keys()
     }
 
-    pub fn perform<O: Operation<Project = P> + 'static>(&self, action: &mut Action<P>, operation: O) {
-
-        // In debug mode, check that the operation being performed is registered in the project.
-        // Until Rust has proper reflection, this is the best we can do :(
-        #[cfg(debug_assertions)]
-        {
-            let mut found = false;
-            for operation_kind in P::OPERATIONS {
-                if (operation_kind.type_id)() == TypeId::of::<O>() {
-                    found = true;
-                }
-            }
-            if !found {
-                panic!("operation '{}' not registered in {}::OPERATIONS.", O::NAME, type_name::<P>());
+    /// In debug mode, check that the operation being performed is registered in the project.
+    /// Until Rust has proper reflection, this is the best we can do :(
+    #[cfg(debug_assertions)]
+    fn verify_operation_type<O: Operation<Project = P>>() {
+        let mut found = false;
+        for operation_kind in P::OPERATIONS {
+            if (operation_kind.type_id)() == TypeId::of::<O>() {
+                found = true;
             }
         }
-
-        let inverse = operation.inverse(&self.context());
-        self.perform_dyn(Box::new(operation));
-        if let Some(inverse) = inverse {
-            let act = Act {
-                operation: Box::new(inverse),
-            };
-            action.push(act);
+        if !found {
+            panic!("operation '{}' not registered in {}::OPERATIONS.", O::NAME, type_name::<P>());
         }
     }
 
-    pub(crate) fn perform_dyn(&self, operation: Box<dyn OperationDyn<Project = P>>) {
-        self.operations_to_perform.borrow_mut().push(operation);
+    pub fn queue_operation<O: Operation<Project = P> + 'static>(&self, operation: O) {
+        #[cfg(debug_assertions)]
+        Self::verify_operation_type::<O>();
+
+        self.operations_to_perform.borrow_mut().push(OperationToPerform::Operation(Act::new(operation))); 
+    }
+
+    pub fn queue_action(&self, action: Action<P>) {
+        self.operations_to_perform.borrow_mut().push(OperationToPerform::Action(action)); 
+    }
+
+    pub fn undo(&self) {
+        self.operations_to_perform.borrow_mut().push(OperationToPerform::Undo);
+    }
+
+    pub fn redo(&self) {
+        self.operations_to_perform.borrow_mut().push(OperationToPerform::Redo);
+    }
+
+    fn perform_act(&mut self, act: Act<P>, context: &mut P::Context) {
+        let mut recorder = Recorder::new(ProjectContextMut {
+            project: &mut self.project,
+            objects: &mut self.objects,
+            context,
+            project_modified: &mut self.project_modified,
+        }, OperationSource::Local);
+        let success = act.operation.perform(&mut recorder);
+        let deltas = recorder.deltas;
+
+        if success {
+            if let Some(collab) = self.kind.as_collab() {
+                collab.perform_operation(act.operation, deltas); 
+            }
+        } else {
+            // If the operation failed, undo the mess it made
+            for delta in deltas.iter().rev() {
+                delta.perform(&mut ProjectContextMut {
+                    project: &mut self.project,
+                    objects: &mut self.objects,
+                    context,
+                    project_modified: &mut self.project_modified,
+                });
+            }
+        }
+    }
+
+    fn perform_action(&mut self, action: Action<P>, context: &mut P::Context) -> Action<P> {
+        let mut inverse_acts = Vec::new();
+        for act in action.acts {
+            if let Some(inverse) = act.operation.inverse(&self.context()) {
+                inverse_acts.push(Act {
+                    operation: inverse,
+                });
+            }
+            self.perform_act(act, context);
+        }
+        inverse_acts.reverse();
+        Action {
+            acts: inverse_acts
+        }
     }
 
     /// Update the client. Performs all the queued operations. Returns the messages that should be sent to the server.
     pub fn tick(&mut self, context: &mut P::Context) {
-        let mut operations = self.operations_to_perform.borrow_mut();
-        let operations = &mut *operations;
+        let mut operations_ref = self.operations_to_perform.borrow_mut();
+        let operations = &mut *operations_ref;
         let operations = std::mem::replace(operations, Vec::new());
+        drop(operations_ref);
 
         // Perform queued operations 
         for operation in operations {
-            let mut recorder = Recorder::new(ProjectContextMut {
-                project: &mut self.project,
-                objects: &mut self.objects,
-                context,
-                project_modified: &mut self.project_modified,
-            }, OperationSource::Local);
-            let success = operation.perform(&mut recorder);
-            let deltas = recorder.deltas;
-
-            if success {
-                if let Some(collab) = self.kind.as_collab() {
-                    collab.perform_operation(operation, deltas); 
-                }
-            } else {
-                // If the operation failed, undo the mess it made
-                for delta in deltas.iter().rev() {
-                    delta.perform(&mut ProjectContextMut {
-                        project: &mut self.project,
-                        objects: &mut self.objects,
-                        context,
-                        project_modified: &mut self.project_modified,
-                    });
-                }
-            }
+            match operation {
+                OperationToPerform::Operation(act) => self.perform_act(act, context),
+                OperationToPerform::Action(action) => {
+                    let inv_action = self.perform_action(action, context);
+                    self.undo_stack.push(inv_action);
+                    self.redo_stack.clear();
+                },
+                OperationToPerform::Undo => {
+                    if let Some(undo_action) = self.undo_stack.pop() {
+                        let redo_action = self.perform_action(undo_action, context);
+                        self.redo_stack.push(redo_action);
+                    }
+                },
+                OperationToPerform::Redo => {
+                    if let Some(redo_action) = self.redo_stack.pop() {
+                        let undo_action = self.perform_action(redo_action, context);
+                        self.undo_stack.push(undo_action);
+                    }
+                },
+            }    
         }
 
         if let Some(collab) = self.kind.as_collab() {
@@ -152,7 +204,6 @@ impl<P: Project> Client<P> {
             local.save_changes(&mut self.project, &mut self.objects, &mut self.project_modified);
             local.load_objects(&mut self.objects);
         }
-        
     }
 
     pub fn take_messages(&self) -> Vec<rmpv::Value> {

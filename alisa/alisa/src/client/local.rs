@@ -99,7 +99,9 @@ impl<P: Project> Client<P> {
             project,
             objects,
             operations_to_perform: RefCell::new(Vec::new()),
-            project_modified: false
+            project_modified: false,
+            undo_stack: Vec::new(),
+            redo_stack: Vec::new()
         })
     }
 
