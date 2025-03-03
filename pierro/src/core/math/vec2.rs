@@ -1,5 +1,5 @@
 use core::f32;
-use std::ops::{Add, AddAssign, Div, Mul, Neg, Sub, SubAssign};
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 use super::{map, Axis, Rect};
 
@@ -32,6 +32,13 @@ impl Vec2 {
     pub const fn splat(val: f32) -> Self {
         vec2(val, val)
     }
+
+    pub const fn per_axis(axis: Axis, along: f32, across: f32) -> Self {
+        match axis {
+            Axis::X => vec2(along, across),
+            Axis::Y => vec2(across, along),
+        }
+    } 
 
     pub const fn on_axis(&self, axis: Axis) -> f32 {
         match axis {
@@ -146,6 +153,15 @@ impl Mul<f32> for Vec2 {
     }
 }
 
+impl MulAssign<f32> for Vec2 {
+
+    fn mul_assign(&mut self, rhs: f32) {
+        self.x *= rhs;
+        self.y *= rhs;
+    }
+    
+}
+
 impl Mul<Vec2> for f32 {
     type Output = Vec2;
 
@@ -168,6 +184,15 @@ impl Div<f32> for Vec2 {
     fn div(self, rhs: f32) -> Self::Output {
         vec2(self.x / rhs, self.y / rhs)
     }
+}
+
+impl DivAssign<f32> for Vec2 {
+
+    fn div_assign(&mut self, rhs: f32) {
+        self.x /= rhs;
+        self.y /= rhs;
+    }
+
 }
 
 impl Div<Vec2> for Vec2 {

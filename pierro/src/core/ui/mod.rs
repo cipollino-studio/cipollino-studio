@@ -211,6 +211,10 @@ impl<'a, 'b> UI<'a, 'b> {
     pub fn set_fill(&mut self, node: UIRef, fill: Color) {
         self.tree.get_mut(node).params.fill = fill;
     }
+
+    pub fn set_texture(&mut self, node: UIRef, texture: Texture) {
+        self.tree.get_mut(node).params.texture = Some(texture); 
+    }
     
     pub fn set_text_color(&mut self, node: UIRef, color: Color) {
         self.tree.get_mut(node).params.text_style.color = color;

@@ -37,6 +37,16 @@ impl UIRef {
 
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum TextureMapMode {
+    /// Scale the texture to the needed size, without preserving aspect ratio
+    Scale,
+    /// Scale the texture to the needed size, preserving the aspect ratio
+    Fit,
+    /// Don't scale the texture down, and always preserve the aspect ratio
+    Cover
+}
+
 pub struct UINodeParams {
     // Layout
     pub(crate) size: PerAxis<Size>,
@@ -51,6 +61,7 @@ pub struct UINodeParams {
     pub(crate) stroke: Stroke,
     pub(crate) clip: bool,
     pub(crate) texture: Option<Texture>,
+    pub(crate) texture_map: TextureMapMode,
 
     // Text
     pub(crate) text: Option<String>,
@@ -85,6 +96,7 @@ impl UINodeParams {
             text: None,
             text_style: TextStyle::default(),
             texture: None,
+            texture_map: TextureMapMode::Fit,
             id_source: None,
             mouse: false,
             scroll: false,
@@ -141,6 +153,11 @@ impl UINodeParams {
 
     pub fn with_texture(mut self, texture: Texture) -> Self {
         self.texture = Some(texture);
+        self
+    }
+
+    pub fn with_texture_map(mut self, texture_map: TextureMapMode) -> Self {
+        self.texture_map = texture_map;
         self
     }
 

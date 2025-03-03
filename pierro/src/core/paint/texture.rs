@@ -32,9 +32,7 @@ impl Texture {
         &self.tex.1
     }
 
-    pub fn create(device: &wgpu::Device, queue: &wgpu::Queue, width: u32, height: u32, data: &[u8]) -> Self {
-        assert_eq!((width * height * 4) as usize, data.len());
-
+    pub fn create_empty(device: &wgpu::Device, width: u32, height: u32) -> Self {
         let texture_size = wgpu::Extent3d {
             width,
             height,
@@ -54,9 +52,19 @@ impl Texture {
             }
         );
 
+        let texture_view = texture.create_view(&Default::default());
+        
+        Self::new(texture, texture_view)
+    }
+
+    pub fn create(device: &wgpu::Device, queue: &wgpu::Queue, width: u32, height: u32, data: &[u8]) -> Self {
+        assert_eq!((width * height * 4) as usize, data.len());
+
+        let texture = Self::create_empty(device, width, height);
+
         queue.write_texture(
             wgpu::ImageCopyTextureBase {
-                texture: &texture,
+                texture: &texture.texture(),
                 mip_level: 0,
                 origin: wgpu::Origin3d::ZERO,
                 aspect: wgpu::TextureAspect::All
@@ -64,15 +72,13 @@ impl Texture {
             data,
             wgpu::ImageDataLayout {
                 offset: 0,
-                bytes_per_row: Some(4 * texture_size.width),
-                rows_per_image: Some(texture_size.height) 
+                bytes_per_row: Some(4 * width),
+                rows_per_image: Some(height) 
             },
-            texture_size 
+            wgpu::Extent3d { width, height, depth_or_array_layers: 1 } 
         );
 
-        let texture_view = texture.create_view(&Default::default());
-
-        Self::new(texture, texture_view)
+        texture
     }
 
     pub fn width(&self) -> u32 {

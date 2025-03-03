@@ -306,6 +306,7 @@ impl RectResources {
 
         self.curr_buffer += 1;
 
+        self.textures.clear();
         self.rect_batch.clear();
     }
 

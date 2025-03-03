@@ -66,3 +66,6 @@ pub use modal::*;
 
 mod resizable_panel;
 pub use resizable_panel::*;
+
+mod canvas;
+pub use canvas::*;
