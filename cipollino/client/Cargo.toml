@@ -7,6 +7,7 @@ edition = "2021"
 project = { path = "../project" }
 
 pierro = { path = "../../pierro", features = ["serde"] } 
+malvina = { path = "../../malvina" }
 
 ewebsock = { version = "0.8.0", features = ["tls"] }
 rustls = "0.23.11"

@@ -39,7 +39,8 @@ impl ProjectState {
 
 pub struct State {
     pub project: ProjectState,
-    pub editor: EditorState
+    pub editor: EditorState,
+    pub renderer: Option<malvina::Renderer>
 }
 
 pub struct Editor {
@@ -64,6 +65,7 @@ impl Editor {
                     open_clip: Ptr::null(),
                     active_layer: Ptr::null()
                 },
+                renderer: None
             },
             docking: systems.prefs.get::<DockingLayoutPref>(),
             socket
