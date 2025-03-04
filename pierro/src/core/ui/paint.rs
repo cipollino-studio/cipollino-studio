@@ -39,7 +39,7 @@ impl UITree {
                 let (uv_min, uv_max) = Self::calc_uvs(
                     node.params.texture_map,
                     vec2(texture.width() as f32, texture.height() as f32),
-                    node.rect.size() 
+                    node.rect.size() * painter.scale_factor()
                 );
                 rect = rect.with_texture(texture).with_uv(uv_min, uv_max);
             }

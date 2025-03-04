@@ -112,4 +112,8 @@ impl<'a> Painter<'a> {
         self.resources.rect.finish();
     }
 
+    pub fn scale_factor(&self) -> f32 {
+        self.dpi_scale
+    }
+
 }

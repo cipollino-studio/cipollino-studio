@@ -32,7 +32,7 @@ impl Texture {
         &self.tex.1
     }
 
-    pub fn create_empty(device: &wgpu::Device, width: u32, height: u32) -> Self {
+    pub fn create_with_usage(device: &wgpu::Device, width: u32, height: u32, usage: wgpu::TextureUsages) -> Self {
         let texture_size = wgpu::Extent3d {
             width,
             height,
@@ -47,7 +47,7 @@ impl Texture {
                 sample_count: 1,
                 dimension: wgpu::TextureDimension::D2,
                 format: wgpu::TextureFormat::Rgba8Unorm,
-                usage: wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::TEXTURE_BINDING,
+                usage: wgpu::TextureUsages::TEXTURE_BINDING | usage,
                 view_formats: &[],
             }
         );
@@ -57,10 +57,14 @@ impl Texture {
         Self::new(texture, texture_view)
     }
 
+    pub fn create_render_texture(device: &wgpu::Device, width: u32, height: u32) -> Self {
+        Self::create_with_usage(device, width, height, wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING)
+    }
+
     pub fn create(device: &wgpu::Device, queue: &wgpu::Queue, width: u32, height: u32, data: &[u8]) -> Self {
         assert_eq!((width * height * 4) as usize, data.len());
 
-        let texture = Self::create_empty(device, width, height);
+        let texture = Self::create_with_usage(device, width, height, wgpu::TextureUsages::COPY_DST);
 
         queue.write_texture(
             wgpu::ImageCopyTextureBase {

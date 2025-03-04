@@ -23,7 +23,12 @@ pub fn canvas<F: FnOnce(&mut UI, &Texture, &Response)>(ui: &mut UI, render: F) -
     };
 
     if create_texture {
-        let texture = Texture::create_empty(ui.wgpu_device(), width, height);
+        let scale = ui.scale_factor();
+        let texture = Texture::create_render_texture(
+            ui.wgpu_device(),
+            (width as f32 * scale) as u32,
+            (height as f32 * scale) as u32
+        );
         ui.memory().insert(response.id, CanvasMemory {
             texture,
         });

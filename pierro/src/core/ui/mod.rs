@@ -284,4 +284,8 @@ impl<'a, 'b> UI<'a, 'b> {
         self.render_resources.text_resources.icon_font
     }
 
+    pub fn scale_factor(&self) -> f32 {
+        self.render_resources.window.scale_factor() as f32
+    }
+
 }
