@@ -5,6 +5,9 @@ pub use stroke::*;
 mod camera;
 pub use camera::*;
 
+mod layer;
+pub use layer::*;
+
 pub struct Renderer {
     camera: CameraUniformsBuffer,
     stroke: StrokeRenderer
@@ -21,7 +24,7 @@ impl Renderer {
         }
     }
 
-    pub fn render(&mut self, device: &wgpu::Device, queue: &wgpu::Queue, texture: &wgpu::Texture, camera: Camera) {
+    pub fn render<F: FnOnce(&mut LayerRenderer)>(&mut self, device: &wgpu::Device, queue: &wgpu::Queue, texture: &wgpu::Texture, camera: Camera, contents: F) {
 
         let texture_view = texture.create_view(&wgpu::TextureViewDescriptor::default());
         let resolution = glam::vec2(texture.width() as f32, texture.height() as f32);
@@ -32,25 +35,31 @@ impl Renderer {
             label: Some("malvina_encoder"),
         });
 
-        let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            label: Some("malvina_render_pass"),
-            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                view: &texture_view,
-                resolve_target: None,
-                ops: wgpu::Operations {
-                    load: wgpu::LoadOp::Clear(wgpu::Color::WHITE),
-                    store: wgpu::StoreOp::Store
-                }
-            })],
-            depth_stencil_attachment: None,
-            timestamp_writes: None,
-            occlusion_query_set: None 
-        });
+        {
+            let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some("malvina_render_pass"),
+                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                    view: &texture_view,
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(wgpu::Color::WHITE),
+                        store: wgpu::StoreOp::Store
+                    }
+                })],
+                depth_stencil_attachment: None,
+                timestamp_writes: None,
+                occlusion_query_set: None 
+            });
+            
+            let mut layer_renderer = LayerRenderer {
+                device: device,
+                render_pass: &mut render_pass,
+                camera: &self.camera,
+                stroke_renderer: &mut self.stroke,
+            };
 
-        let stroke = StrokeMesh::new(device);
-        self.stroke.render(&mut render_pass, &stroke, &self.camera);
-
-        drop(render_pass);
+            contents(&mut layer_renderer);
+        }
 
         queue.submit([encoder.finish()]);
     }

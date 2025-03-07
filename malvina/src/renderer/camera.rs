@@ -19,6 +19,14 @@ impl Camera {
         glam::Mat4::orthographic_rh(min.x, max.x, min.y, max.y, -1.0, 1.0)
     }
 
+    pub fn screen_to_world(&self, pos: glam::Vec2, resolution: glam::Vec2) -> glam::Vec2 {
+        let view_proj = self.calc_view_proj(resolution);
+        let ndc = (pos - resolution * 0.5) / (resolution * 0.5);
+        let ndc = glam::vec4(ndc.x, ndc.y, 0.0, 1.0);
+        let world = view_proj.inverse() * ndc;
+        glam::vec2(world.x, world.y) 
+    }
+
 }
 
 #[repr(C)]

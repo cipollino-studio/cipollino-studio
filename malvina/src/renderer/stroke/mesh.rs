@@ -1,12 +1,14 @@
+use crate::Stroke;
+
 
 #[repr(C)]
 #[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
 pub(crate) struct StrokeStampInstance {
     /// The position of the stamp
-    pos: glam::Vec2,
+    pub pos: glam::Vec2,
     /// The vector pointing to the right, relative to the stamps rotation.
     /// The magnitude is equal to the stamp's radius(half the width/height of the quad) 
-    right: glam::Vec2
+    pub right: glam::Vec2
 }
 
 impl StrokeStampInstance {
@@ -31,19 +33,10 @@ pub struct StrokeMesh {
 
 impl StrokeMesh {
 
-    pub fn new(device: &wgpu::Device) -> Self {
+    pub fn new(device: &wgpu::Device, stroke: &Stroke) -> Self {
         use wgpu::util::DeviceExt;
 
-        let mut stamps = Vec::new();
-        let n = 1880;
-        for i in 0..n {
-            let t = (i as f32) / (n as f32);
-            let angle = std::f32::consts::PI * t; 
-            stamps.push(StrokeStampInstance {
-                pos: glam::vec2(angle.cos(), angle.sin()) * 300.0,
-                right: glam::vec2(angle.sin(), -angle.cos()) * 5.0
-            });
-        }
+        let stamps = stroke.meshgen(); 
 
         let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("malvina_stroke_buffer"),
