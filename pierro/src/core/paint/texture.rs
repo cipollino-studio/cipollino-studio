@@ -1,6 +1,8 @@
 
 use std::sync::Arc;
 
+use crate::{vec2, Vec2};
+
 #[derive(Clone)]
 pub struct Texture {
     tex: Arc<(wgpu::Texture, wgpu::TextureView)> 
@@ -91,6 +93,10 @@ impl Texture {
 
     pub fn height(&self) -> u32 {
         self.texture().height()
+    }
+
+    pub fn size(&self) -> Vec2 {
+        vec2(self.width() as f32, self.height() as f32) 
     }
 
 }
