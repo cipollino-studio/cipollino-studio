@@ -52,14 +52,14 @@ impl FrameArea {
     ) {
 
         for frame_ptr in layer.frames.iter() {
-            if let Some(frame) = project.client.get(frame_ptr) {
+            if let Some(frame) = project.client.get(frame_ptr.ptr()) {
 
                 let frame_interaction_rect = pierro::Rect::min_size(
                     pierro::vec2((frame.time as f32) * TimelinePanel::FRAME_WIDTH, (layer_idx as f32) * TimelinePanel::LAYER_HEIGHT),
                     TimelinePanel::FRAME_SIZE 
                 );
 
-                let selected = self.selection.is_frame_selected(frame_ptr);
+                let selected = self.selection.is_frame_selected(frame_ptr.ptr());
                 
                 let in_selection_rect = if let Some(selection_rect) = self.drag_state.selection_rect() {
                     selection_rect.intersects(frame_interaction_rect)
@@ -85,14 +85,14 @@ impl FrameArea {
                     
                     if frame_interaction_rect.contains(mouse_pos) {
                         if frame_area.mouse_clicked() {
-                            self.selection.invert_select_frame(frame_ptr);
+                            self.selection.invert_select_frame(frame_ptr.ptr());
                             frame_area.request_focus(ui);
                         }
                         if frame_area.drag_started() {
-                            if !self.selection.is_frame_selected(frame_ptr) && !ui.input().key_down(pierro::Key::SHIFT){
+                            if !self.selection.is_frame_selected(frame_ptr.ptr()) && !ui.input().key_down(pierro::Key::SHIFT){
                                 self.selection.clear();
                             }
-                            self.selection.select_frame(frame_ptr);
+                            self.selection.select_frame(frame_ptr.ptr());
                             self.drag_consumed = true;
                             self.drag_state = DragState::Move { offset: 0.0 };
                             frame_area.request_focus(ui);

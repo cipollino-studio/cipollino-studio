@@ -1,5 +1,5 @@
 
-use crate::{Frame, Objects, Project};
+use crate::{Client, Frame, Objects, Project};
 use super::{LayerChildPtr, LayerChildList, LayerParent, LayerType};
 
 
@@ -10,7 +10,7 @@ pub struct Layer {
 
     pub name: String,
 
-    pub frames: alisa::UnorderedChildList<Frame>
+    pub frames: alisa::UnorderedChildList<alisa::LoadingPtr<Frame>>
 }
 
 impl Default for Layer {
@@ -43,7 +43,7 @@ impl alisa::Object for Layer {
 #[project(Project)]
 pub struct LayerTreeData {
     pub name: String,
-    pub frames: alisa::UnorderedChildListTreeData<Frame>
+    pub frames: alisa::UnorderedChildListTreeData<alisa::LoadingPtr<Frame>>
 }
 
 impl Default for LayerTreeData {
@@ -109,3 +109,21 @@ impl LayerType for Layer {
 
 alisa::tree_object_operations!(Layer);
 alisa::object_set_property_operation!(Layer, name, String);
+
+impl Layer { 
+
+    pub fn frame_at(&self, client: &Client, t: i32) -> Option<alisa::Ptr<Frame>> {
+        let mut max_frame = None;
+        let mut max_time = i32::MIN;
+        for frame_ptr in self.frames.iter() {
+            if let Some(frame) = client.get(frame_ptr.ptr()) {
+                if frame.time > max_time && frame.time <= t {
+                    max_frame = Some(frame_ptr.ptr());
+                    max_time = frame.time;
+                }
+            }
+        }
+        max_frame
+    } 
+
+}

@@ -7,10 +7,10 @@ impl FrameArea {
 
     fn box_select_layer(&mut self, project: &ProjectState, layer: &Layer, x_range: pierro::Range) {
         for frame_ptr in layer.frames.iter() {
-            if let Some(frame) = project.client.get(frame_ptr) {
+            if let Some(frame) = project.client.get(frame_ptr.ptr()) {
                 let frame_x_range = pierro::Range::min_size((frame.time as f32) * TimelinePanel::FRAME_WIDTH, TimelinePanel::FRAME_WIDTH);
                 if frame_x_range.intersects(x_range) {
-                    self.selection.select_frame(frame_ptr);
+                    self.selection.select_frame(frame_ptr.ptr());
                 }
             }
         }

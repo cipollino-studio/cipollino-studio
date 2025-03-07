@@ -15,6 +15,7 @@ impl TimelinePanel {
                     layer: editor.active_layer,
                     data: FrameTreeData {
                         time: clip.frame_idx(editor.time),
+                        ..Default::default()
                     },
                 }));
             }

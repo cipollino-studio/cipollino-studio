@@ -1,12 +1,16 @@
 
 use project::{Client, Clip, ClipInner, Layer, Ptr};
 
+use crate::ToolDyn;
+
 pub struct EditorState {
     pub time: f32,
     pub playing: bool,
 
     pub open_clip: Ptr<Clip>,
-    pub active_layer: Ptr<Layer>
+    pub active_layer: Ptr<Layer>,
+
+    pub curr_tool: Box<dyn ToolDyn>
 }
 
 impl EditorState {

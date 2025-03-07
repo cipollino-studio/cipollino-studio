@@ -11,6 +11,9 @@ pub use layer::*;
 mod frame;
 pub use frame::*;
 
+mod scene;
+pub use scene::*;
+
 pub use alisa;
 
 pub use alisa::Ptr;

@@ -7,13 +7,15 @@ pub use editor::*;
 mod panels;
 pub use panels::*;
 
-use splash::SplashScreen;
+mod tool;
+pub use tool::*;
 
 mod systems;
 pub use systems::*;
 
 use std::path::PathBuf;
 use clap::Parser;
+use splash::SplashScreen;
 
 enum AppState {
     SplashScreen(SplashScreen),

@@ -68,7 +68,7 @@ impl Default for ClipTreeData {
 
 impl alisa::TreeObj for Clip {
     type ParentPtr = alisa::Ptr<Folder>;
-    type ChildList = alisa::UnorderedChildList<Clip>;
+    type ChildList = alisa::UnorderedChildList<alisa::LoadingPtr<Clip>>;
     type TreeData = ClipTreeData;
 
     fn child_list<'a>(parent: alisa::Ptr<Folder>, context: &'a alisa::ProjectContext<Project>) -> Option<&'a Self::ChildList> {

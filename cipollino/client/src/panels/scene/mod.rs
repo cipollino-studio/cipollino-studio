@@ -1,6 +1,8 @@
 
-use crate::State;
+mod toolbar;
+mod canvas;
 
+use crate::State;
 use super::Panel;
 
 #[derive(Default)]
@@ -34,17 +36,19 @@ impl Panel for ScenePanel {
             });
             return;
         };
-        let Some(_clip_inner) = project.client.get(clip.inner) else {
+        let Some(clip_inner) = project.client.get(clip.inner) else {
             pierro::centered(ui, |ui| {
                 pierro::label(ui, "Clip loading...");
             });
             return;
         };
 
-        pierro::canvas(ui, |ui, texture, _response| {
-            let camera = malvina::Camera::new(0.0, 0.0, ui.scale_factor());
-            renderer.render(ui.wgpu_device(), ui.wgpu_queue(), texture.texture(), camera);
+        pierro::horizontal_fill(ui, |ui| {
+            self.toolbar(ui);
+            pierro::v_line(ui);
+            self.canvas(ui, project, editor, renderer, clip_inner); 
         });
+        
     }
 
 }

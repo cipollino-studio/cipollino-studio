@@ -43,7 +43,7 @@ impl alisa::Operation for CreateFrame {
 
         // Add it to the layer's frame list
         let Some(frames) = Frame::child_list_mut(self.layer, recorder.context_mut()) else { return false; };
-        frames.insert((), self.ptr);
+        frames.insert((), self.ptr.into());
         recorder.push_delta(alisa::RemoveChildDelta {
             parent: self.layer,
             ptr: self.ptr,

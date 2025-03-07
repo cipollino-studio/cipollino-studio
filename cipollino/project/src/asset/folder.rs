@@ -10,8 +10,8 @@ use super::deep_load_clip;
 pub struct Folder {
     pub parent: alisa::Ptr<Folder>,
     pub name: String,
-    pub folders: alisa::UnorderedChildList<Folder>,
-    pub clips: alisa::UnorderedChildList<Clip>
+    pub folders: alisa::UnorderedChildList<alisa::LoadingPtr<Folder>>,
+    pub clips: alisa::UnorderedChildList<alisa::LoadingPtr<Clip>>
 }
 
 impl Default for Folder {
@@ -46,8 +46,8 @@ impl alisa::Object for Folder {
 #[project(Project)]
 pub struct FolderTreeData {
     pub name: String,
-    pub folders: alisa::UnorderedChildListTreeData<Folder>,
-    pub clips: alisa::UnorderedChildListTreeData<Clip>
+    pub folders: alisa::UnorderedChildListTreeData<alisa::LoadingPtr<Folder>>,
+    pub clips: alisa::UnorderedChildListTreeData<alisa::LoadingPtr<Clip>>
 }
 
 impl Default for FolderTreeData {
@@ -64,7 +64,7 @@ impl Default for FolderTreeData {
 
 impl alisa::TreeObj for Folder {
     type ParentPtr = alisa::Ptr<Folder>;
-    type ChildList = alisa::UnorderedChildList<Folder>;
+    type ChildList = alisa::UnorderedChildList<alisa::LoadingPtr<Folder>>;
     type TreeData = FolderTreeData;
 
     fn child_list<'a>(parent: alisa::Ptr<Folder>, context: &'a alisa::ProjectContext<Project>) -> Option<&'a Self::ChildList> {
@@ -118,12 +118,12 @@ impl alisa::TreeObj for Folder {
             return false;
         };
         for folder_ptr in folder.folders.iter() {
-            if !Folder::can_delete(folder_ptr, project, source) {
+            if !Folder::can_delete(folder_ptr.ptr(), project, source) {
                 return false;
             }
         }
         for clip_ptr in folder.clips.iter() {
-            if !Clip::can_delete(clip_ptr, project, source) {
+            if !Clip::can_delete(clip_ptr.ptr(), project, source) {
                 return false;
             }
         }
@@ -234,9 +234,9 @@ pub fn deep_load_folder(folder_ptr: alisa::Ptr<Folder>, client: &Client) {
     };
     
     for subfolder in folder.folders.iter() {
-        deep_load_folder(subfolder, client);
+        deep_load_folder(subfolder.ptr(), client);
     }
     for clip in folder.clips.iter() {
-        deep_load_clip(clip, client);
+        deep_load_clip(clip.ptr(), client);
     }
 }

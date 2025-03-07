@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use project::{alisa::rmpv, Ptr};
 use project::{deep_load_clip, Client};
 
-use crate::{AppSystems, AssetSelection, DockingLayoutPref, EditorPanel};
+use crate::{AppSystems, AssetSelection, DockingLayoutPref, EditorPanel, Pencil};
 
 mod socket;
 pub use socket::*;
@@ -63,7 +63,9 @@ impl Editor {
                     playing: false,
 
                     open_clip: Ptr::null(),
-                    active_layer: Ptr::null()
+                    active_layer: Ptr::null(),
+                    
+                    curr_tool: Box::new(Pencil::default())
                 },
                 renderer: None
             },

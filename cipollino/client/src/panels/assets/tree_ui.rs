@@ -92,16 +92,16 @@ impl AssetsPanel {
 
     pub(crate) fn render_folder_contents(&self,
         ui: &mut pierro::UI,
-        folders: &UnorderedChildList<Folder>,
-        clips: &UnorderedChildList<Clip>,
+        folders: &UnorderedChildList<project::alisa::LoadingPtr<Folder>>,
+        clips: &UnorderedChildList<project::alisa::LoadingPtr<Clip>>,
         project: &ProjectState,
         editor: &mut EditorState
     ) {
         for folder in folders.iter() {
-            self.render_folder(ui, folder, project, editor);
+            self.render_folder(ui, folder.ptr(), project, editor);
         }
         for clip in clips.iter() {
-            self.render_asset(ui, clip, project, editor);
+            self.render_asset(ui, clip.ptr(), project, editor);
         } 
     }
 
