@@ -152,3 +152,11 @@ impl<O: Object> Debug for LoadingPtr<O> {
     }
 
 }
+
+impl<O: Object> From<Ptr<O>> for LoadingPtr<O> {
+
+    fn from(ptr: Ptr<O>) -> Self {
+        Self::new(ptr)
+    }
+
+}

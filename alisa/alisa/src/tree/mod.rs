@@ -1,6 +1,9 @@
 
 use crate::{Delta, Object, OperationSource, Project, ProjectContext, ProjectContextMut, Ptr, Recorder, Serializable};
 
+mod child_ptr;
+pub use child_ptr::*;
+
 mod child_list;
 pub use child_list::*;
 

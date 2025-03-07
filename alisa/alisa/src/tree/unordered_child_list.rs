@@ -1,16 +1,17 @@
 
 use std::collections::HashSet;
+use std::hash::Hash;
 
-use crate::{LoadingPtr, Object, Project, Ptr, Recorder, RecreateObjectDelta, Serializable};
+use crate::{Object, Project, Ptr, Recorder, Serializable, SerializationContext};
 
-use super::{Children, TreeObj};
+use super::{ChildPtr, Children};
 
 #[derive(Clone)]
-pub struct UnorderedChildList<O: Object> {
-    children: HashSet<LoadingPtr<O>>
+pub struct UnorderedChildList<C: ChildPtr + Hash> {
+    children: HashSet<C>
 }
 
-impl<O: Object> UnorderedChildList<O> {
+impl<C: ChildPtr + Hash> UnorderedChildList<C> {
 
     pub fn new() -> Self {
         Self {
@@ -18,13 +19,13 @@ impl<O: Object> UnorderedChildList<O> {
         }
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = Ptr<O>> + '_ {
-        self.children.iter().map(LoadingPtr::ptr)
+    pub fn iter(&self) -> impl Iterator<Item = C> + '_ {
+        self.children.iter().cloned()
     }
 
 }
 
-impl<O: Object> Default for UnorderedChildList<O> {
+impl<C: ChildPtr + Hash> Default for UnorderedChildList<C> {
 
     fn default() -> Self {
         Self::new()
@@ -32,14 +33,14 @@ impl<O: Object> Default for UnorderedChildList<O> {
 
 }
 
-impl<O: Object> Serializable<O::Project> for UnorderedChildList<O> {
+impl<C: ChildPtr + Hash> Serializable<C::Project> for UnorderedChildList<C> {
 
-    fn serialize(&self, context: &crate::SerializationContext<O::Project>) -> rmpv::Value {
+    fn serialize(&self, context: &SerializationContext<C::Project>) -> rmpv::Value {
         self.children.serialize(context)
     }
 
-    fn deserialize(data: &rmpv::Value, context: &mut crate::DeserializationContext<O::Project>) -> Option<Self> {
-        let children = HashSet::<LoadingPtr<O>>::deserialize(data, context)?;
+    fn deserialize(data: &rmpv::Value, context: &mut crate::DeserializationContext<C::Project>) -> Option<Self> {
+        let children = HashSet::<C>::deserialize(data, context)?;
         Some(Self {
             children
         })
@@ -47,7 +48,7 @@ impl<O: Object> Serializable<O::Project> for UnorderedChildList<O> {
 
 }
 
-impl<O: Object> Children<O> for UnorderedChildList<O> {
+impl<C: ChildPtr + Hash, O: Object> Children<O> for UnorderedChildList<C> where C: From<Ptr<O>> {
 
     type Index = ();
 
@@ -56,11 +57,11 @@ impl<O: Object> Children<O> for UnorderedChildList<O> {
     }
 
     fn insert(&mut self, _idx: Self::Index, child: Ptr<O>) {
-        self.children.insert(LoadingPtr::new(child));
+        self.children.insert(child.into());
     }
 
     fn remove(&mut self, child: Ptr<O>) -> Option<Self::Index> {
-        if self.children.remove(&LoadingPtr::new(child)) {
+        if self.children.remove(&child.into()) {
             Some(()) 
         } else {
             None
@@ -68,7 +69,7 @@ impl<O: Object> Children<O> for UnorderedChildList<O> {
     }
 
     fn index_of(&self, child: Ptr<O>) -> Option<Self::Index> {
-        if self.children.contains(&LoadingPtr::new(child)) {
+        if self.children.contains(&child.into()) {
             Some(())
         } else {
             None
@@ -78,11 +79,11 @@ impl<O: Object> Children<O> for UnorderedChildList<O> {
 
 }
 
-pub struct UnorderedChildListTreeData<O: TreeObj> {
-    children: Vec<(Ptr<O>, O::TreeData)>
+pub struct UnorderedChildListTreeData<C: ChildPtr> {
+    children: Vec<(C, C::TreeData)>
 }
 
-impl<O: TreeObj> Default for UnorderedChildListTreeData<O> {
+impl<C: ChildPtr> Default for UnorderedChildListTreeData<C> {
 
     fn default() -> Self {
         Self { children: Vec::new() }
@@ -90,9 +91,9 @@ impl<O: TreeObj> Default for UnorderedChildListTreeData<O> {
 
 } 
 
-impl<O: TreeObj> Serializable<<O as Object>::Project> for UnorderedChildListTreeData<O> {
+impl<C: ChildPtr + Hash> Serializable<C::Project> for UnorderedChildListTreeData<C> {
 
-    fn serialize(&self, context: &crate::SerializationContext<<O as Object>::Project>) -> rmpv::Value {
+    fn serialize(&self, context: &crate::SerializationContext<C::Project>) -> rmpv::Value {
         rmpv::Value::Array(
             self.children.iter()
                 .map(|(ptr, obj_data)| rmpv::Value::Array(vec![ptr.serialize(context), obj_data.serialize(context)]))
@@ -100,15 +101,15 @@ impl<O: TreeObj> Serializable<<O as Object>::Project> for UnorderedChildListTree
         )
     }
 
-    fn deserialize(data: &rmpv::Value, context: &mut crate::DeserializationContext<<O as Object>::Project>) -> Option<Self> {
+    fn deserialize(data: &rmpv::Value, context: &mut crate::DeserializationContext<C::Project>) -> Option<Self> {
         let data = data.as_array()?;
         let mut children = Vec::new();
         for child in data {
             let Some(child) = child.as_array() else { continue; };
             let Some(ptr_data) = child.get(0) else { continue; };
             let Some(obj_data) = child.get(1) else { continue; };
-            let Some(ptr) = Ptr::deserialize(ptr_data, context) else { continue; };
-            let Some(obj_data) = O::TreeData::deserialize(obj_data, context) else { continue; };
+            let Some(ptr) = C::deserialize(ptr_data, context) else { continue; };
+            let Some(obj_data) = C::TreeData::deserialize(obj_data, context) else { continue; };
             children.push((ptr, obj_data));
         }
         Some(Self {
@@ -118,40 +119,35 @@ impl<O: TreeObj> Serializable<<O as Object>::Project> for UnorderedChildListTree
 
 }
 
-impl<O: TreeObj> UnorderedChildList<O> {
+impl<C: ChildPtr + Hash> UnorderedChildList<C> {
 
-    pub fn collect_data(&self, objects: &<O::Project as Project>::Objects) -> UnorderedChildListTreeData<O> {
+    pub fn collect_data(&self, objects: &<C::Project as Project>::Objects) -> UnorderedChildListTreeData<C> {
         UnorderedChildListTreeData {
             children: self.children.iter()
-                .map(|loading_ptr| loading_ptr.ptr())
-                .filter_map(|ptr| O::list(objects).get(ptr).map(|obj| (ptr, obj.collect_data(objects))))
+                .filter_map(|ptr| {
+                    let data = ptr.collect_data(objects)?;
+                    Some((ptr.clone(), data))
+                })
                 .collect(),
         }
     }
 
-    pub fn destroy(&self, recorder: &mut Recorder<O::Project>) {
+    pub fn destroy(&self, recorder: &mut Recorder<C::Project>) {
         for child in &self.children {
-            let ptr = child.ptr();
-            if let Some(obj) = recorder.obj_list_mut().delete(ptr) {
-                obj.destroy(recorder);
-                recorder.push_delta(RecreateObjectDelta {
-                    ptr,
-                    obj,
-                });
-            }
+            child.destroy(recorder);
         }
     }
 
 }
 
-impl<O: TreeObj> UnorderedChildListTreeData<O> {
+impl<C: ChildPtr + Hash> UnorderedChildListTreeData<C> {
 
-    pub fn instance(&self, parent: O::ParentPtr, recorder: &mut crate::Recorder<O::Project>) -> UnorderedChildList<O> {
+    pub fn instance(&self, parent: C::ParentPtr, recorder: &mut Recorder<C::Project>) -> UnorderedChildList<C> {
         for (ptr, obj_data) in &self.children { 
-            O::instance(obj_data, *ptr, parent.clone(), recorder);
+            ptr.instance(obj_data, parent.clone(), recorder);
         }
         UnorderedChildList {
-            children: self.children.iter().map(|(ptr, _)| LoadingPtr::new(*ptr)).collect(),
+            children: self.children.iter().map(|(ptr, _)| ptr.clone()).collect(),
         }
     }
 
