@@ -8,9 +8,13 @@ pub use camera::*;
 mod layer;
 pub use layer::*;
 
+mod canvas_border;
+use canvas_border::*;
+
 pub struct Renderer {
     camera: CameraUniformsBuffer,
-    stroke: StrokeRenderer
+    stroke: StrokeRenderer,
+    canvas_border: CanvasBorderRenderer
 }
 
 impl Renderer {
@@ -18,9 +22,11 @@ impl Renderer {
     pub fn new(device: &wgpu::Device) -> Self {
         let camera = CameraUniformsBuffer::new(device);
         let stroke = StrokeRenderer::new(device, &camera);
+        let canvas_border = CanvasBorderRenderer::new(device, &camera);
         Self {
             camera,
-            stroke
+            stroke,
+            canvas_border
         }
     }
 
@@ -52,10 +58,12 @@ impl Renderer {
             });
             
             let mut layer_renderer = LayerRenderer {
-                device: device,
+                device,
+                queue,
                 render_pass: &mut render_pass,
                 camera: &self.camera,
                 stroke_renderer: &mut self.stroke,
+                canvas_border_renderer: &mut self.canvas_border
             };
 
             contents(&mut layer_renderer);
