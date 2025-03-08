@@ -33,6 +33,7 @@ pub fn text_edit(ui: &mut UI, text: &mut String) -> TextEditResponse {
     let text_edit = ui.node(
         UINodeParams::new(Size::px(size), Size::px(font_size + widget_margin.v_total()))
             .sense_mouse()
+            .sense_keyboard()
             .with_fill(color)
             .with_rounding(widget_rounding)
     );

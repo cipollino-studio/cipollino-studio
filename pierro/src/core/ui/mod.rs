@@ -15,6 +15,9 @@ pub use input::*;
 
 mod paint;
 
+mod node_params;
+pub use node_params::*;
+
 mod tree;
 pub use tree::*;
 
@@ -236,15 +239,15 @@ impl<'a, 'b> UI<'a, 'b> {
     }
 
     pub fn set_sense_mouse(&mut self, node: UIRef, mouse: bool) {
-        self.tree.get_mut(node).params.mouse = mouse;
+        self.tree.get_mut(node).params.sense.set(Sense::MOUSE, mouse);
     }
 
     pub fn set_sense_scroll(&mut self, node: UIRef, scroll: bool) {
-        self.tree.get_mut(node).params.scroll = scroll;
+        self.tree.get_mut(node).params.sense.set(Sense::SCROLL, scroll);
     }
 
     pub fn set_sense_dnd_hover(&mut self, node: UIRef, dnd_hover: bool) {
-        self.tree.get_mut(node).params.dnd_hover = dnd_hover;
+        self.tree.get_mut(node).params.sense.set(Sense::DND_HOVER, dnd_hover);
     }
     
     pub fn set_on_paint<F: FnOnce(&mut Painter, Rect) + 'static>(&mut self, node: UIRef, on_paint: F) {

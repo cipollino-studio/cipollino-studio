@@ -1,7 +1,7 @@
 
 use crate::{text::{FontId, TextResources}, vec2, Axis, PerAxis, Range, Rect, TSTransform, Vec2, AXES};
 
-use super::{Id, Memory, UIRef, UITree};
+use super::{Id, Memory, Sense, UIRef, UITree};
 
 #[derive(Clone, Copy)]
 pub enum SizeKind {
@@ -484,10 +484,7 @@ impl UITree {
         layout_mem.transform = node.transform;
         layout_mem.first_child = node.first_child.as_option().map(|child| self.get(child).id);
         layout_mem.next = node.next.as_option().map(|next| self.get(next).id);
-        layout_mem.sense_mouse = node.params.mouse;
-        layout_mem.sense_scroll = node.params.scroll;
-        layout_mem.sense_dnd_hover = node.params.dnd_hover;
-        layout_mem.has_interaction_priority = node.params.has_interaction_priority;
+        layout_mem.sense = node.params.sense;
 
         let mut child = node.first_child;
         while child.is_some() {
@@ -517,10 +514,7 @@ pub(crate) struct LayoutMemory {
     pub(crate) first_child: Option<Id>,
     pub(crate) next: Option<Id>,
 
-    pub(crate) sense_mouse: bool,
-    pub(crate) sense_scroll: bool,
-    pub(crate) sense_dnd_hover: bool,
-    pub(crate) has_interaction_priority: bool
+    pub(crate) sense: Sense
 }
 
 impl Default for LayoutMemory {
@@ -533,10 +527,7 @@ impl Default for LayoutMemory {
             transform: TSTransform::IDENTITY,
             first_child: None,
             next: None,
-            sense_mouse: false,
-            sense_scroll: false,
-            sense_dnd_hover: false,
-            has_interaction_priority: false
+            sense: Sense::empty()
         }
     }
 
