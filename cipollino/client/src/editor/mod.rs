@@ -1,5 +1,6 @@
 
 use std::cell::RefCell;
+use std::rc::Rc;
 use std::path::PathBuf;
 
 use project::{alisa::rmpv, Ptr};
@@ -65,7 +66,9 @@ impl Editor {
                     open_clip: Ptr::null(),
                     active_layer: Ptr::null(),
                     
-                    curr_tool: Box::new(Pencil::default())
+                    curr_tool: Rc::new(RefCell::new(Box::new(Pencil::default()))),
+
+                    stroke_preview: None
                 },
                 renderer: None
             },

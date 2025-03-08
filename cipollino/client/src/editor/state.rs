@@ -1,4 +1,6 @@
 
+use std::cell::RefCell;
+use std::rc::Rc;
 use project::{Client, Clip, ClipInner, Layer, Ptr};
 
 use crate::ToolDyn;
@@ -10,7 +12,9 @@ pub struct EditorState {
     pub open_clip: Ptr<Clip>,
     pub active_layer: Ptr<Layer>,
 
-    pub curr_tool: Box<dyn ToolDyn>
+    pub curr_tool: Rc<RefCell<Box<dyn ToolDyn>>>,
+
+    pub stroke_preview: Option<malvina::StrokeMesh> 
 }
 
 impl EditorState {

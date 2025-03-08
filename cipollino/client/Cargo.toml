@@ -20,3 +20,6 @@ pathdiff = "0.2.1"
 
 serde = { workspace = true }
 serde_json = { workspace = true }
+
+[build-dependencies]
+cc = "1.0"

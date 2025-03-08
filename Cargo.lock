@@ -736,6 +736,7 @@ dependencies = [
 name = "cipollino-studio"
 version = "0.1.0"
 dependencies = [
+ "cc",
  "clap",
  "directories",
  "ewebsock",
