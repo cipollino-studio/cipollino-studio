@@ -1,6 +1,10 @@
 
+mod select;
+pub use select::*;
+
 mod pencil;
 pub use pencil::*;
+
 use project::{Action, ClipInner, CreateFrame, Frame, FrameTreeData, Layer, Ptr};
 
 use crate::{EditorState, ProjectState};

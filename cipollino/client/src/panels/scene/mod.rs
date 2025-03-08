@@ -55,7 +55,7 @@ impl Panel for ScenePanel {
         };
 
         pierro::horizontal_fill(ui, |ui| {
-            self.toolbar(ui);
+            self.toolbar(ui, editor);
             pierro::v_line(ui);
             self.canvas(ui, project, editor, renderer, clip_inner); 
         });

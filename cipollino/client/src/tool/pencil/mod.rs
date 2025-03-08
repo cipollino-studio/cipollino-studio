@@ -6,11 +6,11 @@ use super::{Tool, ToolContext};
 mod curve_fit;
 
 #[derive(Default)]
-pub struct Pencil {
+pub struct PencilTool {
     pts: Vec<malvina::StrokePoint>
 }
 
-impl Pencil {
+impl PencilTool {
 
     fn calc_stroke(&self) -> malvina::Stroke {
         let mut pts = Vec::new();
@@ -63,7 +63,7 @@ impl Pencil {
 
 }
 
-impl Tool for Pencil {
+impl Tool for PencilTool {
     const ICON: &'static str = pierro::icons::PENCIL;
 
     fn mouse_clicked(&mut self, ctx: &mut ToolContext, pos: malvina::Vec2) {
