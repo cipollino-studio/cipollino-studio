@@ -53,7 +53,7 @@ fn find_dnd_hovered_node(memory: &mut Memory, node: Id, pos: Vec2) -> Option<Id>
 impl Input {
 
     /// Distribute the input to nodes, taking foucs into account.
-    pub(crate) fn distribute(&self, memory: &mut Memory) {
+    pub(crate) fn distribute(&mut self, memory: &mut Memory) {
 
         // Take away focus if we clicked outside the focused node
         if let Some(focused_node) = memory.get_focus() {
@@ -94,6 +94,14 @@ impl Input {
             None
         })();
 
+        let keyboard_captured_node = memory.get_focus().and_then(|focused| {
+            if memory.get::<LayoutMemory>(focused).sense.contains(Sense::KEYBOARD) {
+                Some(focused)
+            } else {
+                None
+            }
+        });
+
         for (id, interaction) in memory.iter_mut::<Interaction>() {
             let hovered = Some(id) == hovered_node;
             let scrollable = Some(id) == scrollable_node;
@@ -102,12 +110,15 @@ impl Input {
             interaction.r_mouse = if hovered { self.r_mouse } else { MouseButton::new() };
             interaction.scroll = if scrollable { self.scroll } else { Vec2::ZERO };
             interaction.dnd_hovered = Some(id) == dnd_hovered_node;
+            interaction.keyboard_captured = Some(id) == keyboard_captured_node;
         }
 
         // If we're not holding the mouse down, we can't be drag and dropping anything
         if !self.l_mouse.down() && !self.l_mouse.released() {
             memory.clear_dnd_payload();
         }
+
+        self.keyboard_captured = keyboard_captured_node.is_some();
     }
 
 }

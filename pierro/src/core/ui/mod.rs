@@ -122,7 +122,8 @@ impl<'a, 'b> UI<'a, 'b> {
             l_mouse: interaction.l_mouse,
             r_mouse: interaction.r_mouse,
             scroll: interaction.scroll,
-            dnd_hovered: interaction.dnd_hovered
+            dnd_hovered: interaction.dnd_hovered,
+            keyboard_captured: interaction.keyboard_captured
         }
     }
 

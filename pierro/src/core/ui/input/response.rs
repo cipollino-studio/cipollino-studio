@@ -14,7 +14,9 @@ pub struct Response {
     pub r_mouse: MouseButton,
     pub scroll: Vec2,
 
-    pub dnd_hovered: bool
+    pub dnd_hovered: bool,
+
+    pub keyboard_captured: bool
 }
 
 impl Response {

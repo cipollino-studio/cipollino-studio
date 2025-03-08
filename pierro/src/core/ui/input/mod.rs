@@ -29,9 +29,14 @@ pub struct Input {
     pub r_mouse: MouseButton,
     pub scroll: Vec2,
 
+    /// The current state of all the keys
     keys: HashMap<Key, ButtonInput>,
+    /// The keys pressed on this frame
     pub keys_pressed: Vec<Key>,
+    /// The keys released on this frame
     pub keys_released: Vec<Key>,
+    /// Is the keyboard currently captured by a node in the UI tree?
+    pub keyboard_captured: bool,
 
     pub ime_preedit: String,
     pub ime_commit: Option<String>
@@ -44,6 +49,7 @@ pub(crate) struct Interaction {
     pub(crate) r_mouse: MouseButton,
     pub(crate) scroll: Vec2,
     pub(crate) dnd_hovered: bool,
+    pub(crate) keyboard_captured: bool
 }
 
 impl Default for Interaction {
@@ -54,7 +60,8 @@ impl Default for Interaction {
             l_mouse: MouseButton::new(),
             r_mouse: MouseButton::new(),
             scroll: Vec2::ZERO,
-            dnd_hovered: false
+            dnd_hovered: false,
+            keyboard_captured: false
         }
     }
 
@@ -109,7 +116,8 @@ impl Input {
             keys_pressed: Vec::new(),
             keys_released: Vec::new(),
             ime_preedit: String::new(),
-            ime_commit: None
+            ime_commit: None,
+            keyboard_captured: false
         }
     }
 
