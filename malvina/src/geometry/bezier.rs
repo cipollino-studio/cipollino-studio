@@ -40,6 +40,21 @@ pub fn sample_tangent<T: HasMagnitude>(a: &BezierPoint<T>, b: &BezierPoint<T>, t
     derivative * (1.0 / magnitude)
 }
 
+pub fn arc_length<T: HasMagnitude>(a: &BezierPoint<T>, b: &BezierPoint<T>, from: f32, to: f32, step_size: f32) -> f32 {
+    let mut length = 0.0;
+    let mut t = from;
+    let mut p = sample(a, b, t);
+    while t < to {
+        let next = (t + step_size).min(to);
+        let next_p = sample(a, b, next); 
+        length += p.distance(next_p.clone());
+        t = next;
+        p = next_p;
+        t += step_size;
+    }
+    length
+}
+
 pub fn sample_normal<T: HasMagnitude + Turnable>(a: &BezierPoint<T>, b: &BezierPoint<T>, t: f32) -> T {
     sample_tangent(a, b, t).turn_cw()
 }
@@ -86,6 +101,30 @@ impl<T: HasMagnitude> BezierPath<T> {
     pub fn sample_tangent(&self, t: f32) -> T {
         let (a, b, t) = self.get_points(t);
         sample_tangent(a, b, t)
+    }
+
+    pub fn arc_length(&self, from: f32, to: f32, step_size: f32) -> f32 {
+        let from = from.max(0.0).min(self.pts.len() as f32 - 1.001);
+        let to = to.max(0.0).min(self.pts.len() as f32 - 1.001);
+        if from.floor() == to.floor() {
+            let (_, _, from_t) = self.get_points(from);
+            let (a, b, to_t) = self.get_points(to);
+            return arc_length(a, b, from_t, to_t, step_size)
+        }
+
+        let (from_a, from_b, from_t) = self.get_points(from);
+        let from_len = arc_length(from_a, from_b, from_t, 1.0, step_size);
+        let (to_a, to_b, to_t) = self.get_points(from);
+        let to_len = arc_length(to_a, to_b, 0.0, to_t, step_size);
+
+        let mut len = from_len + to_len;
+        for i in (from.floor() as u32 + 1)..(to.floor() as u32) {
+            let a = &self.pts[i as usize];
+            let b = &self.pts[i as usize + 1];
+            len += arc_length(a, b, 0.0, 1.0, step_size);
+        }
+
+        len 
     }
 
 }

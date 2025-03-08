@@ -1,5 +1,5 @@
 
-use crate::{HasMagnitude, StrokeStampInstance};
+use crate::{sample, sample_derivative, HasMagnitude, StrokeStampInstance};
 
 use super::Stroke;
 
@@ -21,18 +21,25 @@ impl Stroke {
 
         let mut stamps = Vec::new();
 
-        let mut t = 0.0;
-        while t < 2.0 {
-            let pos = self.path.sample(t).pt;
-            let derivative = self.path.sample_derivative(t).pt;
-            let tangent = derivative.normalize();
-            let right = tangent * 3.0;
-            stamps.push(StrokeStampInstance {
-                pos: pos + glam::Vec2::Y,
-                right
-            });
+        let spacing = 1.0;
 
-            t += 30.0 / derivative.magnitude(); 
+        for i in 0..(self.path.pts.len() - 1) {
+            let mut t = 0.0;
+            while t < 1.0 {
+                let a = &self.path.pts[i];
+                let b = &self.path.pts[i + 1];
+
+                let pos = sample(a, b, t).pt;
+                let derivative = sample_derivative(a, b, t).pt;
+                let tangent = derivative.normalize();
+                let right = tangent * 3.0;
+                stamps.push(StrokeStampInstance {
+                    pos, 
+                    right
+                });
+
+                t += spacing / derivative.magnitude(); 
+            }
         }
 
         stamps

@@ -1,0 +1,3 @@
+[submodule "cipollino/client/libs/curve-fit"]
+	path = cipollino/client/libs/curve-fit
+	url = https://github.com/ideasman42/curve-fit-nd.git
