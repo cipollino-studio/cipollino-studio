@@ -132,6 +132,7 @@ impl ScenePanel {
             // Render the scene
             renderer.render(ui.wgpu_device(), ui.wgpu_queue(), texture.texture(), camera, |rndr| {
                 self.render_layer_list(rndr, &project.client, &editor, clip, &clip.layers); 
+                rndr.render_canvas_border(malvina::vec2(clip.width as f32, clip.height as f32));
             });
 
             if response.hovered {

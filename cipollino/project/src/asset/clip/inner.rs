@@ -11,6 +11,8 @@ use super::Clip;
 pub struct ClipInner {
     pub layers: LayerChildList,
 
+    pub width: u32,
+    pub height: u32, 
     /// The length of the clip in frames
     pub length: u32,
     pub framerate: f32,
@@ -21,6 +23,8 @@ impl Default for ClipInner {
     fn default() -> Self {
         Self {
             layers: Default::default(),
+            width: 1920,
+            height: 1080,
             length: 100,
             framerate: 24.0,
         }

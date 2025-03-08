@@ -47,6 +47,8 @@ pub struct ClipTreeData {
     pub name: String,
     pub length: u32,
     pub framerate: f32,
+    pub width: u32,
+    pub height: u32,
     
     pub inner_ptr: alisa::Ptr<ClipInner>,
     pub layers: LayerChildListTreeData
@@ -59,6 +61,8 @@ impl Default for ClipTreeData {
             name: "Clip".to_owned(),
             length: 100,
             framerate: 24.0,
+            width: 1920,
+            height: 1080,
             inner_ptr: alisa::Ptr::null(),
             layers: Default::default()
         }
@@ -100,6 +104,8 @@ impl alisa::TreeObj for Clip {
             layers: data.layers.instance(LayerParent::Clip(ptr), recorder),
             length: data.length,
             framerate: data.framerate,
+            width: data.width,
+            height: data.height,
         };
         ClipInner::add(recorder, data.inner_ptr, clip_inner);
 
@@ -125,6 +131,8 @@ impl alisa::TreeObj for Clip {
         let clip_inner = objects.clip_inners.get(self.inner);
         let length = clip_inner.map(|inner| inner.length).unwrap_or(100);
         let framerate = clip_inner.map(|inner| inner.framerate).unwrap_or(24.0);
+        let width = clip_inner.map(|inner| inner.width).unwrap_or(1920);
+        let height = clip_inner.map(|inner| inner.width).unwrap_or(1080);
         let layers = clip_inner
             .map(|clip_inner| clip_inner.layers.collect_data(objects))
             .unwrap_or_default();
@@ -134,7 +142,9 @@ impl alisa::TreeObj for Clip {
             length,
             framerate,
             inner_ptr: self.inner,
-            layers 
+            layers,
+            width,
+            height, 
         }
     }
 

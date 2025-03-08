@@ -15,7 +15,7 @@ impl Default for ScenePanel {
     fn default() -> Self {
         Self {
             cam_pos: malvina::Vec2::ZERO,
-            cam_size: 1.0
+            cam_size: 2.0
         }
     }
 
