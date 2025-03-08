@@ -105,4 +105,8 @@ impl Tool for Pencil {
         Self::create_stroke(ctx, stroke); 
     }
 
+    fn cursor_icon(&self) -> pierro::CursorIcon {
+        pierro::CursorIcon::Crosshair
+    }
+
 }

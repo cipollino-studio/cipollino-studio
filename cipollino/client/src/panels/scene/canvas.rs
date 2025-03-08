@@ -52,8 +52,17 @@ impl ScenePanel {
     pub(super) fn canvas(&mut self, ui: &mut pierro::UI, project: &ProjectState, editor: &mut EditorState, renderer: &mut malvina::Renderer, clip: &ClipInner) {
         pierro::canvas(ui, |ui, texture, response| {
             ui.set_sense_mouse(response.node_ref, true);
+            ui.set_sense_scroll(response.node_ref, true);
 
-            let camera = malvina::Camera::new(0.0, 0.0, ui.scale_factor());
+            // Focus
+            if response.mouse_pressed() {
+                response.request_focus(ui);
+            }
+            if response.mouse_released() {
+                response.release_focus(ui);
+            }
+
+            let camera = malvina::Camera::new(self.cam_pos.x, self.cam_pos.y, ui.scale_factor() / self.cam_size);
 
             // Calculate the world-space mouse position
             let resolution = texture.size();
@@ -64,6 +73,23 @@ impl ScenePanel {
                 .map(|pos| (pos + offset) * ui.scale_factor())
                 .map(|pos| pierro::vec2(pos.x, resolution.y - pos.y))
                 .map(|pos| camera.screen_to_world(malvina::vec2(pos.x, pos.y), malvina::vec2(resolution.x, resolution.y))); 
+
+            // Zoom
+            if let Some(mouse_pos) = mouse_pos {
+                let zoom_fac = (1.05 as f32).powf(-response.scroll.y.clamp(-4.0, 4.0) * 0.7); 
+                let next_cam_size = (self.cam_size * zoom_fac).clamp(0.05, 20.0);
+                let zoom_fac = next_cam_size / self.cam_size;
+                self.cam_pos -= (mouse_pos - self.cam_pos) * (zoom_fac - 1.0); 
+                self.cam_size = next_cam_size;
+            }
+
+            // Panning
+            let panning = ui.input().key_down(pierro::Key::COMMAND);
+            if panning && response.dragging() {
+                let drag_delta = response.drag_delta(ui);
+                let drag_delta = malvina::vec2(-drag_delta.x, drag_delta.y) * self.cam_size;
+                self.cam_pos += drag_delta;
+            }
 
             // Use the current tool
             let tool = editor.curr_tool.clone();
@@ -87,22 +113,39 @@ impl ScenePanel {
                 if response.mouse_released() {
                     tool.mouse_released(&mut tool_context, mouse_pos);
                 }
-                if response.drag_started() {
+                if response.drag_started() && !panning {
                     tool.mouse_drag_started(&mut tool_context, mouse_pos);
                 }
-                if response.dragging() {
+                if response.dragging() && !panning {
                     tool.mouse_dragged(&mut tool_context, mouse_pos);
                 }
-                if response.drag_stopped() {
+                if response.drag_stopped() && !panning {
                     tool.mouse_drag_stopped(&mut tool_context, mouse_pos);
                 }
             }
+            let tool_cursor_icon = tool.cursor_icon();
             let clear_stroke_preview = tool_context.clear_stroke_preview;
+
+            // Recalculate the camera
+            let camera = malvina::Camera::new(self.cam_pos.x, self.cam_pos.y, ui.scale_factor() / self.cam_size);
 
             // Render the scene
             renderer.render(ui.wgpu_device(), ui.wgpu_queue(), texture.texture(), camera, |rndr| {
                 self.render_layer_list(rndr, &project.client, &editor, clip, &clip.layers); 
             });
+
+            if response.hovered {
+                let cursor = if panning {
+                    if response.mouse_down() {
+                        pierro::CursorIcon::Grabbing
+                    } else {
+                        pierro::CursorIcon::Grab
+                    }
+                } else {
+                    tool_cursor_icon
+                };
+                ui.set_cursor(cursor);
+            }
 
             if clear_stroke_preview {
                 editor.stroke_preview = None;
