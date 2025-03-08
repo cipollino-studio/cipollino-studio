@@ -14,8 +14,8 @@ impl Camera {
     }
 
     pub(crate) fn calc_view_proj(&self, resolution: glam::Vec2) -> glam::Mat4 {
-        let min = (self.center - resolution * 0.5) / self.zoom;
-        let max = (self.center + resolution * 0.5) / self.zoom;
+        let min = self.center - resolution * 0.5 / self.zoom;
+        let max = self.center + resolution * 0.5 / self.zoom;
         glam::Mat4::orthographic_rh(min.x, max.x, min.y, max.y, -1.0, 1.0)
     }
 
