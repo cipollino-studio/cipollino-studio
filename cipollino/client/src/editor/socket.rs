@@ -1,4 +1,5 @@
 use project::alisa::{rmpv, rmpv_decode, rmpv_encode};
+use std::sync::{Arc, Mutex};
 
 #[derive(PartialEq, Eq)]
 enum SocketState {
@@ -9,48 +10,73 @@ enum SocketState {
 
 pub struct Socket {
     sender: ewebsock::WsSender,
-    receiver: ewebsock::WsReceiver,
-    state: SocketState,
-    error: Option<String> 
+    state: Arc<Mutex<SocketState>>,
+    error: Arc<Mutex<Option<String>>>,
+    msgs: Arc<Mutex<Vec<rmpv::Value>>>,
+    signal: Arc<Mutex<Option<pierro::RedrawSignal>>>,
+    has_signal: bool
 }
 
 impl Socket {
 
     pub fn new(url: &str) -> Result<Self, String> {
         let (sender, receiver) = ewebsock::connect(url, ewebsock::Options::default())?;        
+
+        let state = Arc::new(Mutex::new(SocketState::None));
+        let error = Arc::new(Mutex::new(None));
+        let msgs = Arc::new(Mutex::new(Vec::new()));
+        let signal = Arc::new(Mutex::new(None::<pierro::RedrawSignal>));
+
+        let state_copy = state.clone();
+        let error_copy = error.clone();
+        let msgs_copy = msgs.clone();
+        let signal_copy = signal.clone();
+
+        std::thread::spawn(move || {
+            loop {
+                let Some(event) = receiver.try_recv() else { continue; };
+                if let Some(signal) = &*signal.lock().unwrap() {
+                    signal.request_redraw();
+                }
+                match event {
+                    ewebsock::WsEvent::Opened => {
+                        *state.lock().unwrap() = SocketState::Opened;
+                    },
+                    ewebsock::WsEvent::Message(msg) => {
+                        if let ewebsock::WsMessage::Binary(data) = msg {
+                            if let Some(msg) = rmpv_decode(&data) {
+                                msgs.lock().unwrap().push(msg);
+                            }
+                        }
+                    },
+                    ewebsock::WsEvent::Error(msg) => {
+                        *error.lock().unwrap() = Some(msg);
+                        *state.lock().unwrap() = SocketState::Closed;
+                    },
+                    ewebsock::WsEvent::Closed => {
+                        *state.lock().unwrap() = SocketState::Closed;
+                        break;
+                    },
+                }
+            }
+        });
+
         Ok(Self {
             sender,
-            receiver,
-            state: SocketState::None,
-            error: None
+            state: state_copy,
+            error: error_copy,
+            msgs: msgs_copy,
+            signal: signal_copy,
+            has_signal: false
         })
     }
 
     pub fn receive(&mut self) -> Option<rmpv::Value> {
-        let event = self.receiver.try_recv()?;
-        match event {
-            ewebsock::WsEvent::Opened => {
-                self.state = SocketState::Opened;
-                None
-            },
-            ewebsock::WsEvent::Message(msg) => {
-                if let ewebsock::WsMessage::Binary(data) = msg {
-                    let msg = rmpv_decode(&data)?;
-                    Some(msg)
-                } else {
-                    None
-                }
-            },
-            ewebsock::WsEvent::Error(msg) => {
-                self.error = Some(msg);
-                self.state = SocketState::Closed;
-                None
-            },
-            ewebsock::WsEvent::Closed => {
-                self.state = SocketState::Closed;
-                None
-            },
+        let mut msgs = self.msgs.lock().ok()?;
+        if msgs.is_empty() {
+            return None;
         }
+        Some(msgs.remove(0))
     }
 
     pub fn send(&mut self, msg: rmpv::Value) {
@@ -60,15 +86,24 @@ impl Socket {
     }
 
     pub fn opened(&self) -> bool {
-        self.state == SocketState::Opened
+        *self.state.lock().unwrap() == SocketState::Opened
     }
 
     pub fn closed(&self) -> bool {
-        self.state == SocketState::Closed
+        *self.state.lock().unwrap() == SocketState::Closed
     }
 
     pub fn take_error(&mut self) -> Option<String> {
-        self.error.take()
+        self.error.lock().unwrap().take()
+    }
+
+    pub fn has_signal(&self) -> bool {
+        self.has_signal
+    }
+
+    pub fn set_signal(&mut self, signal: pierro::RedrawSignal) {
+        self.has_signal = true;
+        *self.signal.lock().unwrap() = Some(signal);
     }
 
 }

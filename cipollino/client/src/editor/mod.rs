@@ -110,6 +110,10 @@ impl Editor {
             while let Some(msg) = socket.receive() {
                 self.state.project.client.receive_message(msg, &mut ());
             }
+            
+            if !socket.has_signal() {
+                socket.set_signal(ui.redraw_signal());
+            }
         }
 
         if self.docking.render(ui, &mut self.state) {
