@@ -14,6 +14,8 @@ pub use socket::*;
 mod state;
 pub use state::*;
 
+mod shortcuts;
+
 pub struct ProjectState {
     pub client: project::Client,
 
@@ -87,6 +89,7 @@ impl Editor {
 
     pub fn tick(&mut self, ui: &mut pierro::UI, systems: &mut AppSystems) {
 
+        // Menu bar
         pierro::menu_bar(ui, |ui| {
             pierro::menu_bar_item(ui, "File", |ui| {
                 if pierro::menu_button(ui, "Open").mouse_clicked() {
@@ -103,6 +106,7 @@ impl Editor {
             });
         });
 
+        // Collab
         if let Some(socket) = &mut self.socket {
             for to_send in self.state.project.client.take_messages() {
                 socket.send(to_send);
@@ -116,10 +120,13 @@ impl Editor {
             }
         }
 
+        // Render the docking panels 
         if self.docking.render(ui, &mut self.state) {
+            // Save the layout if it was modified
             systems.prefs.set::<DockingLayoutPref>(&self.docking);
         }
 
+        // Load the currently open clip if it's not open
         if let Some(clip) = self.state.project.client.get(self.state.editor.open_clip) {
             if let Some(clip_inner) = self.state.project.client.get(clip.inner) {
                 self.state.editor.tick_playback(ui, clip_inner);
@@ -128,6 +135,9 @@ impl Editor {
             }
         }
 
+        self.use_shortcuts(ui, systems);
+
+        // Update the project client
         self.state.project.tick();
         self.state.project.client.tick(&mut ());
     }

@@ -86,7 +86,7 @@ impl FrameArea {
         if !frame_area.is_focused(ui) {
             self.selection.clear();
         }
-        if frame_area.mouse_clicked() && !ui.input().key_down(pierro::Key::SHIFT) {
+        if frame_area.mouse_clicked() && !ui.input().key_down(&pierro::Key::SHIFT) {
             self.selection.clear();
         }
 
@@ -113,13 +113,19 @@ impl FrameArea {
                 self.drag_state = DragState::BoxSelect { from: origin, to: origin }; 
                 frame_area.request_focus(ui);
             }
-            if !ui.input().key_down(pierro::Key::SHIFT) {
+            if !ui.input().key_down(&pierro::Key::SHIFT) {
                 self.selection.clear();
             }
         }
         // stop_drag() called after rendering to avoid a flicker as the frames are moved 
         if frame_area.drag_stopped() {
             self.drag_stopped(project, render_list);
+        }
+
+        // Deleting frames
+        let delete_shortcut = pierro::KeyboardShortcut::new(pierro::KeyModifiers::empty(), pierro::Key::DELETE);
+        if delete_shortcut.used_globally(ui) {
+            self.selection.delete(project);
         }
 
         // Painting the frame area contents 

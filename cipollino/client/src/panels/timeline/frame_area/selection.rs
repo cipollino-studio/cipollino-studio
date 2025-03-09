@@ -1,7 +1,7 @@
 
 use std::collections::HashSet;
 
-use project::{alisa::Action, Frame, Ptr, SetFrameTime};
+use project::{alisa::Action, DeleteFrame, Frame, Ptr, SetFrameTime};
 
 use crate::ProjectState;
 
@@ -17,6 +17,10 @@ impl FrameSelection {
         Self {
             frames: HashSet::new(),
         }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.frames.is_empty()
     }
 
     pub fn select_frame(&mut self, frame: Ptr<Frame>) {
@@ -60,6 +64,16 @@ impl FrameSelection {
             });
         } 
          
+        project.client.queue_action(action);
+    }
+
+    pub fn delete(&self, project: &ProjectState) {
+        let mut action = Action::new();
+        for frame in self.frames.iter() {
+            action.push(DeleteFrame {
+                ptr: *frame
+            });
+        }
         project.client.queue_action(action);
     }
 
