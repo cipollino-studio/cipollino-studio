@@ -73,15 +73,15 @@ pub fn text_edit(ui: &mut UI, text: &mut String) -> TextEditResponse {
 
         for key in ui.input().keys_pressed.clone() {
             if let Some(text) = key.text {
-                if ui.input().key_down(Key::COMMAND) && text.to_lowercase() == "v" {
+                if ui.input().key_down(&Key::COMMAND) && text.to_lowercase() == "v" {
                     for char in ui.get_clipboard_text().unwrap_or(String::new()).chars() {
                         memory.editor.action(font_system(ui), cosmic_text::Action::Insert(char));
                     }
-                } else if ui.input().key_down(Key::COMMAND) && text.to_lowercase() == "c" {
+                } else if ui.input().key_down(&Key::COMMAND) && text.to_lowercase() == "c" {
                     if let Some(text) = memory.editor.copy_selection() {
                         ui.set_clipboard_text(text);
                     }
-                } else if ui.input().key_down(Key::COMMAND) && text.to_lowercase() == "x" {
+                } else if ui.input().key_down(&Key::COMMAND) && text.to_lowercase() == "x" {
                     if let Some(text) = memory.editor.copy_selection() {
                         ui.set_clipboard_text(text);
                     }
@@ -97,7 +97,7 @@ pub fn text_edit(ui: &mut UI, text: &mut String) -> TextEditResponse {
                     memory.editor.action(font_system(ui), cosmic_text::Action::Insert(' '));
                 },
                 Some(LogicalKey::ArrowLeft) | Some(LogicalKey::Home) => {
-                    if !ui.input().key_down(Key::SHIFT) {
+                    if !ui.input().key_down(&Key::SHIFT) {
                         if let Some((min, _)) = memory.editor.selection_bounds() {
                             memory.editor.set_cursor(min);
                         }
@@ -110,7 +110,7 @@ pub fn text_edit(ui: &mut UI, text: &mut String) -> TextEditResponse {
 
                     let motion = if key.logical_key == Some(LogicalKey::Home) {
                         cosmic_text::Motion::Home
-                    } else if ui.input().key_down(Key::COMMAND) {
+                    } else if ui.input().key_down(&Key::COMMAND) {
                         cosmic_text::Motion::LeftWord
                     } else {
                         cosmic_text::Motion::Left
@@ -119,7 +119,7 @@ pub fn text_edit(ui: &mut UI, text: &mut String) -> TextEditResponse {
                     memory.editor.action(font_system(ui), cosmic_text::Action::Motion(motion));
                 },
                 Some(LogicalKey::ArrowRight) | Some(LogicalKey::End) => {
-                    if !ui.input().key_down(Key::SHIFT) {
+                    if !ui.input().key_down(&Key::SHIFT) {
                         if let Some((_, max)) = memory.editor.selection_bounds() {
                             memory.editor.set_cursor(max);
                         }
@@ -132,7 +132,7 @@ pub fn text_edit(ui: &mut UI, text: &mut String) -> TextEditResponse {
 
                     let motion = if key.logical_key == Some(LogicalKey::End) {
                         cosmic_text::Motion::End
-                    } else if ui.input().key_down(Key::COMMAND) {
+                    } else if ui.input().key_down(&Key::COMMAND) {
                         cosmic_text::Motion::RightWord
                     } else {
                         cosmic_text::Motion::Right
@@ -141,7 +141,7 @@ pub fn text_edit(ui: &mut UI, text: &mut String) -> TextEditResponse {
                     memory.editor.action(font_system(ui), cosmic_text::Action::Motion(motion));
                 },
                 Some(LogicalKey::Backspace) => {
-                    if ui.input().key_down(Key::COMMAND) {
+                    if ui.input().key_down(&Key::COMMAND) {
                         if memory.editor.selection_bounds().is_none() {
                             memory.editor.set_selection(cosmic_text::Selection::Normal(memory.editor.cursor()));
                             memory.editor.action(font_system(ui), cosmic_text::Action::Motion(cosmic_text::Motion::LeftWord));
@@ -150,7 +150,7 @@ pub fn text_edit(ui: &mut UI, text: &mut String) -> TextEditResponse {
                     memory.editor.action(font_system(ui), cosmic_text::Action::Backspace);
                 },
                 Some(LogicalKey::Delete) => {
-                    if ui.input().key_down(Key::COMMAND) {
+                    if ui.input().key_down(&Key::COMMAND) {
                         if memory.editor.selection_bounds().is_none() {
                             memory.editor.set_selection(cosmic_text::Selection::Normal(memory.editor.cursor()));
                             memory.editor.action(font_system(ui), cosmic_text::Action::Motion(cosmic_text::Motion::RightWord));
@@ -194,7 +194,7 @@ pub fn text_edit(ui: &mut UI, text: &mut String) -> TextEditResponse {
         if let Some(mouse_pos) = text_edit.mouse_pos(ui) {
             let mouse_pos = mouse_pos - widget_margin.min;
             if text_edit.mouse_pressed() {
-                if !ui.input().key_down(Key::SHIFT) {
+                if !ui.input().key_down(&Key::SHIFT) {
                     memory.editor.set_selection(cosmic_text::Selection::None);
                     memory.editor.action(font_system(ui), cosmic_text::Action::Click { x: (mouse_pos.x + scroll) as i32, y: mouse_pos.y as i32 });
                 } else {

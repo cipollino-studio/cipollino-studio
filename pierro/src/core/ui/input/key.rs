@@ -58,4 +58,35 @@ impl Key {
         logical_key: Some(LogicalKey::Control),
     };
 
+    pub const SPACE: Self = Self {
+        text: None,
+        logical_key: Some(LogicalKey::Space),
+    };
+
+    pub const DELETE: Self = Self {
+        text: None,
+        logical_key: Some(LogicalKey::Backspace),
+    };
+
+    pub fn text(text: &str) -> Self {
+        Self {
+            text: Some(text.to_owned()),
+            logical_key: None,
+        }
+    }
+
+    pub fn to_lowercase(&self) -> Self {
+        Self {
+            text: self.text.as_ref().map(|text| text.to_lowercase()),
+            logical_key: self.logical_key,
+        }
+    }
+
+    pub fn to_uppercase(&self) -> Self {
+        Self {
+            text: self.text.as_ref().map(|text| text.to_uppercase()),
+            logical_key: self.logical_key,
+        }
+    }
+
 }

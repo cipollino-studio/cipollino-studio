@@ -20,6 +20,8 @@ pub use response::*;
 mod key;
 pub use key::*;
 
+mod keyboard;
+
 pub struct Input {
     pub delta_time: f32,
 
@@ -77,22 +79,22 @@ impl Input {
     }
 
     /// Get the state of a key
-    pub fn key_state(&self, key: Key) -> ButtonInput {
-        self.keys.get(&key).map(|state| *state).unwrap_or(ButtonInput::new())
+    pub fn key_state(&self, key: &Key) -> ButtonInput {
+        self.keys.get(key).map(|state| *state).unwrap_or(ButtonInput::new())
     }
 
     /// Is a key down?
-    pub fn key_down(&self, key: Key) -> bool {
+    pub fn key_down(&self, key: &Key) -> bool {
         self.key_state(key).down()
     }
 
     /// Has a key just been pressed?
-    pub fn key_pressed(&self, key: Key) -> bool {
+    pub fn key_pressed(&self, key: &Key) -> bool {
         self.key_state(key).pressed()
     }
 
     /// Has a key just been released?
-    pub fn key_released(&self, key: Key) -> bool {
+    pub fn key_released(&self, key: &Key) -> bool {
         self.key_state(key).released()
     }
 
@@ -143,14 +145,14 @@ impl Input {
 
         self.keys_pressed = std::mem::replace(&mut raw_input.keys_pressed, Vec::new());
         self.keys_released = std::mem::replace(&mut raw_input.keys_released, Vec::new());
+        for (_key, state) in self.keys.iter_mut() {
+            state.tick_with_same_state(raw_input.delta_time);
+        }
         for key in self.keys_pressed.clone() {
             self.key_state_mut(&key).press();
         }
         for key in self.keys_released.clone() {
             self.key_state_mut(&key).release();
-        }
-        for (_key, state) in self.keys.iter_mut() {
-            state.tick_with_same_state(raw_input.delta_time);
         }
 
         self.ime_preedit = raw_input.ime_preedit.clone();
