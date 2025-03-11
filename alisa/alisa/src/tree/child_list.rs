@@ -20,6 +20,10 @@ impl<C: ChildPtr> ChildList<C> {
         self.children.iter().cloned()
     }
 
+    pub fn as_slice(&self) -> &[C] {
+        &self.children
+    }
+
 }
 
 impl<C: ChildPtr> Default for ChildList<C> {

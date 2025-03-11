@@ -24,7 +24,7 @@ impl<Obj: Object> Copy for Ptr<Obj> {}
 
 impl<Obj: Object> Ptr<Obj> {
 
-    pub(crate) fn from_key(key: u64) -> Self {
+    pub fn from_key(key: u64) -> Self {
         Self {
             key,
             _marker: PhantomData,
@@ -41,6 +41,10 @@ impl<Obj: Object> Ptr<Obj> {
 
     pub fn any(&self) -> AnyPtr {
         AnyPtr(self.key)
+    }
+
+    pub fn key(&self) -> u64 {
+        self.key
     }
 
 }
