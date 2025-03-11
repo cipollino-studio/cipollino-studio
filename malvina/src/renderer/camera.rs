@@ -1,4 +1,5 @@
 
+#[derive(Clone, Copy)]
 pub struct Camera {
     center: glam::Vec2,
     zoom: f32
@@ -25,71 +26,6 @@ impl Camera {
         let ndc = glam::vec4(ndc.x, ndc.y, 0.0, 1.0);
         let world = view_proj.inverse() * ndc;
         glam::vec2(world.x, world.y) 
-    }
-
-}
-
-#[repr(C)]
-#[derive(Clone, Copy, bytemuck::Zeroable, bytemuck::Pod)]
-struct CameraUniforms { 
-    pub view_proj: glam::Mat4
-}
-
-pub(crate) struct CameraUniformsBuffer {
-    pub buffer: wgpu::Buffer,
-    pub bind_group_layout: wgpu::BindGroupLayout,
-    pub bind_group: wgpu::BindGroup
-}
-
-impl CameraUniformsBuffer {
-
-    pub fn new(device: &wgpu::Device) -> Self {
-
-        let buffer = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("malvina_camera_buffer"),
-            size: size_of::<CameraUniforms>() as u64,
-            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-            mapped_at_creation: false,
-        });
-
-        let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            label: Some("malvina_camera_bind_group_layout"),
-            entries: &[
-                wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: wgpu::ShaderStages::VERTEX,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: None
-                    },
-                    count: None,
-                }
-            ] 
-        });
-
-        let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("malvina_camera_bind_group"),
-            layout: &bind_group_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: buffer.as_entire_binding(),
-                }
-            ],
-        });
-
-        Self {
-            buffer,
-            bind_group_layout,
-            bind_group
-        } 
-    }
-
-    pub fn update(&self, queue: &wgpu::Queue, camera: &Camera, resolution: glam::Vec2) {
-        queue.write_buffer(&self.buffer, 0, bytemuck::cast_slice(&[CameraUniforms {
-            view_proj: camera.calc_view_proj(resolution),
-        }]));
     }
 
 }

@@ -1,17 +1,11 @@
 
-struct Camera {
-    view_proj: mat4x4<f32> 
-}
-
-@group(0) @binding(0)
-var<uniform> camera: Camera;
-
 struct Uniforms {
-    canvas_size: vec2<f32>
+    view_proj: mat4x4<f32>,
+    canvas_size: vec2<f32>,
+    padding: vec2<f32>
 }
 
-@group(1) @binding(0)
-var<uniform> uniforms: Uniforms;
+var<push_constant> uniforms: Uniforms;
 
 struct VertexOutput {
     @builtin(position) clip_position: vec4<f32>,
@@ -25,10 +19,10 @@ fn vs_main(
 
     let canvas_size = uniforms.canvas_size;
 
-    let inner_tl = camera.view_proj * vec4(-canvas_size.x / 2.0,  canvas_size.y / 2.0, 0.0, 1.0);
-    let inner_tr = camera.view_proj * vec4( canvas_size.x / 2.0,  canvas_size.y / 2.0, 0.0, 1.0);
-    let inner_bl = camera.view_proj * vec4(-canvas_size.x / 2.0, -canvas_size.y / 2.0, 0.0, 1.0);
-    let inner_br = camera.view_proj * vec4( canvas_size.x / 2.0, -canvas_size.y / 2.0, 0.0, 1.0);
+    let inner_tl = uniforms.view_proj * vec4(-canvas_size.x / 2.0,  canvas_size.y / 2.0, 0.0, 1.0);
+    let inner_tr = uniforms.view_proj * vec4( canvas_size.x / 2.0,  canvas_size.y / 2.0, 0.0, 1.0);
+    let inner_bl = uniforms.view_proj * vec4(-canvas_size.x / 2.0, -canvas_size.y / 2.0, 0.0, 1.0);
+    let inner_br = uniforms.view_proj * vec4( canvas_size.x / 2.0, -canvas_size.y / 2.0, 0.0, 1.0);
 
     // Too lazy to use vertex buffers :P
     var verts = array(

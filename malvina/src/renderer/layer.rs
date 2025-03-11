@@ -1,14 +1,16 @@
 
-use super::{CameraUniformsBuffer, CanvasBorderRenderer, StrokeMesh, StrokeRenderer};
+use super::{CanvasBorderRenderer, StrokeMesh, StrokeRenderer};
 
-pub struct LayerRenderer<'renderer> {
-    pub(super) device: &'renderer wgpu::Device,
-    pub(super) queue: &'renderer wgpu::Queue,
+pub struct LayerRenderer<'rndr> {
+    pub(super) device: &'rndr wgpu::Device,
+    pub(super) render_pass: &'rndr mut wgpu::RenderPass<'rndr>,
 
-    pub(super) render_pass: &'renderer mut wgpu::RenderPass<'renderer>,
-    pub(super) camera: &'renderer CameraUniformsBuffer,
-    pub(super) stroke_renderer: &'renderer mut StrokeRenderer,
-    pub(super) canvas_border_renderer: &'renderer mut CanvasBorderRenderer
+    pub(super) view_proj: glam::Mat4,
+    pub(super) resolution: glam::Vec2,
+    pub(super) dpi_factor: f32,
+
+    pub(super) stroke_renderer: &'rndr mut StrokeRenderer,
+    pub(super) canvas_border_renderer: &'rndr mut CanvasBorderRenderer,
 }
 
 impl LayerRenderer<'_> {
@@ -17,12 +19,16 @@ impl LayerRenderer<'_> {
         self.device
     }
 
-    pub fn render_stroke(&mut self, stroke: &StrokeMesh) {
-        self.stroke_renderer.render(self.render_pass, stroke, self.camera);
+    pub fn render_stroke(&mut self, stroke: &StrokeMesh, color: glam::Vec4) {
+        self.stroke_renderer.render(self.render_pass, stroke, color, self.view_proj);
+    }
+
+    pub fn render_stroke_selection(&mut self, stroke: &StrokeMesh, color: glam::Vec4) {
+        self.stroke_renderer.render_selection(self.render_pass, stroke, color, self.resolution, self.dpi_factor, self.view_proj);
     }
 
     pub fn render_canvas_border(&mut self, canvas_size: glam::Vec2) {
-        self.canvas_border_renderer.render(self.queue, self.render_pass, canvas_size, self.camera);
+        self.canvas_border_renderer.render(self.render_pass, canvas_size, self.view_proj);
     }
 
 }
