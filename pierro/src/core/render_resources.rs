@@ -45,11 +45,14 @@ impl RenderResources<'_> {
             force_fallback_adapter: false,
             compatible_surface: Some(&surface) 
         }).await?;
+
+        let mut limits = wgpu::Limits::default();
+        limits.max_push_constant_size = 256;
         let (device, queue) = adapter.request_device(
             &wgpu::DeviceDescriptor {
                 label: None,
-                required_features: wgpu::Features::default(),
-                required_limits: wgpu::Limits::default(),
+                required_features: wgpu::Features::default() | wgpu::Features::PUSH_CONSTANTS,
+                required_limits: limits,
                 memory_hints: Default::default(),
             },
             None
