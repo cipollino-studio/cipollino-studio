@@ -123,7 +123,7 @@ impl ScenePanel {
         // Render the scene
         renderer.render(ui.wgpu_device(), ui.wgpu_queue(), texture.texture(), camera, malvina::glam::vec4(1.0, 1.0, 1.0, 1.0), ui.scale_factor(), |rndr| {
             self.render_layer_list(rndr, &project.client, &editor, clip, &clip.layers); 
-            self.render_selection(rndr, &editor, render_list);
+            self.render_selection(rndr, &editor, &project.client, render_list);
             rndr.render_canvas_border(malvina::vec2(clip.width as f32, clip.height as f32));
         });
 

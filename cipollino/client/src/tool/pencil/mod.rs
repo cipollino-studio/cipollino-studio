@@ -46,6 +46,7 @@ impl PencilTool {
             idx: 0,
             data: StrokeTreeData {
                 stroke: StrokeData(stroke),
+                color: ctx.editor.color.into()
             },
         });
         ctx.project.client.queue_action(action);

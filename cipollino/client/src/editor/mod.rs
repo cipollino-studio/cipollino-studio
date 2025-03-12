@@ -77,7 +77,9 @@ impl Editor {
                     selection: Selection::new(),
 
                     stroke_mesh_cache: HashMap::new(),
-                    stroke_preview: None
+                    stroke_preview: None,
+
+                    color: pierro::Color::BLACK
                 },
                 renderer: None
             },

@@ -19,7 +19,9 @@ pub struct EditorState {
     pub selection: Selection,
 
     pub stroke_mesh_cache: HashMap<Ptr<Stroke>, malvina::StrokeMesh>,
-    pub stroke_preview: Option<malvina::StrokeMesh> 
+    pub stroke_preview: Option<malvina::StrokeMesh>,
+
+    pub color: pierro::Color
 }
 
 impl EditorState {

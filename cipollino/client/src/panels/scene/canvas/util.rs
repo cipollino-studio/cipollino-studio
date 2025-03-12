@@ -7,7 +7,7 @@ use crate::{EditorState, ScenePanel};
 impl ScenePanel {
 
     fn get_frame_render_list(frame: &Frame, list: &mut Vec<SceneChildPtr>) {
-        list.extend_from_slice(frame.scene.as_slice()); 
+        list.extend(frame.scene.iter().rev());
     }
 
     fn get_layer_render_list(client: &Client, editor: &EditorState, clip: &ClipInner, layer: &Layer, list: &mut Vec<SceneChildPtr>) {
