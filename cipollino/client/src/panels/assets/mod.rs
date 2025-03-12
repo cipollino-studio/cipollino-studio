@@ -9,16 +9,16 @@ use super::Panel;
 
 mod tree_ui;
 mod menu_bar;
-mod selection;
-pub use selection::*;
+mod list;
+pub use list::*;
 
 pub trait AssetUI: Asset {
 
     const ICON: &'static str;
 
     fn create(ptr: Ptr<Self>, parent: Ptr<Folder>, action: &mut Action);
-    fn selection_list(selection: &AssetSelection) -> &HashSet<Ptr<Self>>;
-    fn selection_list_mut(selection: &mut AssetSelection) -> &mut HashSet<Ptr<Self>>;
+    fn asset_list(list: &AssetList) -> &HashSet<Ptr<Self>>;
+    fn asset_list_mut(list: &mut AssetList) -> &mut HashSet<Ptr<Self>>;
 
     /// Called when the asset is double-clicked in the UI
     fn on_open(_ptr: Ptr<Self>, _project: &ProjectState, _state: &mut EditorState) {
@@ -38,13 +38,14 @@ impl AssetUI for Folder {
         });
     }
 
-    fn selection_list(selection: &AssetSelection) -> &HashSet<Ptr<Self>> {
-        &selection.folders
+    fn asset_list(list: &AssetList) -> &HashSet<Ptr<Self>> {
+        &list.folders
     }
 
-    fn selection_list_mut(selection: &mut AssetSelection) -> &mut HashSet<Ptr<Self>> {
-        &mut selection.folders
+    fn asset_list_mut(list: &mut AssetList) -> &mut HashSet<Ptr<Self>> {
+        &mut list.folders
     }
+
 }
 
 impl AssetUI for Clip {
@@ -58,17 +59,18 @@ impl AssetUI for Clip {
         });
     }
 
-    fn selection_list(selection: &AssetSelection) -> &HashSet<Ptr<Self>> {
-        &selection.clips
-    }
-
-    fn selection_list_mut(selection: &mut AssetSelection) -> &mut HashSet<Ptr<Self>> {
-        &mut selection.clips
-    }
-
     fn on_open(clip: Ptr<Self>, project: &ProjectState, state: &mut EditorState) {
         state.open_clip(&project.client, clip);
     }
+
+    fn asset_list(list: &AssetList) -> &HashSet<Ptr<Self>> {
+        &list.clips
+    }
+
+    fn asset_list_mut(list: &mut AssetList) -> &mut HashSet<Ptr<Self>> {
+        &mut list.clips
+    }
+
 }
 
 #[derive(Default)]
@@ -89,7 +91,7 @@ impl Panel for AssetsPanel {
     fn render(&mut self, ui: &mut pierro::UI, state: &mut State) {
         self.menu_bar(ui, &state.project);
 
-        let (_, moved_assets) = pierro::dnd_drop_zone_with_size::<AssetSelection, _>(ui, pierro::Size::fr(1.0), pierro::Size::fr(1.0), |ui| {
+        let (_, moved_assets) = pierro::dnd_drop_zone_with_size::<AssetList, _>(ui, pierro::Size::fr(1.0), pierro::Size::fr(1.0), |ui| {
             pierro::scroll_area(ui, |ui| {
                 self.render_folder_contents(ui, &state.project.client.folders, &state.project.client.clips, &state.project, &mut state.editor); 
             });
@@ -99,7 +101,7 @@ impl Panel for AssetsPanel {
         }
 
         self.asset_dnd_source.borrow_mut().display(ui, |ui| {
-            let Some(assets) = ui.memory().get_dnd_payload::<AssetSelection>() else {
+            let Some(assets) = ui.memory().get_dnd_payload::<AssetList>() else {
                 ui.memory().clear_dnd_payload();
                 return;
             };

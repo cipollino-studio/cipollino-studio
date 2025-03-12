@@ -6,19 +6,19 @@ use project::{Action, Client, Layer, LayerParent, Ptr, TransferLayer};
 use super::LayerUI;
 
 #[derive(Default, Clone, Debug)]
-pub struct LayerSelection {
+pub struct LayerList {
     pub layers: HashSet<Ptr<Layer>>
 }
 
-impl LayerSelection {
+impl LayerList {
 
-    pub fn select<L: LayerUI>(&mut self, ptr: Ptr<L>) {
+    pub fn add<L: LayerUI>(&mut self, ptr: Ptr<L>) {
         L::selection_list_mut(self).insert(ptr);
     }
 
     pub fn single<L: LayerUI>(ptr: Ptr<L>) -> Self {
         let mut selection = Self::default();
-        selection.select(ptr);
+        selection.add(ptr);
         selection
     }
 

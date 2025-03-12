@@ -11,11 +11,17 @@ use crate::{EditorState, ProjectState};
 
 pub struct ToolContext<'ctx> {
     pub device: &'ctx pierro::wgpu::Device,
+    pub queue: &'ctx pierro::wgpu::Queue,
+
     pub project: &'ctx ProjectState,
     pub editor: &'ctx mut EditorState,
     pub clip: &'ctx ClipInner,
     pub active_layer: Ptr<Layer>,
     pub frame_time: i32,
+
+    // Picking
+    pub picking_buffer: &'ctx mut malvina::PickingBuffer,
+    pub picking_mouse_pos: Option<(u32, u32)>, 
 
     // Misc
     pub clear_stroke_preview: bool

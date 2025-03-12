@@ -1,19 +1,19 @@
 
 use std::collections::HashSet;
 
-use project::{alisa::{self, Action, TreeObj}, deep_load_clip, deep_load_folder, Client, Clip, DeleteClip, DeleteFolder, Folder, Ptr, TransferClip, TransferFolder};
+use project::{alisa::{self, TreeObj}, deep_load_clip, deep_load_folder, Action, Client, Clip, DeleteClip, DeleteFolder, Folder, Ptr, TransferClip, TransferFolder};
 
 use crate::ProjectState;
 
 use super::AssetUI;
-
-#[derive(Clone, Default)]
-pub struct AssetSelection {
+ 
+#[derive(Default, Clone)]
+pub struct AssetList {
     pub folders: HashSet<Ptr<Folder>>,
     pub clips: HashSet<Ptr<Clip>>
 }
 
-impl AssetSelection {
+impl AssetList {
 
     pub fn deep_load_all(&self, client: &Client) {
         for folder in self.folders.iter() {
@@ -71,18 +71,18 @@ impl AssetSelection {
         state.client.queue_action(action);
     }
 
-    pub fn select<A: AssetUI>(&mut self, asset: Ptr<A>) {
-        A::selection_list_mut(self).insert(asset);
+    pub fn add<A: AssetUI>(&mut self, asset: Ptr<A>) {
+        A::asset_list_mut(self).insert(asset);
     }
 
     pub fn single<A: AssetUI>(asset: Ptr<A>) -> Self {
         let mut selection = Self::default();
-        selection.select(asset);
+        selection.add(asset);
         selection
     }
 
     fn render_contents_of_asset<A: AssetUI>(&self, ui: &mut pierro::UI, client: &Client) {
-        for asset_ptr in A::selection_list(self).iter() {
+        for asset_ptr in A::asset_list(self).iter() {
             let Some(asset) = client.get(*asset_ptr) else { continue; };
             pierro::horizontal_fit_centered(ui, |ui| {
                 pierro::icon(ui, A::ICON);

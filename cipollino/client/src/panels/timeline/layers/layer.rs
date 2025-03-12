@@ -3,7 +3,7 @@ use project::{Action, DeleteLayer, Layer, Ptr};
 
 use crate::{EditorState, ProjectState, TimelinePanel};
 
-use super::LayerSelection;
+use super::LayerList;
 
 impl TimelinePanel {
 
@@ -20,7 +20,7 @@ impl TimelinePanel {
             self.layer_context_menu(ui, project, layer_ptr); 
         });
 
-        self.layer_dnd_source.source_without_cursor_icon(ui, &layer_response, || LayerSelection::single(layer_ptr));
+        self.layer_dnd_source.source_without_cursor_icon(ui, &layer_response, || LayerList::single(layer_ptr));
 
         self.handle_layer_dropping(ui, &layer_response, render_list_idx);
 

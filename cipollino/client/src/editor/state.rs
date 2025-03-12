@@ -1,9 +1,11 @@
 
-use std::cell::RefCell;
+use std::{cell::RefCell, collections::HashMap};
 use std::rc::Rc;
-use project::{Client, Clip, ClipInner, Layer, Ptr};
+use project::{Client, Clip, ClipInner, Layer, Ptr, Stroke};
 
 use crate::ToolDyn;
+
+use super::Selection;
 
 pub struct EditorState {
     pub time: f32,
@@ -14,6 +16,9 @@ pub struct EditorState {
 
     pub curr_tool: Rc<RefCell<Box<dyn ToolDyn>>>,
 
+    pub selection: Selection,
+
+    pub stroke_mesh_cache: HashMap<Ptr<Stroke>, malvina::StrokeMesh>,
     pub stroke_preview: Option<malvina::StrokeMesh> 
 }
 

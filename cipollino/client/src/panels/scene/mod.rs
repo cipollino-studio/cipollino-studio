@@ -5,9 +5,14 @@ mod canvas;
 use crate::State;
 use super::Panel;
 
+use std::cell::RefCell;
+use std::rc::Rc;
+
 pub struct ScenePanel {
     cam_pos: malvina::Vec2,
-    cam_size: f32
+    cam_size: f32,
+
+    picking_buffer: Rc<RefCell<malvina::PickingBuffer>>,
 }
 
 impl Default for ScenePanel {
@@ -15,7 +20,8 @@ impl Default for ScenePanel {
     fn default() -> Self {
         Self {
             cam_pos: malvina::Vec2::ZERO,
-            cam_size: 2.0
+            cam_size: 2.0,
+            picking_buffer: Rc::new(RefCell::new(malvina::PickingBuffer::new())),
         }
     }
 

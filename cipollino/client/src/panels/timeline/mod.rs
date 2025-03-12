@@ -1,5 +1,5 @@
 use frame_area::FrameArea;
-use layers::{LayerDropLocation, LayerSelection};
+use layers::{LayerDropLocation, LayerList};
 use project::alisa::AnyPtr;
 use render_list::RenderList;
 
@@ -22,7 +22,7 @@ pub struct TimelinePanel {
 
     layer_dnd_source: pierro::DndSource,
     layer_dnd_hover_pos: Option<LayerDropLocation>,
-    layer_dnd_dropped_payload: Option<LayerSelection>,
+    layer_dnd_dropped_payload: Option<LayerList>,
 
     frame_area: FrameArea
 }

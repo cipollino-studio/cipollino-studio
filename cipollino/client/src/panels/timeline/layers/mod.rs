@@ -8,8 +8,8 @@ use crate::{EditorState, ProjectState};
 use super::{render_list::RenderLayerKind, RenderList, TimelinePanel};
 
 mod layer;
-mod selection;
-pub use selection::*;
+mod list;
+pub use list::*;
 
 pub trait LayerUI: Object<Project = Project> {
 
@@ -18,8 +18,8 @@ pub trait LayerUI: Object<Project = Project> {
     fn name(&self) -> &String;
     fn rename(action: &mut Action, ptr: Ptr<Self>, name: String);
 
-    fn selection_list(selection: &LayerSelection) -> &HashSet<Ptr<Self>>;
-    fn selection_list_mut(selection: &mut LayerSelection) -> &mut HashSet<Ptr<Self>>;
+    fn selection_list(selection: &LayerList) -> &HashSet<Ptr<Self>>;
+    fn selection_list_mut(selection: &mut LayerList) -> &mut HashSet<Ptr<Self>>;
 
 }
 
@@ -38,11 +38,11 @@ impl LayerUI for Layer {
         });
     }
     
-    fn selection_list(selection: &LayerSelection) -> &HashSet<Ptr<Self>> {
+    fn selection_list(selection: &LayerList) -> &HashSet<Ptr<Self>> {
         &selection.layers
     }
 
-    fn selection_list_mut(selection: &mut LayerSelection) -> &mut HashSet<Ptr<Self>> {
+    fn selection_list_mut(selection: &mut LayerList) -> &mut HashSet<Ptr<Self>> {
         &mut selection.layers
     }
 
@@ -91,7 +91,7 @@ impl TimelinePanel {
     fn handle_layer_dropping(&mut self, ui: &mut pierro::UI, layer_response: &pierro::Response, idx: usize) {
         ui.set_sense_dnd_hover(layer_response.node_ref, true);
 
-        if ui.memory().has_dnd_payload_of_type::<LayerSelection>() {
+        if ui.memory().has_dnd_payload_of_type::<LayerList>() {
             if let Some(mouse_pos) = ui.input().mouse_pos {
                 let rect = ui.memory().get::<pierro::LayoutInfo>(layer_response.id).screen_rect;
                 if rect.top_half().contains(mouse_pos) {
@@ -141,7 +141,7 @@ impl TimelinePanel {
         self.scroll_state = scroll_state;
 
         ui.set_sense_dnd_hover(scroll_response.scroll_area.node_ref, true);
-        if ui.memory().has_dnd_payload_of_type::<LayerSelection>() {
+        if ui.memory().has_dnd_payload_of_type::<LayerList>() {
             if scroll_response.scroll_area.dnd_hovered {
                 self.layer_dnd_hover_pos = Some(LayerDropLocation {
                     render_list_idx: render_list.len() - 1,
@@ -170,7 +170,7 @@ impl TimelinePanel {
         }
 
         self.layer_dnd_source.display(ui, |ui| {
-            let Some(selection) = ui.memory().get_dnd_payload::<LayerSelection>() else {
+            let Some(selection) = ui.memory().get_dnd_payload::<LayerList>() else {
                 ui.memory().clear_dnd_payload();
                 return;
             };

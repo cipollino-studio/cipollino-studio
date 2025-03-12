@@ -1,12 +1,13 @@
 
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::rc::Rc;
 use std::path::PathBuf;
 
 use project::{alisa::rmpv, Ptr};
 use project::{deep_load_clip, Client};
 
-use crate::{AppSystems, AssetSelection, DockingLayoutPref, EditorPanel, PencilTool};
+use crate::{AppSystems, AssetList, DockingLayoutPref, EditorPanel, PencilTool};
 
 mod socket;
 pub use socket::*;
@@ -14,17 +15,20 @@ pub use socket::*;
 mod state;
 pub use state::*;
 
+mod selection;
+pub use selection::*;
+
 mod shortcuts;
 
 pub struct ProjectState {
     pub client: project::Client,
 
-    assets_to_delete: RefCell<Vec<AssetSelection>>
+    assets_to_delete: RefCell<Vec<AssetList>>
 }
 
 impl ProjectState {
 
-    pub fn delete_assets(&self, selection: AssetSelection) {
+    pub fn delete_assets(&self, selection: AssetList) {
         self.assets_to_delete.borrow_mut().push(selection);
     }
 
@@ -70,6 +74,9 @@ impl Editor {
                     
                     curr_tool: Rc::new(RefCell::new(Box::new(PencilTool::default()))),
 
+                    selection: Selection::new(),
+
+                    stroke_mesh_cache: HashMap::new(),
                     stroke_preview: None
                 },
                 renderer: None
@@ -120,11 +127,15 @@ impl Editor {
             }
         }
 
+        self.state.editor.selection.begin_frame(ui.key_down(&pierro::Key::SHIFT));
+
         // Render the docking panels 
         if self.docking.render(ui, &mut self.state) {
             // Save the layout if it was modified
             systems.prefs.set::<DockingLayoutPref>(&self.docking);
         }
+
+        self.state.editor.selection.end_frame(ui.input().l_mouse.clicked() || ui.input().l_mouse.drag_started());
 
         // Load the currently open clip if it's not open
         if let Some(clip) = self.state.project.client.get(self.state.editor.open_clip) {

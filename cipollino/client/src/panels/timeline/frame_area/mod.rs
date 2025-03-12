@@ -1,6 +1,6 @@
 
 use paint::PaintCommands;
-use project::ClipInner;
+use project::{Action, ClipInner, DeleteFrame};
 
 use crate::{EditorState, ProjectState};
 
@@ -8,10 +8,7 @@ use super::{render_list::RenderLayerKind, RenderList, TimelinePanel};
 
 mod paint;
 mod layer;
-mod selection;
 mod dragging;
-
-pub use selection::*;
 
 enum DragState {
     None,
@@ -44,8 +41,6 @@ impl DragState {
 }
 
 pub(super) struct FrameArea {
-    selection: FrameSelection,
-
     drag_consumed: bool,
     drag_state: DragState
 }
@@ -54,16 +49,15 @@ impl FrameArea {
 
     pub fn new() -> Self {
         Self {
-            selection: FrameSelection::new(),
             drag_consumed: false,
             drag_state: DragState::None
         }
     }
 
-    fn render_layers(&mut self, ui: &mut pierro::UI, project: &ProjectState, frame_area: &pierro::Response, paint_commands: &mut PaintCommands, render_list: &RenderList) {
+    fn render_layers(&mut self, ui: &mut pierro::UI, project: &ProjectState, editor: &mut EditorState, frame_area: &pierro::Response, paint_commands: &mut PaintCommands, render_list: &RenderList) {
         for (idx, render_layer) in render_list.iter().enumerate() {
             match render_layer.kind {
-                RenderLayerKind::Layer(_ptr, layer) => self.render_layer_contents(ui, project, frame_area, paint_commands, idx, layer),
+                RenderLayerKind::Layer(_ptr, layer) => self.render_layer_contents(ui, project, editor, frame_area, paint_commands, idx, layer),
             }
         }
     }
@@ -82,14 +76,6 @@ impl FrameArea {
                 .sense_mouse()
         );
 
-        // Focus and selection
-        if !frame_area.is_focused(ui) {
-            self.selection.clear();
-        }
-        if frame_area.mouse_clicked() && !ui.input().key_down(&pierro::Key::SHIFT) {
-            self.selection.clear();
-        }
-
         // Dragging
         match &mut self.drag_state {
             DragState::None => {},
@@ -106,26 +92,26 @@ impl FrameArea {
 
         // Rendering
         let mut paint_commands = PaintCommands::new();
-        self.render_layers(ui, project, &frame_area, &mut paint_commands, render_list);
+        self.render_layers(ui, project, editor, &frame_area, &mut paint_commands, render_list);
 
         if frame_area.drag_started() && !self.drag_consumed {
             if let Some(origin) = frame_area.mouse_pos(ui) {
                 self.drag_state = DragState::BoxSelect { from: origin, to: origin }; 
                 frame_area.request_focus(ui);
             }
-            if !ui.input().key_down(&pierro::Key::SHIFT) {
-                self.selection.clear();
+            if ui.input().key_down(&pierro::Key::SHIFT) {
+                editor.selection.keep_selection();
             }
         }
         // stop_drag() called after rendering to avoid a flicker as the frames are moved 
         if frame_area.drag_stopped() {
-            self.drag_stopped(project, render_list);
+            self.drag_stopped(project, editor, render_list);
         }
 
         // Deleting frames
         let delete_shortcut = pierro::KeyboardShortcut::new(pierro::KeyModifiers::empty(), pierro::Key::DELETE);
         if delete_shortcut.used_globally(ui) {
-            self.selection.delete(project);
+            Self::delete_frame_selection(project, editor);
         }
 
         // Painting the frame area contents 
@@ -153,6 +139,16 @@ impl FrameArea {
                 paint_commands
             );
         });
+    }
+
+    fn delete_frame_selection(project: &ProjectState, editor: &mut EditorState) {
+        let mut action = Action::new();
+        for frame in editor.selection.iter() {
+            action.push(DeleteFrame {
+                ptr: frame
+            });
+        }
+        project.client.queue_action(action);
     }
 
 }

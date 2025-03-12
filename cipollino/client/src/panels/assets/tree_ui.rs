@@ -3,7 +3,7 @@ use project::{alisa::UnorderedChildList, Action, Asset, Clip, Folder, Ptr};
 
 use crate::{EditorState, ProjectState};
 
-use super::{AssetSelection, AssetUI, AssetsPanel};
+use super::{AssetList, AssetUI, AssetsPanel};
 
 impl AssetsPanel {
 
@@ -45,7 +45,7 @@ impl AssetsPanel {
                 pierro::close_context_menu(ui, response.id);
             }
             if pierro::menu_button(ui, "Delete").mouse_clicked() {
-                let selection = AssetSelection::single(ptr);
+                let selection = AssetList::single(ptr);
                 state.delete_assets(selection);
                 pierro::close_context_menu(ui, response.id);
             }
@@ -60,7 +60,7 @@ impl AssetsPanel {
                 self.renamable_asset_label(ui, asset.name(), asset_ptr, project);
             });
 
-            self.asset_dnd_source.borrow_mut().source_without_cursor_icon(ui, &response, || AssetSelection::single(asset_ptr));
+            self.asset_dnd_source.borrow_mut().source_without_cursor_icon(ui, &response, || AssetList::single(asset_ptr));
             
             self.asset_label_context_menu(ui, project, asset_ptr, asset.name(), &response);
 
@@ -74,7 +74,7 @@ impl AssetsPanel {
         let Some(folder) = project.client.get(folder_ptr) else { return; };
 
         ui.push_id_seed(&folder_ptr);
-        let (_, moved_assets) = pierro::dnd_drop_zone::<AssetSelection, _>(ui, |ui| {
+        let (_, moved_assets) = pierro::dnd_drop_zone::<AssetList, _>(ui, |ui| {
             let folder_response = pierro::collapsing_header(ui, |ui| {
                 self.renamable_asset_label(ui, &folder.name, folder_ptr, project);
             }, |ui| {
@@ -82,7 +82,7 @@ impl AssetsPanel {
             });
             self.asset_label_context_menu(ui, project, folder_ptr, &folder.name, &folder_response); 
 
-            self.asset_dnd_source.borrow_mut().source_without_cursor_icon(ui, &folder_response, || AssetSelection::single(folder_ptr));
+            self.asset_dnd_source.borrow_mut().source_without_cursor_icon(ui, &folder_response, || AssetList::single(folder_ptr));
         });
 
         if let Some(moved_assets) = moved_assets {
