@@ -37,7 +37,7 @@ impl ScenePanel {
     }
 
     pub(super) fn render_layer_list(&mut self, rndr: &mut malvina::LayerRenderer, client: &Client, editor: &EditorState, clip: &ClipInner, layer_list: &LayerChildList) {
-        for layer in layer_list.iter() {
+        for layer in layer_list.iter().rev() {
             match layer {
                 LayerChildPtr::Layer(layer_ptr) => {
                     if let Some(layer) = client.get(layer_ptr.ptr()) {

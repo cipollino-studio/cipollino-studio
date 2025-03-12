@@ -18,7 +18,7 @@ impl ScenePanel {
     }
 
     fn get_layer_list_render_list(client: &Client, editor: &EditorState, clip: &ClipInner, layer_list: &LayerChildList, list: &mut Vec<SceneChildPtr>) {
-        for layer in layer_list.iter() {
+        for layer in layer_list.iter().rev() {
             match layer {
                 LayerChildPtr::Layer(layer_ptr) => {
                     if let Some(layer) = client.get(layer_ptr.ptr()) {

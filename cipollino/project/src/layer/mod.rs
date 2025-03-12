@@ -147,7 +147,7 @@ impl LayerChildList {
         } 
     }
 
-    pub fn iter<'a>(&'a self) -> impl Iterator<Item = LayerChildPtr> + 'a {
+    pub fn iter<'a>(&'a self) -> impl Iterator<Item = LayerChildPtr> + DoubleEndedIterator + 'a {
         self.children.iter().cloned()
     }
 
