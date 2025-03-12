@@ -81,6 +81,27 @@ impl<P: Project, T: Serializable<P>> Serializable<P> for Option<T> {
 
 }
 
+impl<P: Project, T: Serializable<P>, const N: usize> Serializable<P> for [T; N] {
+
+    fn serialize(&self, context: &SerializationContext<P>) -> rmpv::Value {
+        rmpv::Value::Array(self.iter().map(|val| val.serialize(context)).collect())
+    }
+
+    fn deserialize(data: &rmpv::Value, context: &mut DeserializationContext<P>) -> Option<Self> {
+        let Some(arr) = data.as_array() else { return None; };
+        if arr.len() != N {
+            return None;
+        } 
+        let mut deserialized = Vec::new(); 
+        for i in 0..arr.len() {
+            deserialized.push(T::deserialize(&arr[i], context)?);
+        }
+        let mut deserialized = deserialized.into_iter();
+        Some(std::array::from_fn(|_| deserialized.next().unwrap()))
+    }
+
+}
+
 impl<P: Project, T: Serializable<P>> Serializable<P> for Vec<T> {
 
     fn deserialize(data: &rmpv::Value, context: &mut DeserializationContext<P>) -> Option<Self> {

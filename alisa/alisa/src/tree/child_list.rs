@@ -1,5 +1,5 @@
 
-use crate::{Object, Project, Ptr, Recorder, Serializable, SerializationContext};
+use crate::{DeserializationContext, Object, Project, Ptr, Recorder, Serializable, SerializationContext};
 use super::{ChildPtr, Children};
 
 
@@ -16,7 +16,7 @@ impl<C: ChildPtr> ChildList<C> {
         }
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = C> + '_ {
+    pub fn iter(&self) -> impl Iterator<Item = C> + DoubleEndedIterator + '_ {
         self.children.iter().cloned()
     }
 
@@ -121,7 +121,7 @@ impl<C: ChildPtr> Serializable<C::Project> for ChildListTreeData<C> {
         )
     }
 
-    fn deserialize(data: &rmpv::Value, context: &mut crate::DeserializationContext<C::Project>) -> Option<Self> {
+    fn deserialize(data: &rmpv::Value, context: &mut DeserializationContext<C::Project>) -> Option<Self> {
         let data = data.as_array()?;
         let mut children = Vec::new();
         for child in data {
