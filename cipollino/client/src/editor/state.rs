@@ -5,7 +5,7 @@ use project::{Client, Clip, ClipInner, Layer, Ptr, Stroke};
 
 use crate::ToolDyn;
 
-use super::Selection;
+use super::{Selection, SelectionKind};
 
 pub struct EditorState {
     pub time: f32,
@@ -27,12 +27,16 @@ impl EditorState {
     pub fn jump_to(&mut self, time: f32) {
         self.time = time;
         self.playing = false;
+        self.selection.clear();
     }
 
     pub(super) fn tick_playback(&mut self, ui: &mut pierro::UI, clip: &ClipInner) {
         if self.playing {
             self.time += ui.input().delta_time;
             ui.request_redraw();
+            if self.selection.kind() == SelectionKind::Scene {
+                self.selection.clear();
+            }
         }
 
         if self.time > clip.duration() {
