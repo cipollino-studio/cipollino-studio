@@ -153,8 +153,10 @@ impl<'a, 'b> UI<'a, 'b> {
     }
 
     pub fn layer<R, F: FnOnce(&mut Self) -> R>(&mut self, body: F) -> (UIRef, R) {
-        let layer = self.tree.add_layer(self.window_size);
-        (layer, self.with_parent(layer, body))
+        self.with_default_styles(|ui| {
+            let layer = ui.tree.add_layer(ui.window_size);
+            (layer, ui.with_parent(layer, body))
+        })
     }
 
     pub fn get_parent_ref(&self, node: UIRef) -> UIRef {
@@ -204,6 +206,13 @@ impl<'a, 'b> UI<'a, 'b> {
         self.style.push::<S>(style);
         let result = body(self);
         self.style.pop();
+        result
+    }
+
+    pub fn with_default_styles<R, F: FnOnce(&mut Self) -> R>(&mut self, body: F) -> R {
+        let curr_styles = std::mem::replace(&mut self.style, StyleStack::new());
+        let result = body(self);
+        self.style = curr_styles;
         result
     }
 
