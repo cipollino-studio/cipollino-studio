@@ -58,6 +58,10 @@ impl Color {
         }
     }
 
+    pub const fn gray(val: f32) -> Self {
+        Self::rgb(val, val, val)
+    }
+
     pub fn darken(&self, t: f32) -> Self {
         Self::rgba(self.r * (1.0 - t), self.g * (1.0 - t), self.b * (1.0 - t), self.a)
     }

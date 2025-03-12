@@ -72,3 +72,6 @@ pub use canvas::*;
 
 mod shortcut;
 pub use shortcut::*;
+
+mod color_picker;
+pub use color_picker::*;
