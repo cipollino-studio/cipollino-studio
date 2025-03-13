@@ -1,6 +1,6 @@
 
 use crate::{theme, Response, UI};
-use crate::{CursorIcon, LayoutInfo, PaintText, Rect};
+use crate::{LayoutInfo, PaintText, Rect};
 use cosmic_text::{Edit, FontSystem};
 
 use super::{paint_text_edit, text_edit_keyboard_input, text_edit_mouse_input};
@@ -19,36 +19,31 @@ pub(super) fn font_system<'a>(ui: &'a mut UI) -> &'a mut FontSystem {
     ui.font_system(ui.text_font()).unwrap()
 }
 
+pub fn text_edit_begin_editing(ui: &mut UI, text_edit: &Response, text: &mut String) {
+    let font_size = ui.style::<theme::LabelFontSize>();
+
+    text_edit.request_focus(ui);
+
+    let mut buffer = cosmic_text::Buffer::new(font_system(ui), cosmic_text::Metrics { font_size, line_height: font_size });
+    buffer.set_text(font_system(ui), text, cosmic_text::Attrs::new().family(cosmic_text::Family::SansSerif), cosmic_text::Shaping::Advanced);
+    let mut editor = cosmic_text::Editor::new(buffer);
+    editor.action(font_system(ui), cosmic_text::Action::Motion(cosmic_text::Motion::End));
+    ui.memory().insert(text_edit.id, TextEditMemory {
+        editor,
+        scroll: 0.0
+    });
+}
+
+pub fn editing_text(ui: &mut UI, text_edit: &Response) -> bool {
+    ui.memory().has::<TextEditMemory>(text_edit.id)
+}
+
 pub fn text_edit_interaction(ui: &mut UI, text_edit: Response, text: &mut String) -> TextEditResponse {
 
-    let color = ui.style::<theme::BgTextField>(); 
-    let font_size = ui.style::<theme::LabelFontSize>();
     let widget_margin = ui.style::<theme::WidgetMargin>(); 
     let text_style = theme::label_text_style(ui);
 
-    if text_edit.is_focused(ui) && !ui.memory().has::<TextEditMemory>(text_edit.id) {
-        let mut buffer = cosmic_text::Buffer::new(font_system(ui), cosmic_text::Metrics { font_size, line_height: font_size });
-        buffer.set_text(font_system(ui), text, cosmic_text::Attrs::new().family(cosmic_text::Family::SansSerif), cosmic_text::Shaping::Advanced);
-        let mut editor = cosmic_text::Editor::new(buffer);
-        editor.action(font_system(ui), cosmic_text::Action::Motion(cosmic_text::Motion::End));
-        ui.memory().insert(text_edit.id, TextEditMemory {
-            editor,
-            scroll: 0.0
-        });
-    }
-
     let mut done_editing = false;
-
-    let focused = text_edit.is_focused(ui); 
-    let target_color = if focused {
-        theme::pressed_color(color)
-    } else if text_edit.hovered {
-        theme::hovered_color(color)
-    } else {
-        color
-    };
-
-    ui.set_fill(text_edit.node_ref, target_color);
 
     if let Some(mut memory) = ui.memory().remove::<TextEditMemory>(text_edit.id) {
         // Keyboard input
@@ -84,10 +79,6 @@ pub fn text_edit_interaction(ui: &mut UI, text_edit: Response, text: &mut String
         ui.set_on_paint(text_edit.node_ref, move |painter, rect| {
             painter.text(PaintText::new(paint_text, text_style, Rect::to_infinity(rect.tl() + widget_margin.min)));
         });
-    }
-
-    if text_edit.hovered && text_edit.contains_mouse(ui) {
-        ui.set_cursor(CursorIcon::Text);
     }
 
     if text_edit.mouse_pressed_outside(ui) {

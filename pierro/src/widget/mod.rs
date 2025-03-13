@@ -75,3 +75,6 @@ pub use shortcut::*;
 
 mod color_picker;
 pub use color_picker::*;
+
+mod drag_value;
+pub use drag_value::*;
