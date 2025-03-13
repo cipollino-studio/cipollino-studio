@@ -44,6 +44,10 @@ pub(crate) trait OperationDyn: Send + Sync {
     fn inverse(&self, context: &ProjectContext<Self::Project>) -> Option<Box<dyn OperationDyn<Project = Self::Project>>>;
     fn name(&self) -> &'static str;
     fn serialize(&self) -> rmpv::Value;
+
+    #[cfg(debug_assertions)]
+    fn verify_operation_type(&self);
+    
 }
 
 impl<O: Operation + Serializable<O::Project>> OperationDyn for O {
@@ -66,6 +70,13 @@ impl<O: Operation + Serializable<O::Project>> OperationDyn for O {
 
     fn serialize(&self) -> rmpv::Value {
         self.serialize(&SerializationContext::shallow())
+    }
+
+    #[cfg(debug_assertions)]
+    fn verify_operation_type(&self) {
+        use crate::Client;
+
+        Client::<Self::Project>::verify_operation_type::<Self>();
     }
 
 }

@@ -91,7 +91,7 @@ impl<P: Project> Client<P> {
     /// In debug mode, check that the operation being performed is registered in the project.
     /// Until Rust has proper reflection, this is the best we can do :(
     #[cfg(debug_assertions)]
-    fn verify_operation_type<O: Operation<Project = P>>() {
+    pub(crate) fn verify_operation_type<O: Operation<Project = P>>() {
         let mut found = false;
         for operation_kind in P::OPERATIONS {
             if (operation_kind.type_id)() == TypeId::of::<O>() {
@@ -111,6 +111,11 @@ impl<P: Project> Client<P> {
     }
 
     pub fn queue_action(&self, action: Action<P>) {
+        #[cfg(debug_assertions)]
+        for act in &action.acts {
+            act.operation.verify_operation_type();
+        }
+
         self.operations_to_perform.borrow_mut().push(OperationToPerform::Action(action)); 
     }
 
