@@ -34,8 +34,8 @@ pub use checkbox::*;
 mod scroll;
 pub use scroll::*;
 
-mod text_edit;
-pub use text_edit::*;
+pub mod text_edit;
+pub use text_edit::{text_edit, TextEditResponse};
 
 mod context_menu;
 pub use context_menu::*;
