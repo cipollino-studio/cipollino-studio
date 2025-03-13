@@ -1,4 +1,4 @@
-use crate::{vec2, Color, PaintRect, Painter, Rect, Stroke};
+use crate::{vec2, Color, PaintRect, Painter, Rect, Rounding, Stroke};
 
 use super::{ColorSpace, N_CELLS};
 
@@ -36,7 +36,8 @@ pub(super) fn paint_color_bar<C: ColorSpace>(painter: &mut Painter, rect: Rect, 
     let outline_color = Color::gray(outline_value);   
     painter.rect(
         PaintRect::new(color_rect, fill_color)
-            .with_stroke(Stroke::new(outline_color, 1.0))
+            .with_stroke(Stroke::new(outline_color, 1.5))
+            .with_rounding(Rounding::same(3.0))
     );
 
 }
