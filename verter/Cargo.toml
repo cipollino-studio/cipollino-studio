@@ -1,0 +1,14 @@
+[package]
+name = "verter"
+description = "A file format for fast incremental modifications"
+homepage = "https://github.com/cipollino-studio/cipollino-studio/tree/main/verter"
+repository = "https://github.com/cipollino-studio/cipollino-studio/tree/main/verter"
+readme = "README.md"
+
+categories = ["filesystem"]
+
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+[dependencies]

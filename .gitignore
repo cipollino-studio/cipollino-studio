@@ -10,3 +10,6 @@ build
 # alisa examples 
 **/*.project
 **/*.slips
+
+# verter
+**/*.verter
