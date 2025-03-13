@@ -1,5 +1,5 @@
 
-use crate::{Clip, ClipInner, CreateClip, CreateClipInner, CreateFolder, CreateFrame, CreateLayer, CreateStroke, DeleteClip, DeleteFolder, DeleteFrame, DeleteLayer, DeleteStroke, Folder, Frame, Layer, RenameClip, RenameFolder, SetFrameTime, SetLayerName, Stroke, TransferClip, TransferFolder, TransferLayer};
+use crate::{Clip, ClipInner, CreateClip, CreateClipInner, CreateFolder, CreateFrame, CreateLayer, CreateStroke, DeleteClip, DeleteFolder, DeleteFrame, DeleteLayer, DeleteStroke, Folder, Frame, Layer, RenameClip, RenameFolder, SetClipInnerLength, SetFrameTime, SetLayerName, Stroke, TransferClip, TransferFolder, TransferLayer};
 
 #[derive(alisa::Serializable)]
 #[project(Project)]
@@ -70,6 +70,7 @@ impl alisa::Project for Project {
         alisa::OperationKind::from::<TransferClip>(),
 
         alisa::OperationKind::from::<CreateClipInner>(),
+        alisa::OperationKind::from::<SetClipInnerLength>(),
         
         alisa::OperationKind::from::<CreateLayer>(),
         alisa::OperationKind::from::<DeleteLayer>(),

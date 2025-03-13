@@ -1,5 +1,5 @@
 
-use project::{Action, Clip, ClipInner, CreateFrame, CreateLayer, FrameTreeData, LayerParent, LayerTreeData, Ptr};
+use project::{Action, Clip, ClipInner, CreateFrame, CreateLayer, FrameTreeData, LayerParent, LayerTreeData, Ptr, SetClipInnerLength};
 
 use crate::{EditorState, ProjectState};
 
@@ -7,7 +7,7 @@ use super::TimelinePanel;
 
 impl TimelinePanel {
 
-    pub(super) fn header(&mut self, ui: &mut pierro::UI, project: &ProjectState, editor: &mut EditorState, clip_ptr: Ptr<Clip>, clip: &ClipInner) {
+    pub(super) fn header(&mut self, ui: &mut pierro::UI, project: &ProjectState, editor: &mut EditorState, clip_ptr: Ptr<Clip>, clip_inner_ptr: Ptr<ClipInner>, clip: &ClipInner) {
         if pierro::icon_button(ui, pierro::icons::PLUS).mouse_clicked() {
             if let Some(ptr) = project.client.next_ptr() {
                 project.client.queue_action(Action::single(CreateFrame {
@@ -70,6 +70,18 @@ impl TimelinePanel {
                 });
             });
         });
+
+        pierro::label(ui, "Length: ");
+        let clip_length_resp = pierro::DragValue::new(&mut self.clip_length_preview).with_min(1).render(ui);
+        if clip_length_resp.done_editing {
+            project.client.queue_action(Action::single(SetClipInnerLength {
+                ptr: clip_inner_ptr,
+                length_value: self.clip_length_preview,
+            }));
+        }
+        if !clip_length_resp.drag_value.is_focused(ui) {
+            self.clip_length_preview = clip.length;
+        }
     }
 
 }

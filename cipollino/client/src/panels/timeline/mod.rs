@@ -17,6 +17,8 @@ pub struct TimelinePanel {
     layers_width: f32,
     scroll_state: pierro::ScrollAreaState,
 
+    clip_length_preview: u32,
+
     renaming_state: Option<(AnyPtr, String)>,
     started_renaming: bool,
 
@@ -33,6 +35,8 @@ impl Default for TimelinePanel {
         Self {
             layers_width: 100.0,
             scroll_state: pierro::ScrollAreaState::default(),
+
+            clip_length_preview: 0,
 
             renaming_state: None,
             started_renaming: false,
@@ -77,7 +81,7 @@ impl Panel for TimelinePanel {
 
         pierro::margin_with_size(ui, pierro::Margin::same(3.0), pierro::Size::fr(1.0), pierro::Size::fit(), |ui| {
             pierro::horizontal_centered(ui, |ui| {
-                self.header(ui, project, editor, editor.open_clip, clip_inner);
+                self.header(ui, project, editor, editor.open_clip, clip.inner, clip_inner);
             });
         });
         pierro::h_line(ui);

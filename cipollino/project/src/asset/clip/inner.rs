@@ -103,3 +103,5 @@ impl alisa::Operation for CreateClipInner {
     }
 
 }
+
+alisa::object_set_property_operation!(ClipInner, length, u32);
