@@ -29,10 +29,12 @@ impl Stroke {
                 let a = &self.path.pts[i];
                 let b = &self.path.pts[i + 1];
 
-                let pos = sample(a, b, t).pt;
+                let bezier_pt = sample(a, b, t);
+                let pos = bezier_pt.pt;
+                let pressure = bezier_pt.pressure;
                 let derivative = sample_derivative(a, b, t).pt;
                 let tangent = derivative.normalize();
-                let right = tangent * 3.0;
+                let right = tangent * 3.0 * pressure;
                 stamps.push(StrokeStampInstance {
                     pos, 
                     right
