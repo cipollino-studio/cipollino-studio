@@ -89,7 +89,8 @@ impl ScenePanel {
             queue: ui.wgpu_queue(),
             editor,
 
-            clear_stroke_preview: false 
+            clear_stroke_preview: false,
+            pressure: ui.input().pressure
         };
         if let Some(mouse_pos) = mouse_pos {
             if response.mouse_clicked() {
