@@ -41,7 +41,7 @@ impl Panel for ScenePanel {
         let editor = &mut state.editor;
         
         if state.renderer.is_none() {
-            state.renderer = Some(malvina::Renderer::new(ui.wgpu_device()));
+            state.renderer = Some(malvina::Renderer::new(ui.wgpu_device(), ui.wgpu_queue()));
         }
         let Some(renderer) = state.renderer.as_mut() else {
             return;
