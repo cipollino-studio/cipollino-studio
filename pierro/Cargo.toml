@@ -16,7 +16,7 @@ license = "MIT"
 serde = ["dep:serde"]
 
 [dependencies]
-winit = "0.30.5"
+winit = { git = "https://github.com/cipollino-studio/winit.git", rev = "a394408" } 
 wgpu = { workspace = true }
 bitflags = "2.9.0"
 pollster = "0.3.0"

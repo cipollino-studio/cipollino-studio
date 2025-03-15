@@ -4,7 +4,7 @@ use std::sync::Arc;
 use super::UI;
 
 pub struct RedrawSignal {
-    window: Arc<winit::window::Window>
+    window: Arc<Box<dyn winit::window::Window>>
 }
 
 impl UI<'_, '_> {

@@ -10,7 +10,7 @@ use crate::{text::TextResources, PainterResources, WindowConfig};
 use super::{TextRenderCache, Vec2};
 
 pub(crate) struct RenderResources<'a> {
-    pub(crate) window: Arc<Window>,
+    pub(crate) window: Arc<Box<dyn Window>>,
 
     pub(crate) surface: wgpu::Surface<'a>,
     pub(crate) device: wgpu::Device,
@@ -26,17 +26,17 @@ pub(crate) struct RenderResources<'a> {
 
 impl RenderResources<'_> {
 
-    pub(crate) async fn new(event_loop: &ActiveEventLoop, config: WindowConfig) -> Option<Self> {
+    pub(crate) async fn new(event_loop: &dyn ActiveEventLoop, config: WindowConfig) -> Option<Self> {
 
         let icon = Icon::from_rgba(config.icon.rgba, config.icon.width, config.icon.height).ok();
 
         let window_attributes = WindowAttributes::default()
-            .with_min_inner_size(Size::Logical(LogicalSize::new(config.min_size.x as f64, config.min_size.y as f64)))
+            .with_min_surface_size(Size::Logical(LogicalSize::new(config.min_size.x as f64, config.min_size.y as f64)))
             .with_window_icon(icon)
             .with_maximized(config.maximize)
             .with_title(config.title);
         let window = Arc::new(event_loop.create_window(window_attributes).ok()?);
-        let size = window.inner_size();
+        let size = window.surface_size();
 
         let instance = wgpu::Instance::default();
         let surface = instance.create_surface(window.clone()).ok()?;

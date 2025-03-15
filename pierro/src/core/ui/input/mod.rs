@@ -41,7 +41,10 @@ pub struct Input {
     pub keyboard_captured: bool,
 
     pub ime_preedit: String,
-    pub ime_commit: Option<String>
+    pub ime_commit: Option<String>,
+
+    /// The current tablet pen pressure, going from 0.0 to 1.0
+    pub pressure: f32
 }
 
 /// The memory storing what inputs are provided to a node
@@ -119,7 +122,8 @@ impl Input {
             keys_released: Vec::new(),
             ime_preedit: String::new(),
             ime_commit: None,
-            keyboard_captured: false
+            keyboard_captured: false,
+            pressure: 1.0
         }
     }
 
@@ -157,6 +161,8 @@ impl Input {
 
         self.ime_preedit = raw_input.ime_preedit.clone();
         self.ime_commit = std::mem::replace(&mut raw_input.ime_commit, None);
+
+        self.pressure = raw_input.pressure;
 
         if raw_input.lost_focus {
 

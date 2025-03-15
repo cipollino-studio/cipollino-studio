@@ -2,7 +2,7 @@
 use std::collections::HashMap;
 
 use winit::{
-    application::ApplicationHandler, dpi::{LogicalPosition, LogicalSize, Position, Size}, event::*, event_loop::{ActiveEventLoop, ControlFlow, EventLoop}, window::WindowId
+    application::ApplicationHandler, dpi::{LogicalPosition, LogicalSize, Position, Size}, event::*, event_loop::{ActiveEventLoop, ControlFlow, EventLoop}, window::{Cursor, WindowId}
 };
 
 use crate::{vec2, Input, Memory, Painter, RawInput, Rect, RenderResources, UITree, Vec2, WindowConfig, UI};
@@ -36,7 +36,7 @@ struct AppHandler<'a, T: App> {
 impl<T: App> AppHandler<'_, T> {
 
     pub fn tick(app: &mut T, render_resources: &mut RenderResources<'_>, clipboard: Option<&mut arboard::Clipboard>, textures: &mut HashMap<String, Texture>, raw_input: &mut RawInput, input: &mut Input, memory: &mut Memory) {
-        let physical_size = vec2(render_resources.window.inner_size().width as f32, render_resources.window.inner_size().height as f32);
+        let physical_size = vec2(render_resources.window.surface_size().width as f32, render_resources.window.surface_size().height as f32);
         let scale_factor = render_resources.window.scale_factor() as f32;
         let size = physical_size / scale_factor;
         
@@ -101,7 +101,7 @@ impl<T: App> AppHandler<'_, T> {
         output.present();
 
         // other ui output
-        render_resources.window.set_cursor(pierro_to_winit_cursor(cursor));
+        render_resources.window.set_cursor(Cursor::Icon(pierro_to_winit_cursor(cursor)));
         render_resources.window.set_ime_allowed(request_ime.is_some()); 
         if let Some(ime_node) = request_ime {
             let id = tree.get(ime_node).id;
@@ -214,15 +214,27 @@ fn pierro_to_winit_cursor(cursor: CursorIcon) -> winit::window::CursorIcon {
 
 impl<T: App> ApplicationHandler for AppHandler<'_, T> {
 
-    fn resumed(&mut self, event_loop: &ActiveEventLoop) {
-        if self.render_resources.is_none() {
-            self.render_resources = pollster::block_on(RenderResources::new(event_loop, T::window_config()));
+    fn can_create_surfaces(&mut self, event_loop: &dyn ActiveEventLoop) {
+        self.render_resources = pollster::block_on(RenderResources::new(event_loop, T::window_config()));
+    }
+
+    fn device_event(
+            &mut self,
+            _event_loop: &dyn ActiveEventLoop,
+            _device_id: Option<DeviceId>,
+            event: DeviceEvent,
+        ) {
+        match event {
+            DeviceEvent::TabletPressure(pressure) => {
+                self.raw_input.pressure = pressure;
+            },
+            _ => {}
         }
     }
 
     fn window_event(
         &mut self,
-        event_loop: &ActiveEventLoop,
+        event_loop: &dyn ActiveEventLoop,
         _window_id: WindowId,
         event: WindowEvent,
     ) {
@@ -232,7 +244,7 @@ impl<T: App> ApplicationHandler for AppHandler<'_, T> {
             render_resources.request_redraw();
         }
         match event {
-            WindowEvent::Resized(new_size) => {
+            WindowEvent::SurfaceResized(new_size) => {
                 render_resources.resize(new_size);
             },
             WindowEvent::RedrawRequested => {
@@ -246,21 +258,21 @@ impl<T: App> ApplicationHandler for AppHandler<'_, T> {
                 }
             },
 
-            WindowEvent::MouseInput { device_id: _, state, button } => {
+            WindowEvent::PointerButton { device_id: _, state, button, .. } => {
                 match button {
-                    MouseButton::Left => {
+                    ButtonSource::Mouse(MouseButton::Left) => {
                         self.raw_input.l_mouse_down = state.is_pressed();
                     },
-                    MouseButton::Right => {
+                    ButtonSource::Mouse(MouseButton::Right) => {
                         self.raw_input.r_mouse_down = state.is_pressed();
                     },
                     _ => {}
                 }
             },
-            WindowEvent::CursorLeft { device_id: _ } => {
+            WindowEvent::PointerLeft { .. } => {
                 self.raw_input.mouse_pos = None;
             },
-            WindowEvent::CursorMoved { device_id: _, position } => {
+            WindowEvent::PointerMoved { device_id: _, position, .. } => {
                 self.raw_input.mouse_pos = Some(vec2(position.x as f32, position.y as f32))
             },
             WindowEvent::MouseWheel { device_id: _, delta, phase: _ } => {

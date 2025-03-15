@@ -28,7 +28,10 @@ pub(crate) struct RawInput {
     /// What is the current IME preedit?
     pub(crate) ime_preedit: String,
     /// What IME text input was commited this frame?
-    pub(crate) ime_commit: Option<String>
+    pub(crate) ime_commit: Option<String>,
+
+    /// The current tablet pen pressure
+    pub(crate) pressure: f32
 }
 
 impl RawInput {
@@ -44,7 +47,8 @@ impl RawInput {
             keys_released: Vec::new(),
             lost_focus: false,
             ime_preedit: String::new(),
-            ime_commit: None
+            ime_commit: None,
+            pressure: 1.0
         }
     }
 
