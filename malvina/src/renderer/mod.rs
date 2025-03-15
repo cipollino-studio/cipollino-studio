@@ -14,19 +14,26 @@ pub use picking::*;
 mod canvas_border;
 use canvas_border::*;
 
+mod brush;
+pub use brush::*;
+
 pub struct Renderer {
     stroke: StrokeRenderer,
     canvas_border: CanvasBorderRenderer,
+    circle_brush: BrushTexture
 }
 
 impl Renderer {
 
-    pub fn new(device: &wgpu::Device) -> Self {
-        let stroke = StrokeRenderer::new(device);
+    pub fn new(device: &wgpu::Device, queue: &wgpu::Queue) -> Self {
+        let brush_texture_resources = BrushTextureResources::new(device);
+        let stroke = StrokeRenderer::new(device, &brush_texture_resources);
         let canvas_border = CanvasBorderRenderer::new(device);
+        let circle_brush = BrushTexture::circle(device, queue, &brush_texture_resources, 100);
         Self {
             stroke,
             canvas_border,
+            circle_brush
         }
     }
 
@@ -65,19 +72,21 @@ impl Renderer {
                         store: wgpu::StoreOp::Store
                     }
                 })],
-                depth_stencil_attachment: None,
+                depth_stencil_attachment: None, 
                 timestamp_writes: None,
                 occlusion_query_set: None 
             });
             
             let mut layer_renderer = LayerRenderer {
                 device,
+                queue,
                 render_pass: &mut render_pass,
                 view_proj: view_proj,
                 resolution,
                 dpi_factor,
                 stroke_renderer: &mut self.stroke,
                 canvas_border_renderer: &mut self.canvas_border,
+                circle_brush: &self.circle_brush
             };
 
             contents(&mut layer_renderer);

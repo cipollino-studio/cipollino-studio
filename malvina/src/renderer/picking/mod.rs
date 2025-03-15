@@ -23,7 +23,7 @@ impl PickingRenderer<'_, '_> {
     }
 
     pub fn render_stroke(&mut self, stroke: &StrokeMesh, id: u32) {
-        self.renderer.render_stroke(stroke, Self::id_to_color(id));
+        self.renderer.render_stroke_picking(stroke, Self::id_to_color(id));
     }
 
 }

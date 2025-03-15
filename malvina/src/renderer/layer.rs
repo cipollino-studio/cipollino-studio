@@ -1,8 +1,9 @@
 
-use super::{CanvasBorderRenderer, StrokeMesh, StrokeRenderer};
+use super::{BrushTexture, CanvasBorderRenderer, StrokeMesh, StrokeRenderer};
 
 pub struct LayerRenderer<'rndr> {
     pub(super) device: &'rndr wgpu::Device,
+    pub(super) queue: &'rndr wgpu::Queue,
     pub(super) render_pass: &'rndr mut wgpu::RenderPass<'rndr>,
 
     pub(super) view_proj: glam::Mat4,
@@ -11,6 +12,8 @@ pub struct LayerRenderer<'rndr> {
 
     pub(super) stroke_renderer: &'rndr mut StrokeRenderer,
     pub(super) canvas_border_renderer: &'rndr mut CanvasBorderRenderer,
+
+    pub(super) circle_brush: &'rndr BrushTexture
 }
 
 impl LayerRenderer<'_> {
@@ -19,12 +22,20 @@ impl LayerRenderer<'_> {
         self.device
     }
 
+    pub fn queue(&self) -> &wgpu::Queue {
+        self.queue
+    }
+
     pub fn render_stroke(&mut self, stroke: &StrokeMesh, color: glam::Vec4) {
-        self.stroke_renderer.render(self.render_pass, stroke, color, self.view_proj);
+        self.stroke_renderer.render(self.render_pass, stroke, self.circle_brush, color, self.resolution / self.dpi_factor, self.view_proj);
+    }
+
+    pub(crate) fn render_stroke_picking(&mut self, stroke: &StrokeMesh, color: glam::Vec4) {
+        self.stroke_renderer.render_picking(self.render_pass, stroke, self.circle_brush, color, self.resolution / self.dpi_factor, self.view_proj);
     }
 
     pub fn render_stroke_selection(&mut self, stroke: &StrokeMesh, color: glam::Vec4) {
-        self.stroke_renderer.render_selection(self.render_pass, stroke, color, self.resolution, self.dpi_factor, self.view_proj);
+        self.stroke_renderer.render_selection(self.render_pass, stroke, self.circle_brush, color, self.resolution / self.dpi_factor, self.view_proj);
     }
 
     pub fn render_canvas_border(&mut self, canvas_size: glam::Vec2) {
