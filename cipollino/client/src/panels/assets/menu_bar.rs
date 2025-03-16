@@ -1,5 +1,5 @@
 
-use project::{alisa::Action, Clip, ClipTreeData, CreateClip, Folder, Ptr};
+use project::{alisa::Action, ActionContext, Clip, ClipTreeData, CreateClip, Folder, Ptr};
 
 use crate::ProjectState;
 
@@ -10,7 +10,7 @@ impl AssetsPanel {
     fn asset_menu_bar_icon<A: AssetUI>(&self, ui: &mut pierro::UI, state: &ProjectState) {
         if pierro::icon_button(ui, A::ICON).mouse_clicked() {
             if let Some(ptr) = state.client.next_ptr() {
-                let mut action = Action::new();
+                let mut action = Action::new(ActionContext::new(format!("Create {}", A::NAME)));
                 A::create(ptr, Ptr::null(), &mut action); 
                 state.client.queue_action(action);
             }
@@ -20,7 +20,7 @@ impl AssetsPanel {
     fn create_clip(state: &ProjectState) {
         let Some(clip_ptr) = state.client.next_ptr() else { return; };
         let Some(inner_ptr) = state.client.next_ptr() else { return; };
-        state.client.queue_action(Action::single(CreateClip {
+        state.client.queue_action(Action::single(ActionContext::new("Create Clip"), CreateClip {
             ptr: clip_ptr,
             parent: Ptr::null(),
             data: ClipTreeData {

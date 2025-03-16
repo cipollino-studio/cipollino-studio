@@ -30,11 +30,6 @@ impl alisa::Operation for SetFrameTime {
         let Some(frame) = recorder.obj_list().get(self.frame) else { return false; };
         let layer: alisa::Ptr<Layer> = frame.layer;
 
-        // Recreated a previously deleted frame if necessary 
-        if let Some(data) = &self.frame_recreation_data {
-            alisa::create_tree_object(recorder, self.frame_recreation_ptr, layer, (), data);
-        }
-
         // If there's already a frame at the time we're moving this frame to, delete it
         let context = recorder.context();
         let Some(child_list) = Frame::child_list(layer, &context) else { return false; };
@@ -53,8 +48,12 @@ impl alisa::Operation for SetFrameTime {
             time_value: old_time,
         });
 
-        true
+        // Recreated a previously deleted frame if necessary 
+        if let Some(data) = &self.frame_recreation_data {
+            alisa::create_tree_object(recorder, self.frame_recreation_ptr, layer, (), data);
+        }
 
+        true
     }
 
     fn inverse(&self, context: &alisa::ProjectContext<Project>) -> Option<SetFrameTime> {
@@ -64,10 +63,11 @@ impl alisa::Operation for SetFrameTime {
         let frame = context.obj_list().get(self.frame)?;
         let old_time = frame.time;
         let layer = frame.layer;
+        let new_time = self.new_time.max(0);
 
         // If we're going to delete a frame when we move this frame, we need to collect its tree data to recreate it
         let child_list = Frame::child_list(layer, context)?;
-        let recreated_frame = find_frame_at_time(&context, child_list, self.new_time).unwrap_or_default();
+        let recreated_frame = find_frame_at_time(&context, child_list, new_time).unwrap_or_default();
         let recreated_frame = if recreated_frame == self.frame {
             alisa::Ptr::null()
         } else {
@@ -81,6 +81,16 @@ impl alisa::Operation for SetFrameTime {
             frame_recreation_ptr: recreated_frame,
             frame_recreation_data: recreate_data,
         })
+    }
+
+    #[cfg(debug_assertions)]
+    fn debug_info(&self) -> String {
+        let recreation_info = if let Some(recreate) = &self.frame_recreation_data {
+            format!(" To recreate frame {} at time {}.", self.frame_recreation_ptr.key(), recreate.time)
+        } else {
+            String::new()
+        };
+        format!("Frame {} to time {}.{}", self.frame.key(), self.new_time, recreation_info)
     }
 
 }

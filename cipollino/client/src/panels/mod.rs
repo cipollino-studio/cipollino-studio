@@ -11,10 +11,18 @@ pub use scene::*;
 mod panel;
 pub use panel::*;
 
+#[cfg(debug_assertions)]
+mod debug;
+#[cfg(debug_assertions)]
+pub use debug::*;
+
 pub const PANEL_KINDS: &'static [PanelKind] = &[
     PanelKind::of::<AssetsPanel>(),
     PanelKind::of::<TimelinePanel>(),
-    PanelKind::of::<ScenePanel>()
+    PanelKind::of::<ScenePanel>(),
+
+    #[cfg(debug_assertions)]
+    PanelKind::of::<DebugPanel>()
 ];
 
 use crate::UserPref;

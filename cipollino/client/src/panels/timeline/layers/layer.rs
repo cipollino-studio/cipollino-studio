@@ -1,5 +1,5 @@
 
-use project::{Action, DeleteLayer, Layer, Ptr};
+use project::{Action, ActionContext, DeleteLayer, Layer, Ptr};
 
 use crate::{EditorState, ProjectState, TimelinePanel};
 
@@ -9,7 +9,7 @@ impl TimelinePanel {
 
     fn layer_context_menu(&mut self, ui: &mut pierro::UI, project: &ProjectState, layer_ptr: Ptr<Layer>) {
         if pierro::menu_button(ui, "Delete").mouse_clicked() {
-            project.client.queue_action(Action::single(DeleteLayer {
+            project.client.queue_action(Action::single(ActionContext::new("Delete Layer"), DeleteLayer {
                 ptr: layer_ptr,
             }));
         }

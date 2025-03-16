@@ -1,5 +1,5 @@
 
-use project::{alisa::UnorderedChildList, Action, Asset, Clip, Folder, Ptr};
+use project::{alisa::UnorderedChildList, Action, ActionContext, Asset, Clip, Folder, Ptr};
 
 use crate::{EditorState, ProjectState};
 
@@ -21,7 +21,7 @@ impl AssetsPanel {
                     text_edit.response.request_focus(ui);
                 }
                 if text_edit.done_editing {
-                    let mut action = Action::new();
+                    let mut action = Action::new(ActionContext::new(format!("Rename {}", A::NAME)));
                     A::rename(&mut action, ptr, new_name.clone());
                     state.client.queue_action(action);
                     *renaming_state = None;

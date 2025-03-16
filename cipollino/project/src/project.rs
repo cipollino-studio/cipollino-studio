@@ -29,10 +29,25 @@ pub struct Objects {
     pub strokes: alisa::ObjList<Stroke>
 }
 
+pub struct ActionContext {
+    pub name: String
+}
+
+impl ActionContext {
+
+    pub fn new<S: Into<String>>(name: S) -> Self {
+        Self {
+            name: name.into()
+        }
+    }
+
+}
+
 impl alisa::Project for Project {
 
     type Context = ();
     type Objects = Objects;
+    type ActionContext = ActionContext;
 
     fn empty() -> Self {
         Self::default()

@@ -1,7 +1,7 @@
 
 use super::{FrameArea, DragState};
 use crate::{panels::timeline::{render_list::RenderLayerKind, RenderList}, EditorState, ProjectState, TimelinePanel};
-use project::{Action, Frame, Layer, SetFrameTime};
+use project::{Action, ActionContext, Frame, Layer, SetFrameTime};
 
 impl FrameArea {
 
@@ -35,7 +35,7 @@ impl FrameArea {
     }
 
     fn move_selected(project: &ProjectState, editor: &EditorState, drag: f32) {
-        let mut action = Action::new();
+        let mut action = Action::new(ActionContext::new("Move Frames"));
 
         let frame_offset = FrameArea::drag_to_frame_offset(drag);
 

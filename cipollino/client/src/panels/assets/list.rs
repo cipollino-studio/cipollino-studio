@@ -1,7 +1,7 @@
 
 use std::collections::HashSet;
 
-use project::{alisa::{self, TreeObj}, deep_load_clip, deep_load_folder, Action, Client, Clip, DeleteClip, DeleteFolder, Folder, Ptr, TransferClip, TransferFolder};
+use project::{alisa::{self, TreeObj}, deep_load_clip, deep_load_folder, Action, ActionContext, Client, Clip, DeleteClip, DeleteFolder, Folder, Ptr, TransferClip, TransferFolder};
 
 use crate::ProjectState;
 
@@ -37,7 +37,7 @@ impl AssetList {
             }
         }
 
-        let mut action = Action::new();
+        let mut action = Action::new(ActionContext::new("Delete Assets"));
         for folder in self.folders.iter() {
             action.push(DeleteFolder {
                 ptr: *folder,
@@ -55,7 +55,7 @@ impl AssetList {
     }
 
     pub fn transfer(self, new_parent: Ptr<Folder>, state: &ProjectState) {
-        let mut action = Action::new(); 
+        let mut action = Action::new(ActionContext::new("Transfer Assets")); 
         for moved_folder in self.folders {
             action.push(TransferFolder {
                 ptr: moved_folder,
