@@ -81,7 +81,7 @@ pub fn text_edit_interaction(ui: &mut UI, text_edit: Response, text: &mut String
         });
     }
 
-    if text_edit.mouse_pressed_outside(ui) {
+    if editing_text(ui, &text_edit) && text_edit.mouse_pressed_outside(ui) {
         done_editing = true;
     }
     if done_editing {
