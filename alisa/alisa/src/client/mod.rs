@@ -111,6 +111,10 @@ impl<P: Project> Client<P> {
     }
 
     pub fn queue_action(&self, action: Action<P>) {
+        if action.is_empty() {
+            return;
+        }
+
         #[cfg(debug_assertions)]
         for act in &action.acts {
             act.operation.verify_operation_type();
@@ -166,7 +170,8 @@ impl<P: Project> Client<P> {
         }
         inverse_acts.reverse();
         Action {
-            acts: inverse_acts
+            acts: inverse_acts,
+            context: action.context
         }
     }
 
@@ -183,22 +188,28 @@ impl<P: Project> Client<P> {
                 OperationToPerform::Operation(act) => self.perform_act(act, context),
                 OperationToPerform::Action(action) => {
                     let inv_action = self.perform_action(action, context);
-                    self.undo_stack.push(inv_action);
+                    if !inv_action.is_empty() {
+                        self.undo_stack.push(inv_action);
+                    }
                     self.redo_stack.clear();
                 },
                 OperationToPerform::Undo => {
                     if let Some(undo_action) = self.undo_stack.pop() {
                         let redo_action = self.perform_action(undo_action, context);
-                        self.redo_stack.push(redo_action);
+                        if !redo_action.is_empty() {
+                            self.redo_stack.push(redo_action);
+                        }
                     }
                 },
                 OperationToPerform::Redo => {
                     if let Some(redo_action) = self.redo_stack.pop() {
                         let undo_action = self.perform_action(redo_action, context);
-                        self.undo_stack.push(undo_action);
+                        if !undo_action.is_empty() {
+                            self.undo_stack.push(undo_action);
+                        }
                     }
                 },
-            }    
+            }
         }
 
         if let Some(collab) = self.kind.as_collab() {
@@ -255,6 +266,14 @@ impl<P: Project> Client<P> {
         let tried_loading = O::list(&self.objects).tried_loading.borrow().contains(&ptr);
         let to_load = O::list(&self.objects).to_load.borrow().contains(&ptr);
         tried_loading && !to_load
+    }
+
+    pub fn undo_stack(&self) -> &Vec<Action<P>> {
+        &self.undo_stack
+    }
+
+    pub fn redo_stack(&self) -> &Vec<Action<P>> {
+        &self.redo_stack
     }
 
 }

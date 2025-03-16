@@ -34,10 +34,14 @@ pub trait Operation: Sized + Any + Serializable<Self::Project> + Send + Sync {
     /// Get the inverse operation. 
     fn inverse(&self, context: &ProjectContext<Self::Project>) -> Option<Self::Inverse>;
 
+    /// Information about the operation used for debugging
+    #[cfg(debug_assertions)]
+    fn debug_info(&self) -> String { String::new() }
+
 }
 
 /// Shim trait for turning an operation into a dyn object
-pub(crate) trait OperationDyn: Send + Sync {
+pub trait OperationDyn: Send + Sync {
     type Project: Project;
 
     fn perform(&self, recorder: &mut Recorder<'_, Self::Project>) -> bool;
@@ -47,7 +51,10 @@ pub(crate) trait OperationDyn: Send + Sync {
 
     #[cfg(debug_assertions)]
     fn verify_operation_type(&self);
-    
+
+    #[cfg(debug_assertions)]
+    fn debug_info(&self) -> String;
+
 }
 
 impl<O: Operation + Serializable<O::Project>> OperationDyn for O {
@@ -77,6 +84,11 @@ impl<O: Operation + Serializable<O::Project>> OperationDyn for O {
         use crate::Client;
 
         Client::<Self::Project>::verify_operation_type::<Self>();
+    }
+
+    #[cfg(debug_assertions)]
+    fn debug_info(&self) -> String {
+        self.debug_info()
     }
 
 }

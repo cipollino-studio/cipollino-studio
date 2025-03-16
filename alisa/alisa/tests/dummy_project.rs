@@ -9,6 +9,7 @@ pub struct DummyProject {
 impl Project for DummyProject {
     type Context = ();
     type Objects = ();
+    type ActionContext = ();
 
     fn empty() -> Self {
         Self {}
