@@ -64,8 +64,8 @@ impl alisa::TreeObj for Layer {
         parent.child_list(context)
     }
 
-    fn child_list_mut<'a>(parent: LayerParent, context: &'a mut alisa::ProjectContextMut<Project>) -> Option<&'a mut Self::ChildList> {
-        parent.child_list_mut(context)
+    fn child_list_mut<'a>(parent: LayerParent, recorder: &'a mut alisa::Recorder<Project>) -> Option<&'a mut Self::ChildList> {
+        parent.child_list_mut(recorder)
     }
 
     fn parent(&self) -> LayerParent {
@@ -77,13 +77,12 @@ impl alisa::TreeObj for Layer {
     }
 
     fn instance(data: &Self::TreeData, ptr: alisa::Ptr<Self>, parent: Self::ParentPtr, recorder: &mut alisa::Recorder<Self::Project>) {
-        use alisa::Object;
         let layer = Layer {
             parent,
             name: data.name.clone(),
             frames: data.frames.instance(ptr, recorder)
         };
-        Self::add(recorder, ptr, layer);
+        recorder.add_obj(ptr, layer);
     }
 
     fn destroy(&self, recorder: &mut alisa::Recorder<Self::Project>) {

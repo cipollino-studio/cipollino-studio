@@ -20,7 +20,6 @@ pub struct DeleteFrame {
 
 impl alisa::Operation for CreateFrame {
     type Project = Project;
-    type Inverse = DeleteFrame;
 
     const NAME: &'static str = "CreateFrame";
 
@@ -42,16 +41,18 @@ impl alisa::Operation for CreateFrame {
         Frame::instance(&self.data, self.ptr, self.layer, recorder);
 
         // Add it to the layer's frame list
-        let Some(frames) = Frame::child_list_mut(self.layer, recorder.context_mut()) else { return false; };
+        let Some(frames) = Frame::child_list_mut(self.layer, recorder) else { return false; };
         frames.insert((), self.ptr.into());
-        recorder.push_delta(alisa::RemoveChildDelta {
-            parent: self.layer,
-            ptr: self.ptr,
-        });
 
         true
 
     }
+
+}
+
+impl alisa::InvertibleOperation for CreateFrame {
+
+    type Inverse = DeleteFrame;
 
     fn inverse(&self, context: &alisa::ProjectContext<Project>) -> Option<Self::Inverse> {
         use alisa::TreeObj;
@@ -71,13 +72,19 @@ impl alisa::Operation for CreateFrame {
 
 impl alisa::Operation for DeleteFrame {
     type Project = Project;
-    type Inverse = CreateFrame;
 
     const NAME: &'static str = "DeleteFrame";
 
     fn perform(&self, recorder: &mut alisa::Recorder<'_, Project>) -> bool {
         alisa::delete_tree_object(recorder, self.ptr)
     }
+
+    
+
+}
+
+impl alisa::InvertibleOperation for DeleteFrame {
+    type Inverse = CreateFrame;
 
     fn inverse(&self, context: &alisa::ProjectContext<Project>) -> Option<Self::Inverse> {
         use alisa::TreeObj;
@@ -90,5 +97,4 @@ impl alisa::Operation for DeleteFrame {
             data,
         })
     }
-
 }

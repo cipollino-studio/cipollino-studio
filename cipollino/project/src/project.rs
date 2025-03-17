@@ -1,7 +1,7 @@
 
 use crate::{Clip, ClipInner, CreateClip, CreateClipInner, CreateFolder, CreateFrame, CreateLayer, CreateStroke, DeleteClip, DeleteFolder, DeleteFrame, DeleteLayer, DeleteStroke, Folder, Frame, Layer, RenameClip, RenameFolder, SetClipInnerLength, SetFrameTime, SetLayerName, Stroke, TransferClip, TransferFolder, TransferLayer};
 
-#[derive(alisa::Serializable)]
+#[derive(alisa::Serializable, Clone)]
 #[project(Project)]
 pub struct Project {
     pub folders: alisa::UnorderedChildList<alisa::LoadingPtr<Folder>>,

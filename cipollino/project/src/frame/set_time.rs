@@ -3,8 +3,6 @@ use crate::{frame::find_frame_at_time, Layer, Project};
 
 use super::{Frame, FrameTreeData};
 
-alisa::object_set_property_delta!(Frame, time, i32);
-
 #[derive(alisa::Serializable, Default)]
 #[project(Project)]
 pub struct SetFrameTime {
@@ -17,7 +15,6 @@ pub struct SetFrameTime {
 
 impl alisa::Operation for SetFrameTime {
     type Project = Project;
-    type Inverse = SetFrameTime;
 
     const NAME: &'static str = "SetFrameTime";
 
@@ -27,7 +24,7 @@ impl alisa::Operation for SetFrameTime {
 
         let new_time = self.new_time.max(0);
 
-        let Some(frame) = recorder.obj_list().get(self.frame) else { return false; };
+        let Some(frame) = recorder.get_obj(self.frame) else { return false; };
         let layer: alisa::Ptr<Layer> = frame.layer;
 
         // If there's already a frame at the time we're moving this frame to, delete it
@@ -40,13 +37,8 @@ impl alisa::Operation for SetFrameTime {
         }
 
         // Update the frame's time
-        let Some(frame) = recorder.obj_list_mut().get_mut(self.frame) else { return false; };
-        let old_time = frame.time;
+        let Some(frame) = recorder.get_obj_mut(self.frame) else { return false; };
         frame.time = new_time;
-        recorder.push_delta(SetFrameTimeDelta {
-            ptr: self.frame,
-            time_value: old_time,
-        });
 
         // Recreated a previously deleted frame if necessary 
         if let Some(data) = &self.frame_recreation_data {
@@ -55,6 +47,22 @@ impl alisa::Operation for SetFrameTime {
 
         true
     }
+
+    #[cfg(debug_assertions)]
+    fn debug_info(&self) -> String {
+        let recreation_info = if let Some(recreate) = &self.frame_recreation_data {
+            format!(" To recreate frame {} at time {}.", self.frame_recreation_ptr.key(), recreate.time)
+        } else {
+            String::new()
+        };
+        format!("Frame {} to time {}.{}", self.frame.key(), self.new_time, recreation_info)
+    }
+
+}
+
+impl alisa::InvertibleOperation for SetFrameTime {
+
+    type Inverse = SetFrameTime;
 
     fn inverse(&self, context: &alisa::ProjectContext<Project>) -> Option<SetFrameTime> {
 
@@ -81,16 +89,6 @@ impl alisa::Operation for SetFrameTime {
             frame_recreation_ptr: recreated_frame,
             frame_recreation_data: recreate_data,
         })
-    }
-
-    #[cfg(debug_assertions)]
-    fn debug_info(&self) -> String {
-        let recreation_info = if let Some(recreate) = &self.frame_recreation_data {
-            format!(" To recreate frame {} at time {}.", self.frame_recreation_ptr.key(), recreate.time)
-        } else {
-            String::new()
-        };
-        format!("Frame {} to time {}.{}", self.frame.key(), self.new_time, recreation_info)
     }
 
 }

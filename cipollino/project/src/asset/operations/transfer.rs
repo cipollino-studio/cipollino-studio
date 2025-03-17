@@ -25,7 +25,6 @@ macro_rules! asset_transfer_operation {
             impl alisa::Operation for [< Transfer $asset:camel >] {
 
                 type Project = crate::Project;
-                type Inverse = [< Transfer $asset:camel >];
 
                 const NAME: &'static str = stringify!([< Transfer $asset:camel >]);
 
@@ -43,6 +42,12 @@ macro_rules! asset_transfer_operation {
                         false
                     }
                 }
+
+            }
+
+            impl alisa::InvertibleOperation for [< Transfer $asset:camel >] {
+
+                type Inverse = [< Transfer $asset:camel >];
 
                 fn inverse(&self, context: &alisa::ProjectContext<Self::Project>) -> Option<Self::Inverse> {
                     use alisa::TreeObj;

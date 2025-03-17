@@ -124,8 +124,8 @@ impl alisa::TreeObj for Stroke {
         context.obj_list().get(parent).map(|frame| &frame.scene)
     }
 
-    fn child_list_mut<'a>(parent: alisa::Ptr<Frame>, context: &'a mut alisa::ProjectContextMut<Project>) -> Option<&'a mut Self::ChildList> {
-        context.obj_list_mut().get_mut(parent).map(|frame| &mut frame.scene)
+    fn child_list_mut<'a>(parent: alisa::Ptr<Frame>, context: &'a mut alisa::Recorder<Project>) -> Option<&'a mut Self::ChildList> {
+        context.get_obj_mut(parent).map(|frame| &mut frame.scene)
     }
 
     fn parent(&self) -> alisa::Ptr<Frame> {
@@ -137,13 +137,12 @@ impl alisa::TreeObj for Stroke {
     }
 
     fn instance(data: &StrokeTreeData, ptr: alisa::Ptr<Stroke>, frame: alisa::Ptr<Frame>, recorder: &mut alisa::Recorder<Project>) {
-        use alisa::Object;
         let stroke = Stroke {
             frame,
             stroke: data.stroke.clone(),
             color: data.color
         };
-        Self::add(recorder, ptr, stroke);
+        recorder.add_obj(ptr, stroke);
     }
 
     fn destroy(&self, _recorder: &mut alisa::Recorder<Project>) {

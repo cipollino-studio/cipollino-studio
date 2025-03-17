@@ -67,8 +67,8 @@ impl alisa::TreeObj for Frame {
         Some(&context.obj_list().get(parent)?.frames)
     }
 
-    fn child_list_mut<'a>(parent: alisa::Ptr<Layer>, context: &'a mut alisa::ProjectContextMut<Project>) -> Option<&'a mut Self::ChildList> {
-        Some(&mut context.obj_list_mut().get_mut(parent)?.frames)
+    fn child_list_mut<'a>(parent: alisa::Ptr<Layer>, context: &'a mut alisa::Recorder<Project>) -> Option<&'a mut Self::ChildList> {
+        Some(&mut context.get_obj_mut(parent)?.frames)
     }
 
     fn parent(&self) -> alisa::Ptr<Layer> {
@@ -80,13 +80,12 @@ impl alisa::TreeObj for Frame {
     }
 
     fn instance(data: &FrameTreeData, ptr: alisa::Ptr<Self>, parent: alisa::Ptr<Layer>, recorder: &mut alisa::Recorder<Project>) {
-        use alisa::Object;
         let frame = Frame {
             layer: parent,
             time: data.time,
             scene: data.scene.instance(ptr, recorder),
         };
-        Self::add(recorder, ptr, frame);
+        recorder.add_obj(ptr, frame);
     }
 
     fn destroy(&self, recorder: &mut alisa::Recorder<Self::Project>) {

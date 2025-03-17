@@ -74,11 +74,11 @@ impl alisa::TreeObj for Folder {
         context.obj_list().get(parent).map(|folder| &folder.folders)
     }
 
-    fn child_list_mut<'a>(parent: alisa::Ptr<Folder>, context: &'a mut alisa::ProjectContextMut<Project>) -> Option<&'a mut Self::ChildList> {
+    fn child_list_mut<'a>(parent: alisa::Ptr<Folder>, context: &'a mut alisa::Recorder<Project>) -> Option<&'a mut Self::ChildList> {
         if parent.is_null() {
             return Some(&mut context.project_mut().folders);
         }
-        context.obj_list_mut().get_mut(parent).map(|folder| &mut folder.folders)
+        context.get_obj_mut(parent).map(|folder| &mut folder.folders)
     }
 
     fn parent(&self) -> alisa::Ptr<Folder> {
@@ -90,14 +90,13 @@ impl alisa::TreeObj for Folder {
     }
 
     fn instance(data: &Self::TreeData, ptr: alisa::Ptr<Self>, parent: alisa::Ptr<Folder>, recorder: &mut alisa::Recorder<Project>) {
-        use alisa::Object;
         let folder = Self {
             parent,
             name: data.name.clone(),
             folders: data.folders.instance(ptr, recorder),
             clips: data.clips.instance(ptr, recorder),
         };
-        Self::add(recorder, ptr, folder)
+        recorder.add_obj(ptr, folder)
     }
 
     fn destroy(&self, recorder: &mut alisa::Recorder<Project>) {
@@ -195,7 +194,6 @@ fn is_inside_folder(folders: &alisa::ObjList<Folder>, parent_ptr: alisa::Ptr<Fol
 impl alisa::Operation for TransferFolder {
 
     type Project = Project;
-    type Inverse = Self;
     const NAME: &'static str = "TransferFolder";
 
     fn perform(&self, recorder: &mut alisa::Recorder<'_, Project>) -> bool {
@@ -219,6 +217,13 @@ impl alisa::Operation for TransferFolder {
 
     }
 
+    
+}
+
+impl alisa::InvertibleOperation for TransferFolder {
+
+    type Inverse = Self;
+
     fn inverse(&self, context: &alisa::ProjectContext<Project>) -> Option<Self> {
         let folder = context.obj_list().get(self.ptr)?;
         Some(Self {
@@ -226,6 +231,7 @@ impl alisa::Operation for TransferFolder {
             new_parent: folder.parent,
         })
     }
+
 }
 
 pub fn deep_load_folder(folder_ptr: alisa::Ptr<Folder>, client: &Client) {

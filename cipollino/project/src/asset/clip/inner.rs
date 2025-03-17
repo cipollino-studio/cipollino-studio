@@ -74,12 +74,9 @@ pub struct CreateClipInner {
 
 impl alisa::Operation for CreateClipInner {
     type Project = Project;
-    type Inverse = CreateClipInner;
     const NAME: &'static str = "CreateClipInner";
 
     fn perform(&self, recorder: &mut alisa::Recorder<'_, Self::Project>) -> bool {
-
-        use alisa::Object;
 
         let Some(clip) = recorder.obj_list().get(self.clip) else {
             return false;
@@ -89,17 +86,13 @@ impl alisa::Operation for CreateClipInner {
             return false;
         }
 
-        ClipInner::add(recorder, self.inner, ClipInner::default());
-        let Some(clip) = recorder.obj_list_mut().get_mut(self.clip) else {
+        recorder.add_obj(self.inner, ClipInner::default());
+        let Some(clip) = recorder.get_obj_mut(self.clip) else {
             return false;
         };
         clip.inner = self.inner;
 
         true
-    }
-
-    fn inverse(&self, _context: &alisa::ProjectContext<Self::Project>) -> Option<Self::Inverse> {
-        None
     }
 
 }

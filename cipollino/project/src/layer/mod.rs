@@ -28,12 +28,11 @@ impl LayerParent {
         }
     }
 
-    fn child_list_mut<'a>(&self, context: &'a mut alisa::ProjectContextMut<Project>) -> Option<&'a mut LayerChildList> {
+    fn child_list_mut<'a>(&self, recorder: &'a mut alisa::Recorder<Project>) -> Option<&'a mut LayerChildList> {
         match self {
-            LayerParent::Clip(ptr) => context.obj_list()
-                .get(*ptr)
+            LayerParent::Clip(ptr) => recorder.get_obj(*ptr)
                 .map(|clip| clip.inner)
-                .and_then(|inner| context.obj_list_mut().get_mut(inner))
+                .and_then(|inner| recorder.get_obj_mut(inner))
                 .map(|inner| &mut inner.layers),
         }
     }
@@ -135,12 +134,8 @@ impl LayerChildList {
         for child in &self.children {
             match child {
                 LayerChildPtr::Layer(layer_ptr) => {
-                    if let Some(layer) = recorder.obj_list_mut().delete(layer_ptr.ptr()) {
+                    if let Some(layer) = recorder.delete_obj(layer_ptr.ptr()) {
                         layer.destroy(recorder);
-                        recorder.push_delta(alisa::RecreateObjectDelta {
-                            ptr: layer_ptr.ptr(),
-                            obj: layer,
-                        });
                     }
                 },
             }

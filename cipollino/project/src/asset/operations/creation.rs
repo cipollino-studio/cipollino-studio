@@ -21,7 +21,6 @@ macro_rules! asset_creation_operations {
             impl alisa::Operation for [< Create $asset:camel >] {
 
                 type Project = crate::Project;
-                type Inverse = [< Delete $asset:camel >];
                 
                 const NAME: &'static str = stringify!([< Create $asset:camel >]);
 
@@ -42,18 +41,21 @@ macro_rules! asset_creation_operations {
                     crate::rectify_name_duplication(self.ptr, sibling_names, recorder);
 
                     // Add it to the parent's child list
-                    let Some(child_list) = $asset::child_list_mut(self.parent, recorder.context_mut()) else {
+                    let Some(child_list) = $asset::child_list_mut(self.parent, recorder) else {
                         return false;
                     };
 
                     child_list.insert((), self.ptr);
-                    recorder.push_delta(alisa::RemoveChildDelta {
-                        parent: self.parent.clone(),
-                        ptr: self.ptr
-                    });
 
                     true
                 }
+
+
+            }
+
+            impl alisa::InvertibleOperation for [< Create $asset:camel >] {
+
+                type Inverse = [< Delete $asset:camel >];
 
                 fn inverse(&self, _context: &alisa::ProjectContext<crate::Project>) -> Option<Self::Inverse> {
                     Some(Self::Inverse {
@@ -66,8 +68,7 @@ macro_rules! asset_creation_operations {
             impl alisa::Operation for [< Delete $asset:camel >] {
 
                 type Project = crate::Project;
-                type Inverse = [< Create $asset:camel >];
-                
+
                 const NAME: &'static str = stringify!([< Delete $asset:camel >]);
 
                 fn perform(&self, recorder: &mut alisa::Recorder<crate::Project>) -> bool {
@@ -77,6 +78,12 @@ macro_rules! asset_creation_operations {
                     }
                     alisa::delete_tree_object(recorder, self.ptr) 
                 }
+
+            }
+
+            impl alisa::InvertibleOperation for [< Delete $asset:camel >] {
+
+                type Inverse = [< Create $asset:camel >];
 
                 fn inverse(&self, context: &alisa::ProjectContext<crate::Project>) -> Option<Self::Inverse> {
                     use alisa::TreeObj;

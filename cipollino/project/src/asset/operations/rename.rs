@@ -25,7 +25,6 @@ macro_rules! asset_rename_operation {
             impl alisa::Operation for [< Rename $asset:camel >] {
 
                 type Project = crate::Project;
-                type Inverse = [< Rename $asset:camel >];
                 
                 const NAME: &'static str = stringify!([< Rename $asset:camel >]);
 
@@ -40,22 +39,22 @@ macro_rules! asset_rename_operation {
                     };
                     let sibling_names = $asset::get_sibling_names(child_list, recorder.obj_list(), Some(self.ptr));
 
-                    let Some(obj) = recorder.obj_list_mut().get_mut(self.ptr) else {
+                    let Some(obj) = recorder.get_obj_mut(self.ptr) else {
                         return false;
                     };
 
-                    let old_name = obj.name().clone();
                     *obj.name_mut() = self.name.clone();
 
                     crate::rectify_name_duplication(self.ptr, sibling_names, recorder);
 
-                    recorder.push_delta(crate::SetAssetNameDelta {
-                        ptr: self.ptr,
-                        name: old_name
-                    });
-
                     true
                 }
+
+            }
+
+            impl alisa::InvertibleOperation for [< Rename $asset:camel >] {
+
+                type Inverse = [< Rename $asset:camel >];
 
                 fn inverse(&self, context: &alisa::ProjectContext<Self::Project>) -> Option<Self::Inverse> {
                     let object = context.obj_list().get(self.ptr)?; 

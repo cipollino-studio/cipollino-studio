@@ -82,11 +82,11 @@ impl alisa::TreeObj for Clip {
         context.obj_list().get(parent).map(|folder| &folder.clips)
     }
 
-    fn child_list_mut<'a>(parent: alisa::Ptr<Folder>, context: &'a mut alisa::ProjectContextMut<Project>) -> Option<&'a mut Self::ChildList> {
+    fn child_list_mut<'a>(parent: alisa::Ptr<Folder>, context: &'a mut alisa::Recorder<Project>) -> Option<&'a mut Self::ChildList> {
         if parent.is_null() {
             return Some(&mut context.project_mut().clips);
         }
-        context.obj_list_mut().get_mut(parent).map(|folder| &mut folder.clips)
+        context.get_obj_mut(parent).map(|folder| &mut folder.clips)
     }
 
     fn parent(&self) -> Self::ParentPtr {
@@ -98,8 +98,6 @@ impl alisa::TreeObj for Clip {
     }
 
     fn instance(data: &Self::TreeData, ptr: alisa::Ptr<Self>, parent: alisa::Ptr<Folder>, recorder: &mut alisa::Recorder<Project>) {
-        use alisa::Object;
-
         let clip_inner = ClipInner {
             layers: data.layers.instance(LayerParent::Clip(ptr), recorder),
             length: data.length,
@@ -107,23 +105,19 @@ impl alisa::TreeObj for Clip {
             width: data.width,
             height: data.height,
         };
-        ClipInner::add(recorder, data.inner_ptr, clip_inner);
+        recorder.add_obj(data.inner_ptr, clip_inner);
 
         let clip = Self {
             folder: parent,
             name: data.name.clone(),
             inner: data.inner_ptr 
         };
-        Self::add(recorder, ptr, clip);
+        recorder.add_obj(ptr, clip);
     }
 
     fn destroy(&self, recorder: &mut alisa::Recorder<Project>) {
-        if let Some(clip_inner) = recorder.obj_list_mut().delete(self.inner) {
+        if let Some(clip_inner) = recorder.delete_obj(self.inner) {
             clip_inner.layers.clone().destroy(recorder);
-            recorder.push_delta(alisa::RecreateObjectDelta {
-                ptr: self.inner,
-                obj: clip_inner,
-            });
         }
     }
 
