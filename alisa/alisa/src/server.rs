@@ -170,7 +170,11 @@ impl<P: Project> Server<P> {
         &self.client.project
     }
 
-    pub fn get_msgs_to_send(&mut self, client: ClientId) -> Option<&mut Vec<rmpv::Value>> {
+    pub fn get_msgs_to_send(&self, client: ClientId) -> Option<&Vec<rmpv::Value>> {
+        Some(&self.clients.get(&client)?.to_send)
+    }
+
+    pub fn get_msgs_to_send_mut(&mut self, client: ClientId) -> Option<&mut Vec<rmpv::Value>> {
         Some(&mut self.clients.get_mut(&client)?.to_send)
     }
 

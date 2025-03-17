@@ -1,11 +1,11 @@
 
-use crate::{Ptr, Recorder, RecreateObjectDelta};
+use crate::{Ptr, Recorder};
 
-use super::{Children, InsertChildDelta, RemoveChildDelta, TreeObj};
+use super::{Children, TreeObj};
 
 pub fn create_tree_object<O: TreeObj>(recorder: &mut Recorder<O::Project>, ptr: Ptr<O>, parent: O::ParentPtr, idx: <O::ChildList as Children<O>>::Index, data: &O::TreeData) -> bool {
     // Make sure the parent we're creating the object in exists 
-    if O::child_list_mut(parent.clone(), recorder.context_mut()).is_none() {
+    if O::child_list_mut(parent.clone(), recorder).is_none() {
         return false;
     }
 
@@ -13,38 +13,25 @@ pub fn create_tree_object<O: TreeObj>(recorder: &mut Recorder<O::Project>, ptr: 
     O::instance(data, ptr, parent.clone(), recorder);
 
     // Add it to the parent's child list
-    let Some(child_list) = O::child_list_mut(parent.clone(), recorder.context_mut()) else {
+    let Some(child_list) = O::child_list_mut(parent.clone(), recorder) else {
         return false;
     };
     child_list.insert(idx, ptr);
-    recorder.push_delta(RemoveChildDelta {
-        parent: parent.clone(),
-        ptr: ptr
-    });
 
     true
 }
 
 pub fn delete_tree_object<O: TreeObj>(recorder: &mut Recorder<O::Project>, ptr: Ptr<O>) -> bool {
-    if let Some(obj) = recorder.obj_list_mut().delete(ptr) {
+    if let Some(obj) = recorder.delete_obj(ptr) {
         obj.destroy(recorder);
         let parent = obj.parent(); 
-        recorder.push_delta(RecreateObjectDelta {
-            ptr,
-            obj
-        });
-        if let Some(child_list) = O::child_list_mut(parent.clone(), recorder.context_mut()) {
-            if let Some(idx) = child_list.remove(ptr) {
-                recorder.push_delta(InsertChildDelta {
-                    parent,
-                    ptr,
-                    idx
-                });
+        if let Some(child_list) = O::child_list_mut(parent.clone(), recorder) {
+            if let Some(_idx) = child_list.remove(ptr) {
                 return true;
             }
         }
     }
-    false 
+    false
 }
 
 #[macro_export]

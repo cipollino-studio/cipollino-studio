@@ -1,41 +1,32 @@
 
 use crate::{Ptr, Recorder};
 
-use super::{Children, InsertChildDelta, RemoveChildDelta, SetParentDelta, TreeObj};
+use super::{Children, TreeObj};
 
 pub fn transfer_tree_object<O: TreeObj>(recorder: &mut Recorder<O::Project>, ptr: Ptr<O>, new_parent: &O::ParentPtr, new_idx: &<O::ChildList as Children<O>>::Index) -> bool {
 
     // Make sure everything we need exists
-    let Some(obj) = recorder.obj_list_mut().get_mut(ptr) else {
+    let Some(obj) = recorder.get_obj_mut(ptr) else {
         return false;
     };
     let old_parent = obj.parent().clone();
-    if O::child_list_mut(old_parent.clone(), recorder.context_mut()).is_none() {
+    if O::child_list_mut(old_parent.clone(), recorder).is_none() {
         return false;
     }
-    if O::child_list_mut(new_parent.clone(), recorder.context_mut()).is_none() {
+    if O::child_list_mut(new_parent.clone(), recorder).is_none() {
         return false;
     }
 
     // Set the object's parent
-    let Some(obj) = recorder.obj_list_mut().get_mut(ptr) else {
+    let Some(obj) = recorder.get_obj_mut(ptr) else {
         return false;
     };
     *obj.parent_mut() = new_parent.clone();
-    recorder.push_delta(SetParentDelta {
-        ptr: ptr,
-        new_parent: old_parent.clone()
-    });
     
     // Remove the object from the old parent's child list
     let mut old_idx = None;
-    if let Some(old_child_list) = O::child_list_mut(old_parent.clone(), recorder.context_mut()) {
+    if let Some(old_child_list) = O::child_list_mut(old_parent.clone(), recorder) {
         if let Some(idx) = old_child_list.remove(ptr) {
-            recorder.push_delta(InsertChildDelta {
-                parent: old_parent,
-                ptr,
-                idx
-            });
             old_idx = Some(idx);
         }
     }
@@ -47,12 +38,8 @@ pub fn transfer_tree_object<O: TreeObj>(recorder: &mut Recorder<O::Project>, ptr
     };
 
     // Add the object to the new parent's child list
-    if let Some(new_child_list) = O::child_list_mut(new_parent.clone(), recorder.context_mut()) {
+    if let Some(new_child_list) = O::child_list_mut(new_parent.clone(), recorder) {
         new_child_list.insert(new_idx.clone(), ptr);
-        recorder.push_delta(RemoveChildDelta {
-            parent: new_parent.clone(),
-            ptr
-        });
     }
 
     true

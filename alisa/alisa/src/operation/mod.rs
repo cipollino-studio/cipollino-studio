@@ -6,7 +6,10 @@ use crate::{DeserializationContext, Project, ProjectContext, Serializable, Seria
 mod common;
 
 mod delta;
-pub use delta::*;
+pub(crate) use delta::*;
+
+mod recorder;
+pub use recorder::*;
 
 /// Enum that indicates where an operation originated
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -129,5 +132,5 @@ impl<P: Project> OperationKind<P> {
 /// An operation that was not yet confirmed by the server. Used for moving backwards/forwards in time for conflict resolution.  
 pub(crate) struct UnconfirmedOperation<P: Project> {
     pub(crate) operation: Box<dyn OperationDyn<Project = P>>,
-    pub(crate) deltas: Vec<Box<dyn Delta<Project = P>>> 
+    pub(crate) delta: Delta<P>
 }

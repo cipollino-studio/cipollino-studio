@@ -1,5 +1,5 @@
 
-use crate::{LoadingPtr, Project, Ptr, Recorder, RecreateObjectDelta, Serializable};
+use crate::{LoadingPtr, Project, Ptr, Recorder, Serializable};
 
 use super::TreeObj;
 
@@ -24,12 +24,8 @@ impl<O: TreeObj> ChildPtr for Ptr<O> {
     }
     
     fn destroy(&self, recorder: &mut Recorder<Self::Project>) {
-        if let Some(obj) = recorder.obj_list_mut().delete(*self) {
+        if let Some(obj) = recorder.delete_obj(*self) {
             obj.destroy(recorder);
-            recorder.push_delta(RecreateObjectDelta {
-                ptr: *self,
-                obj,
-            });
         }
     }
     

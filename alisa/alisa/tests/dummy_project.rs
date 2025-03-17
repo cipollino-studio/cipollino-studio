@@ -1,7 +1,7 @@
 
 use alisa::Project;
 
-#[derive(Default, alisa::Serializable)]
+#[derive(Default, alisa::Serializable, Clone)]
 pub struct DummyProject {
 
 }

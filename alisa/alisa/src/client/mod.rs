@@ -2,7 +2,7 @@
 
 use std::{any::{type_name, TypeId}, cell::RefCell, ops::Deref};
 
-use crate::{Act, Action, Object, Operation, OperationSource, Project, ProjectContext, ProjectContextMut, Ptr, Recorder};
+use crate::{Act, Action, Delta, Object, Operation, OperationSource, Project, ProjectContext, ProjectContextMut, Ptr, Recorder};
 
 mod local;
 use local::*;
@@ -132,29 +132,29 @@ impl<P: Project> Client<P> {
     }
 
     fn perform_act(&mut self, act: Act<P>, context: &mut P::Context) {
+        let mut delta = Delta::new();
         let mut recorder = Recorder::new(ProjectContextMut {
             project: &mut self.project,
             objects: &mut self.objects,
             context,
             project_modified: &mut self.project_modified,
-        }, OperationSource::Local);
+        }, OperationSource::Local, Some(&mut delta));
         let success = act.operation.perform(&mut recorder);
-        let deltas = recorder.deltas;
 
         if success {
             if let Some(collab) = self.kind.as_collab() {
-                collab.perform_operation(act.operation, deltas); 
+                collab.perform_operation(act.operation, delta); 
             }
         } else {
+            let mut context = ProjectContextMut {
+                project: &mut self.project,
+                objects: &mut self.objects,
+                context,
+                project_modified: &mut self.project_modified,
+            };
+
             // If the operation failed, undo the mess it made
-            for delta in deltas.iter().rev() {
-                delta.perform(&mut ProjectContextMut {
-                    project: &mut self.project,
-                    objects: &mut self.objects,
-                    context,
-                    project_modified: &mut self.project_modified,
-                });
-            }
+            delta.undo(&mut context);
         }
     }
 
@@ -219,6 +219,13 @@ impl<P: Project> Client<P> {
         if let Some(local) = self.kind.as_local() {
             local.save_changes(&mut self.project, &mut self.objects, &mut self.project_modified);
             local.load_objects(&mut self.objects);
+        }
+    }
+
+    pub fn has_messages(&self) -> bool {
+        match &self.kind {
+            ClientKind::Local(_) => false,
+            ClientKind::Collab(collab) => collab.has_messages(),
         }
     }
 

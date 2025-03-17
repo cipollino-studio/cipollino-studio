@@ -52,7 +52,7 @@ impl<P: Project> Collab<P> {
         }
     }
 
-    pub(crate) fn perform_operation(&mut self, operation: Box<dyn OperationDyn<Project = P>>, deltas: Vec<Box<dyn Delta<Project = P>>>) {
+    pub(crate) fn perform_operation(&mut self, operation: Box<dyn OperationDyn<Project = P>>, delta: Delta<P>) {
         self.send_message(rmpv::Value::Map(vec![
             ("type".into(), "operation".into()),
             ("operation".into(), operation.name().into()),
@@ -60,13 +60,17 @@ impl<P: Project> Collab<P> {
         ]));
         self.unconfirmed_operations.push(UnconfirmedOperation {
             operation,
-            deltas
+            delta
         });
     }
     
     pub(crate) fn send_message(&self, message: rmpv::Value) {
         self.to_send.borrow_mut().push(message);
     }
+
+    pub(crate) fn has_messages(&self) -> bool {
+        !self.to_send.borrow().is_empty()
+    } 
 
     pub(crate) fn take_messages(&self) -> Vec<rmpv::Value> {
         std::mem::replace(&mut *self.to_send.borrow_mut(), Vec::new())
@@ -116,26 +120,38 @@ impl<P: Project> Client<P> {
         // Undo all the stuff we've done client side
         if let Some(collab) = self.kind.as_collab() {
             for unconfirmed_operation in collab.unconfirmed_operations.iter().rev() {
-                for delta in unconfirmed_operation.deltas.iter().rev() {
-                    delta.perform(&mut project_context);
-                }
+                unconfirmed_operation.delta.undo(&mut project_context); 
             }
         }
 
         // Apply the newly-received operation
-        let mut recorder = Recorder::new(project_context, OperationSource::Server);
+        let mut recorder = Recorder::new(project_context, OperationSource::Server, None);
         let success = (operation_kind.perform)(operation, &mut recorder);
 
         // Reapply the operations we've done on top of the inserted operation
         if let Some(collab) = self.kind.as_collab() {
-            for unconfirmed_operation in &collab.unconfirmed_operations {
-                let mut recorder = Recorder::new(ProjectContextMut {
+            let unconfirmed_operations = std::mem::replace(&mut collab.unconfirmed_operations, Vec::new());
+            
+            for unconfirmed_operation in unconfirmed_operations {
+                let mut delta = Delta::new();
+                let project_context = ProjectContextMut {
                     project: &mut self.project,
                     objects: &mut self.objects,
                     context,
                     project_modified: &mut self.project_modified,
-                }, OperationSource::Local);
-                unconfirmed_operation.operation.perform(&mut recorder);
+                };
+                let mut recorder = Recorder::new(project_context, OperationSource::Local, Some(&mut delta));
+                if unconfirmed_operation.operation.perform(&mut recorder) {
+                    collab.unconfirmed_operations.push(UnconfirmedOperation { operation: unconfirmed_operation.operation, delta });
+                } else {
+                    let mut project_context = ProjectContextMut {
+                        project: &mut self.project,
+                        objects: &mut self.objects,
+                        context,
+                        project_modified: &mut self.project_modified,
+                    };
+                    delta.undo(&mut project_context);
+                }
             }
         }
 
