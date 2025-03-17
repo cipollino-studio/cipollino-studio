@@ -2,7 +2,7 @@
 
 use std::{any::{type_name, TypeId}, cell::RefCell, ops::Deref};
 
-use crate::{Act, Action, Delta, Object, Operation, OperationSource, Project, ProjectContext, ProjectContextMut, Ptr, Recorder};
+use crate::{Act, Action, Delta, Object, Operation, OperationDyn, OperationSource, Project, ProjectContext, ProjectContextMut, Ptr, Recorder};
 
 mod local;
 use local::*;
@@ -48,7 +48,7 @@ impl<P: Project> ClientKind<P> {
 }
 
 enum OperationToPerform<P: Project> {
-    Operation(Act<P>),
+    Operation(Box<dyn OperationDyn<Project = P>>),
     Action(Action<P>),
     Undo,
     Redo
@@ -107,7 +107,7 @@ impl<P: Project> Client<P> {
         #[cfg(debug_assertions)]
         Self::verify_operation_type::<O>();
 
-        self.operations_to_perform.borrow_mut().push(OperationToPerform::Operation(Act::new(operation))); 
+        self.operations_to_perform.borrow_mut().push(OperationToPerform::Operation(Box::new(operation))); 
     }
 
     pub fn queue_action(&self, action: Action<P>) {
@@ -131,7 +131,7 @@ impl<P: Project> Client<P> {
         self.operations_to_perform.borrow_mut().push(OperationToPerform::Redo);
     }
 
-    fn perform_act(&mut self, act: Act<P>, context: &mut P::Context) {
+    fn perform_act(&mut self, operation: Box<dyn OperationDyn<Project = P>>, context: &mut P::Context) {
         let mut delta = Delta::new();
         let mut recorder = Recorder::new(ProjectContextMut {
             project: &mut self.project,
@@ -139,11 +139,11 @@ impl<P: Project> Client<P> {
             context,
             project_modified: &mut self.project_modified,
         }, OperationSource::Local, Some(&mut delta));
-        let success = act.operation.perform(&mut recorder);
+        let success = operation.perform(&mut recorder);
 
         if success {
             if let Some(collab) = self.kind.as_collab() {
-                collab.perform_operation(act.operation, delta); 
+                collab.perform_operation(operation, delta); 
             }
         } else {
             let mut context = ProjectContextMut {
@@ -166,7 +166,7 @@ impl<P: Project> Client<P> {
                     operation: inverse,
                 });
             }
-            self.perform_act(act, context);
+            self.perform_act(act.operation, context);
         }
         inverse_acts.reverse();
         Action {

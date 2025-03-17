@@ -73,13 +73,18 @@ macro_rules! tree_object_transfer_operation {
             impl ::alisa::Operation for [< Transfer $object >] {
 
                 type Project = <$object as ::alisa::Object>::Project;
-                type Inverse = [< Transfer $object:camel >];
 
                 const NAME: &'static str = stringify!([< Transfer $object:camel >]);
 
                 fn perform(&self, recorder: &mut ::alisa::Recorder<Self::Project>) -> bool {
                     ::alisa::transfer_tree_object(recorder, self.ptr, &self.new_parent, &self.new_idx)
                 }
+
+            }
+
+            impl ::alisa::InvertibleOperation for [< Transfer $object >] {
+
+                type Inverse = [< Transfer $object:camel >];
 
                 fn inverse(&self, context: &::alisa::ProjectContext<Self::Project>) -> Option<Self::Inverse> {
                     use ::alisa::TreeObj;

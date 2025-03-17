@@ -64,13 +64,19 @@ macro_rules! tree_object_creation_operations {
             impl ::alisa::Operation for [< Create $object:camel >] {
 
                 type Project = <$object as ::alisa::Object>::Project;
-                type Inverse = [< Delete $object:camel >];
 
                 const NAME: &'static str = stringify!([< Create $object:camel >]);
 
                 fn perform(&self, recorder: &mut ::alisa::Recorder<Self::Project>) -> bool {
                     ::alisa::create_tree_object(recorder, self.ptr, self.parent.clone(), self.idx.clone(), &self.data)
                 }
+
+
+            }
+
+            impl ::alisa::InvertibleOperation for [< Create $object:camel >] {
+
+                type Inverse = [< Delete $object:camel >];
 
                 fn inverse(&self, context: &::alisa::ProjectContext<Self::Project>) -> Option<Self::Inverse> {
                     Some([<Delete $object:camel >] {
@@ -99,7 +105,6 @@ macro_rules! tree_object_creation_operations {
             impl ::alisa::Operation for [< Delete $object:camel >] {
 
                 type Project = <$object as ::alisa::Object>::Project;
-                type Inverse = [< Create $object:camel >];
 
                 const NAME: &'static str = stringify!([< Delete $object:camel >]);
 
@@ -110,6 +115,13 @@ macro_rules! tree_object_creation_operations {
                     }
                     ::alisa::delete_tree_object(recorder, self.ptr)
                 }
+
+
+            }
+
+            impl ::alisa::InvertibleOperation for [< Delete $object:camel >] {
+
+                type Inverse = [< Create $object:camel >];
 
                 fn inverse(&self, context: &::alisa::ProjectContext<Self::Project>) -> Option<Self::Inverse> {
                     use ::alisa::Children;
@@ -132,7 +144,6 @@ macro_rules! tree_object_creation_operations {
                 }
 
             }
-
 
         }
     }

@@ -1,18 +1,11 @@
 
-use crate::{Operation, OperationDyn, Project};
+use crate::Project;
+
+mod invertible_operation;
+pub use invertible_operation::*;
 
 pub(crate) struct Act<P: Project> {
-    pub(crate) operation: Box<dyn OperationDyn<Project = P>>
-}
-
-impl<P: Project> Act<P> {
-
-    pub fn new<O: Operation<Project = P>>(operation: O) -> Self {
-        Act {
-            operation: Box::new(operation)
-        } 
-    }
-
+    pub(crate) operation: Box<dyn InvertibleOperationDyn<Project = P>>
 }
 
 pub struct Action<P: Project> {
@@ -29,19 +22,19 @@ impl<P: Project> Action<P> {
         }
     }
 
-    pub fn push<O: Operation<Project = P>>(&mut self, operation: O) {
+    pub fn push<O: InvertibleOperation<Project = P>>(&mut self, operation: O) {
         self.acts.push(Act {
             operation: Box::new(operation),
         });
     }
 
-    pub fn single<O: Operation<Project = P>>(context: P::ActionContext, operation: O) -> Self {
+    pub fn single<O: InvertibleOperation<Project = P>>(context: P::ActionContext, operation: O) -> Self {
         let mut action = Action::new(context);
         action.push(operation);
         action
     }
 
-    pub fn iter_operations(&self) -> impl Iterator<Item = &Box<dyn OperationDyn<Project = P>>> {
+    pub fn iter_operations(&self) -> impl Iterator<Item = &Box<dyn InvertibleOperationDyn<Project = P>>> {
         self.acts.iter().map(|act| &act.operation)
     }
 

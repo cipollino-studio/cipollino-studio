@@ -52,7 +52,6 @@ macro_rules! object_set_property_operation {
             impl ::alisa::Operation for [< Set $object:camel $property:camel >] {
 
                 type Project = <$object as ::alisa::Object>::Project;
-                type Inverse = Self;
 
                 const NAME: &'static str = stringify!([< Set $object:camel $property:camel >]);
 
@@ -64,6 +63,12 @@ macro_rules! object_set_property_operation {
                     obj.$property = self.[< $property:snake _value >].clone();
                     true
                 }
+
+            }
+
+            impl ::alisa::InvertibleOperation for [< Set $object:camel $property:camel >] {
+
+                type Inverse = Self;
 
                 fn inverse(&self, context: &::alisa::ProjectContext<Self::Project>) -> Option<Self::Inverse> {
                     use alisa::Object;

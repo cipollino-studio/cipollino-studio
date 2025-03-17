@@ -1,7 +1,7 @@
 
 use std::any::{type_name, Any, TypeId};
 
-use crate::{DeserializationContext, Project, ProjectContext, Serializable, SerializationContext};
+use crate::{DeserializationContext, Project, Serializable, SerializationContext};
 
 mod common;
 
@@ -26,7 +26,6 @@ pub enum OperationSource {
 pub trait Operation: Sized + Any + Serializable<Self::Project> + Send + Sync {
 
     type Project: Project;
-    type Inverse: Operation<Project = Self::Project, Inverse = Self>;
 
     /// The name of the operation, used for collab messages. MAKE SURE THIS IS UNIQUE FOR ALL OPERATIONS!
     const NAME: &'static str;
@@ -34,8 +33,6 @@ pub trait Operation: Sized + Any + Serializable<Self::Project> + Send + Sync {
     /// Perform the operation. Returns true if the operation was performed successfully.
     /// If the operation encoutered an error, it will not be broadcast to other clients.
     fn perform(&self, recorder: &mut Recorder<'_, Self::Project>) -> bool; 
-    /// Get the inverse operation. 
-    fn inverse(&self, context: &ProjectContext<Self::Project>) -> Option<Self::Inverse>;
 
     /// Information about the operation used for debugging
     #[cfg(debug_assertions)]
@@ -48,7 +45,6 @@ pub trait OperationDyn: Send + Sync {
     type Project: Project;
 
     fn perform(&self, recorder: &mut Recorder<'_, Self::Project>) -> bool;
-    fn inverse(&self, context: &ProjectContext<Self::Project>) -> Option<Box<dyn OperationDyn<Project = Self::Project>>>;
     fn name(&self) -> &'static str;
     fn serialize(&self) -> rmpv::Value;
 
@@ -65,13 +61,6 @@ impl<O: Operation + Serializable<O::Project>> OperationDyn for O {
 
     fn perform(&self, recorder: &mut Recorder<'_, Self::Project>) -> bool {
         self.perform(recorder)
-    }
-
-    fn inverse(&self, context: &ProjectContext<Self::Project>) -> Option<Box<dyn OperationDyn<Project = Self::Project>>> {
-        if let Some(inverse) = <Self as Operation>::inverse(self, context) {
-            return Some(Box::new(inverse)); 
-        }
-        None
     }
 
     fn name(&self) -> &'static str {

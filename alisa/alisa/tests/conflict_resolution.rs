@@ -15,7 +15,6 @@ struct Set {
 
 impl alisa::Operation for Set {
     type Project = Project;
-    type Inverse = Self;
 
     const NAME: &'static str = "Set";
 
@@ -24,11 +23,6 @@ impl alisa::Operation for Set {
         true
     }
 
-    fn inverse(&self, context: &alisa::ProjectContext<Project>) -> Option<Self::Inverse> {
-        Some(Self {
-            n: context.project().n
-        })
-    }
 }
 
 #[derive(alisa::Serializable, Default)]
@@ -38,7 +32,6 @@ struct Add {
 
 impl alisa::Operation for Add {
     type Project = Project;
-    type Inverse = Self;
     const NAME: &'static str = "Add";
 
     fn perform(&self, recorder: &mut alisa::Recorder<'_, Project>) -> bool {
@@ -46,11 +39,6 @@ impl alisa::Operation for Add {
         true
     }
 
-    fn inverse(&self, _context: &alisa::ProjectContext<Project>) -> Option<Self::Inverse> {
-        Some(Self {
-            n: -self.n
-        })
-    }
 }
 
 impl alisa::Project for Project {
@@ -134,4 +122,3 @@ fn add_then_set() {
     assert_eq!(server.bob().n, 50);
     
 }
-

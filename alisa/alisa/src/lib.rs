@@ -1,3 +1,4 @@
+#![feature(trait_upcasting)]
 
 mod project;
 pub use project::*;
