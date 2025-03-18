@@ -1,7 +1,7 @@
 
 use std::any::{Any, TypeId};
 
-use crate::{clickable_icon, h_line, h_spacing, horizontal_centered, icons, margin, theme, widget::label, window, Layout, LayoutInfo, Margin, Size, TSTransform, UINodeParams, Vec2, UI};
+use crate::{clickable_icon, h_line, h_spacing, icon_gap, icons, margin, theme, vertical_centered, widget::label, window, Layout, LayoutInfo, Margin, Size, TSTransform, UINodeParams, Vec2, UI};
 use super::{Window, WindowDyn};
 
 pub(super) struct WindowInstance<C> {
@@ -45,10 +45,11 @@ impl<C: 'static> WindowInstance<C> {
             |ui| {
                 let close_window = clickable_icon(ui, icons::X).mouse_clicked();
                 h_spacing(ui, 3.0);
-                horizontal_centered(ui, |ui| {
+                vertical_centered(ui, |ui| {
                     label(ui, self.window.title());
                 });
                 h_spacing(ui, 3.0);
+                icon_gap(ui);
 
                 close_window
             }
