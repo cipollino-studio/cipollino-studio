@@ -52,7 +52,7 @@ impl pierro::Window for CreateClipDialog {
         self.data.render_ui(ui);
         pierro::v_spacing(ui, 5.0);
         pierro::vertical_centered(ui, |ui| {
-            if pierro::button(ui, "Create Dialog").mouse_clicked() {
+            if pierro::button(ui, "Create Clip").mouse_clicked() {
                 if let Some(clip) = self.create_clip(&state.project.client) {
                     state.editor.open_clip(clip);
                 }
