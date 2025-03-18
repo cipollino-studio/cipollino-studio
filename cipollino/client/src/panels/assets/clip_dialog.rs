@@ -1,13 +1,16 @@
 
-use pierro::vertical_centered;
 use project::{Action, ActionContext, Client, Clip, ClipTreeData, CreateClip, Ptr};
 
 use crate::State;
 
+const FPS_OPTIONS: &[f32] = &[12.0, 18.0, 24.0, 30.0, 48.0, 60.0];
+
 pub(super) struct ClipDialog {
     name: String,
     length: u32,
-    framerate: f32
+    framerate: f32,
+    width: u32,
+    height: u32,
 }
 
 impl ClipDialog {
@@ -16,7 +19,9 @@ impl ClipDialog {
         Self {
             name: "Clip".to_owned(),
             length: 100,
-            framerate: 24.0
+            framerate: 24.0,
+            width: 1980,
+            height: 1080
         }
     }
 
@@ -30,6 +35,8 @@ impl ClipDialog {
                 name: self.name.clone(),
                 length: self.length,
                 framerate: self.framerate,
+                width: self.width,
+                height: self.height,
                 inner_ptr,
                 ..Default::default()
             },
@@ -49,6 +56,7 @@ fn labeled<F: FnOnce(&mut pierro::UI)>(ui: &mut pierro::UI, label: &str, content
 
         contents(ui);
     });
+    pierro::v_spacing(ui, 1.5);
 }
 
 impl pierro::Window for ClipDialog {
@@ -66,18 +74,27 @@ impl pierro::Window for ClipDialog {
         labeled(ui, "Name:", |ui| {
             pierro::text_edit(ui, &mut self.name);
         });
+        labeled(ui, "Size:", |ui| {
+            pierro::drag_value(ui, &mut self.width);
+            pierro::h_spacing(ui, 3.0);
+            pierro::drag_value(ui, &mut self.height);
+        });
         labeled(ui, "Length:", |ui| {
             pierro::drag_value(ui, &mut self.length);
         });
         labeled(ui, "FPS:", |ui| {
             pierro::dropdown(ui, format!("{}", self.framerate), |ui| {
-                if pierro::menu_button(ui, "24").mouse_clicked() {
-                    self.framerate = 24.0;
+                for fps_option in FPS_OPTIONS {
+                    if pierro::menu_button(ui, format!("{}", fps_option)).mouse_clicked() {
+                        self.framerate = *fps_option;
+                    }
                 }
             });
         });
 
-        vertical_centered(ui, |ui| {
+        pierro::v_spacing(ui, 5.0);
+
+        pierro::vertical_centered(ui, |ui| {
             if pierro::button(ui, "Create Dialog").mouse_clicked() {
                 if let Some(clip) = self.create_clip(&state.project.client) {
                     state.editor.open_clip(clip);
