@@ -124,7 +124,9 @@ impl Panel for AssetsPanel {
 
         let (_, moved_assets) = pierro::dnd_drop_zone_with_size::<AssetList, _>(ui, pierro::Size::fr(1.0), pierro::Size::fr(1.0), |ui| {
             pierro::scroll_area(ui, |ui| {
-                self.render_folder_contents(ui, &state.project.client.folders, &state.project.client.clips, &state.project, &mut state.editor); 
+                pierro::margin(ui, pierro::Margin::same(3.0), |ui| {
+                    self.render_folder_contents(ui, &state.project.client.folders, &state.project.client.clips, &state.project, &mut state.editor); 
+                });
             });
         });
         if let Some(moved_assets) = moved_assets {
