@@ -9,8 +9,11 @@ use super::Panel;
 
 mod tree_ui;
 mod menu_bar;
+
 mod list;
 pub use list::*;
+
+mod clip_dialog;
 
 pub trait AssetUI: Asset {
 
@@ -59,8 +62,8 @@ impl AssetUI for Clip {
         });
     }
 
-    fn on_open(clip: Ptr<Self>, project: &ProjectState, state: &mut EditorState) {
-        state.open_clip(&project.client, clip);
+    fn on_open(clip: Ptr<Self>, _project: &ProjectState, state: &mut EditorState) {
+        state.open_clip(clip);
     }
 
     fn asset_list(list: &AssetList) -> &HashSet<Ptr<Self>> {
@@ -89,7 +92,7 @@ impl Panel for AssetsPanel {
     }
 
     fn render(&mut self, ui: &mut pierro::UI, state: &mut State) {
-        self.menu_bar(ui, &state.project);
+        self.menu_bar(ui, state);
 
         let (_, moved_assets) = pierro::dnd_drop_zone_with_size::<AssetList, _>(ui, pierro::Size::fr(1.0), pierro::Size::fr(1.0), |ui| {
             pierro::scroll_area(ui, |ui| {

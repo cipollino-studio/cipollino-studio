@@ -1,9 +1,9 @@
 
-use project::{alisa::Action, ActionContext, Clip, ClipTreeData, CreateClip, Folder, Ptr};
+use project::{alisa::Action, ActionContext, Clip, Folder, Ptr};
 
-use crate::ProjectState;
+use crate::{ProjectState, State};
 
-use super::{AssetUI, AssetsPanel};
+use super::{clip_dialog::ClipDialog, AssetUI, AssetsPanel};
 
 impl AssetsPanel {
 
@@ -17,31 +17,19 @@ impl AssetsPanel {
         }
     }
 
-    fn create_clip(state: &ProjectState) {
-        let Some(clip_ptr) = state.client.next_ptr() else { return; };
-        let Some(inner_ptr) = state.client.next_ptr() else { return; };
-        state.client.queue_action(Action::single(ActionContext::new("Create Clip"), CreateClip {
-            ptr: clip_ptr,
-            parent: Ptr::null(),
-            data: ClipTreeData {
-                name: "Clip".to_owned(),
-                length: 100,
-                framerate: 24.0,
-                inner_ptr,
-                ..Default::default()
-            },
-        }));
+    fn create_clip(state: &mut State) {
+        state.editor.open_window(ClipDialog::new());
     }
     
-    fn clip_menu_bar_icon(&self, ui: &mut pierro::UI, state: &ProjectState) {
+    fn clip_menu_bar_icon(&self, ui: &mut pierro::UI, state: &mut State) {
         if pierro::icon_button(ui, Clip::ICON).mouse_clicked() {
             Self::create_clip(state);
         }
     } 
 
-    pub(crate) fn menu_bar(&self, ui: &mut pierro::UI, state: &ProjectState) {
+    pub(crate) fn menu_bar(&self, ui: &mut pierro::UI, state: &mut State) {
         pierro::menu_bar(ui, |ui| {
-            self.asset_menu_bar_icon::<Folder>(ui, state); 
+            self.asset_menu_bar_icon::<Folder>(ui, &state.project); 
             self.clip_menu_bar_icon(ui, state);
         });
     }

@@ -1,13 +1,10 @@
 
-use std::cell::RefCell;
-use std::collections::HashMap;
-use std::rc::Rc;
 use std::path::PathBuf;
 
-use project::{alisa::rmpv, Ptr};
+use project::alisa::rmpv;
 use project::{deep_load_clip, Client};
 
-use crate::{AppSystems, AssetList, DockingLayoutPref, EditorPanel, PencilTool};
+use crate::{AppSystems, DockingLayoutPref, EditorPanel};
 
 mod socket;
 pub use socket::*;
@@ -20,39 +17,10 @@ pub use selection::*;
 
 mod shortcuts;
 
-pub struct ProjectState {
-    pub client: project::Client,
-
-    assets_to_delete: RefCell<Vec<AssetList>>
-}
-
-impl ProjectState {
-
-    pub fn delete_assets(&self, selection: AssetList) {
-        self.assets_to_delete.borrow_mut().push(selection);
-    }
-
-    pub fn tick(&self) {
-        let to_delete = self.assets_to_delete.borrow_mut().pop();
-        if let Some(to_delete) = to_delete {
-            if !to_delete.try_delete(&self.client) {
-                to_delete.deep_load_all(&self.client);
-                self.assets_to_delete.borrow_mut().push(to_delete);
-            }
-        }
-    }
-
-}
-
-pub struct State {
-    pub project: ProjectState,
-    pub editor: EditorState,
-    pub renderer: Option<malvina::Renderer>
-}
-
 pub struct Editor {
     state: State,
     docking: pierro::DockingState<EditorPanel>,
+    windows: pierro::WindowManager<State>,
     socket: Option<Socket>
 }
 
@@ -61,29 +29,12 @@ impl Editor {
     fn new(client: Client, socket: Option<Socket>, systems: &mut AppSystems) -> Self {
         Self {
             state: State {
-                project: ProjectState {
-                    client,
-                    assets_to_delete: RefCell::new(Vec::new())
-                },
-                editor: EditorState {
-                    time: 0.0,
-                    playing: false,
-
-                    open_clip: Ptr::null(),
-                    active_layer: Ptr::null(),
-                    
-                    curr_tool: Rc::new(RefCell::new(Box::new(PencilTool::default()))),
-
-                    selection: Selection::new(),
-
-                    stroke_mesh_cache: HashMap::new(),
-                    stroke_preview: None,
-
-                    color: pierro::Color::BLACK
-                },
+                project: ProjectState::new(client),
+                editor: EditorState::new(),
                 renderer: None
             },
             docking: systems.prefs.get::<DockingLayoutPref>(),
+            windows: pierro::WindowManager::new(),
             socket
         }
     }
@@ -136,6 +87,10 @@ impl Editor {
             // Save the layout if it was modified
             systems.prefs.set::<DockingLayoutPref>(&self.docking);
         }
+
+        // Render the windows on top
+        self.state.editor.open_queued_windows(&mut self.windows);
+        self.windows.render(ui, &mut self.state);
 
         self.state.editor.selection.end_frame(ui.input().l_mouse.clicked() || ui.input().l_mouse.drag_started());
 
