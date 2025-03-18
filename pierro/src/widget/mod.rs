@@ -61,9 +61,6 @@ pub use dropdown::*;
 mod window;
 pub use window::*;
 
-mod modal;
-pub use modal::*;
-
 mod resizable_panel;
 pub use resizable_panel::*;
 

@@ -31,7 +31,7 @@ style!(WidgetStroke, Stroke, Stroke::new(Color::hex(0x1E1E1EFF), 1.0));
 style!(WidgetMargin, Margin, Margin::same(5.0));
 style!(WidgetRounding, Rounding, Rounding::same(5.0));
 
-style!(WindowMarin, Margin, Margin::same(7.5));
+style!(WindowMargin, Margin, Margin::same(7.5));
 
 style!(ColorTransitionRate, f32, 0.3);
 
