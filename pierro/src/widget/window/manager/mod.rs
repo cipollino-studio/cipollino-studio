@@ -14,7 +14,7 @@ pub trait Window: Any {
     const UNIQUE: bool = false;
 
     fn title(&self) -> impl Into<String>;
-    fn render(&mut self, ui: &mut UI, context: &mut Self::Context);
+    fn render(&mut self, ui: &mut UI, close: &mut bool, context: &mut Self::Context);
 
 }
 
@@ -23,7 +23,7 @@ pub trait WindowDyn {
     type Context;    
 
     fn title(&self) -> String;
-    fn render(&mut self, ui: &mut UI, context: &mut Self::Context);
+    fn render(&mut self, ui: &mut UI, close: &mut bool, context: &mut Self::Context);
     fn unique(&self) -> bool;
 
 }
@@ -35,8 +35,8 @@ impl<W: Window> WindowDyn for W {
         self.title().into()
     }
 
-    fn render(&mut self, ui: &mut UI, context: &mut Self::Context) {
-        self.render(ui, context);
+    fn render(&mut self, ui: &mut UI, close: &mut bool, context: &mut Self::Context) {
+        self.render(ui, close, context);
     }
 
     fn unique(&self) -> bool {

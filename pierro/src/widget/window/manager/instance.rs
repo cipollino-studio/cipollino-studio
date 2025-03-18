@@ -70,8 +70,9 @@ impl<C: 'static> WindowInstance<C> {
             self.pos = (ui.window_size() - window_size) / 2.0;
         }
 
+        let mut window_wants_close = false; 
         margin(ui, window_margin, |ui| {
-            self.window.render(ui, context);
+            self.window.render(ui, &mut window_wants_close, context);
         });
 
         if just_opened {
@@ -79,7 +80,7 @@ impl<C: 'static> WindowInstance<C> {
         }
         self.opened_on_last_frame = just_opened;
 
-        (close_window, window_bar.mouse_pressed())
+        (close_window || window_wants_close, window_bar.mouse_pressed())
     }
 
     pub fn render(&mut self, ui: &mut UI, context: &mut C) -> (bool, bool) {
