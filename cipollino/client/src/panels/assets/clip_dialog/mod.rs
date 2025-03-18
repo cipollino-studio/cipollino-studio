@@ -45,7 +45,7 @@ impl ClipProperties {
             name: "Clip".to_owned(),
             length: 100,
             framerate: 24.0,
-            width: 1980,
+            width: 1920,
             height: 1080
         }
     }
