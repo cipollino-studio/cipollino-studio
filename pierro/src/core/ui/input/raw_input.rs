@@ -1,6 +1,6 @@
 
 use crate::Vec2;
-use super::Key;
+use super::{Key, KeyModifiers};
 
 /// The raw input given to the application by the windowing library
 pub(crate) struct RawInput {
@@ -21,6 +21,10 @@ pub(crate) struct RawInput {
     pub(crate) keys_pressed: Vec<Key>,
     /// What keys were released this frame?
     pub(crate) keys_released: Vec<Key>,
+    /// What key modifiers are down? 
+    pub(crate) key_modifiers: KeyModifiers, 
+    /// What text was inputted this frame?
+    pub(crate) text: String,
 
     /// Did this app window lose focus?
     pub(crate) lost_focus: bool,
@@ -45,6 +49,8 @@ impl RawInput {
             scroll: Vec2::ZERO,
             keys_pressed: Vec::new(),
             keys_released: Vec::new(),
+            key_modifiers: KeyModifiers::empty(),
+            text: String::new(),
             lost_focus: false,
             ime_preedit: String::new(),
             ime_commit: None,

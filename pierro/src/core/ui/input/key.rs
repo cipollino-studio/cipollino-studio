@@ -1,27 +1,77 @@
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
-pub enum LogicalKey {
-    Alt,
-    CapsLock,
-    Control,
-    Fn,
-    Shift,
-    Command,
-
-    Enter,
-    Tab,
-    Space,
-
+pub enum Key {
     ArrowDown,
     ArrowLeft,
     ArrowRight,
     ArrowUp,
 
-    Backspace,
-    Delete,
     Escape,
+    Tab,
+    Backspace,
+    Enter,
+    Space,
+
+    Insert,
+    Delete,
     Home,
     End,
+    PageUp,
+    PageDown,
+
+    Colon,
+    Comma,
+    Backslash,
+    Slash,
+    Pipe,
+    QuestionMark,
+    OpenBracket,
+    CloseBracket,
+    Backtick,
+    Minus,
+    Period,
+    Plus,
+    Equals,
+    Semicolon,
+    Quote,
+
+    Num0,
+    Num1,
+    Num2,
+    Num3,
+    Num4,
+    Num5,
+    Num6,
+    Num7,
+    Num8,
+    Num9,
+
+    A, 
+    B,
+    C, 
+    D, 
+    E, 
+    F, 
+    G, 
+    H, 
+    I, 
+    J, 
+    K, 
+    L,
+    M,
+    N,
+    O, 
+    P, 
+    Q,
+    R, 
+    S, 
+    T, 
+    U, 
+    V, 
+    W, 
+    X, 
+    Y,
+    Z, 
 
     F1,
     F2,
@@ -34,59 +84,39 @@ pub enum LogicalKey {
     F9,
     F10,
     F11,
-    F12
+    F12,
+    F13,
+    F14,
+    F15,
+    F16,
+    F17,
+    F18,
+    F19,
+    F20,
+    F21,
+    F22,
+    F23,
+    F24,
+    F25,
+    F26,
+    F27,
+    F28,
+    F29,
+    F30,
+    F31,
+    F32,
+    F33,
+    F34,
+    F35,
 }
 
-#[derive(Clone, PartialEq, Eq, Debug, Hash)]
-pub struct Key {
-    pub text: Option<String>,
-    pub logical_key: Option<LogicalKey>
-}
 
-impl Key {
+bitflags::bitflags! {
 
-    pub const SHIFT: Self = Self {
-        text: None,
-        logical_key: Some(LogicalKey::Shift),
-    };
-
-    pub const COMMAND: Self = Self {
-        text: None,
-        #[cfg(target_os = "macos")]
-        logical_key: Some(LogicalKey::Command),
-        #[cfg(not(target_os = "macos"))]
-        logical_key: Some(LogicalKey::Control),
-    };
-
-    pub const SPACE: Self = Self {
-        text: None,
-        logical_key: Some(LogicalKey::Space),
-    };
-
-    pub const DELETE: Self = Self {
-        text: None,
-        logical_key: Some(LogicalKey::Backspace),
-    };
-
-    pub fn text(text: &str) -> Self {
-        Self {
-            text: Some(text.to_owned()),
-            logical_key: None,
-        }
-    }
-
-    pub fn to_lowercase(&self) -> Self {
-        Self {
-            text: self.text.as_ref().map(|text| text.to_lowercase()),
-            logical_key: self.logical_key,
-        }
-    }
-
-    pub fn to_uppercase(&self) -> Self {
-        Self {
-            text: self.text.as_ref().map(|text| text.to_uppercase()),
-            logical_key: self.logical_key,
-        }
-    }
+    #[derive(Clone, Copy, PartialEq, Eq)]
+    pub struct KeyModifiers: u8 {
+        const CONTROL = 1 << 0;
+        const SHIFT = 1 << 1;
+    } 
 
 }

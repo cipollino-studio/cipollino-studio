@@ -37,6 +37,10 @@ pub struct Input {
     pub keys_pressed: Vec<Key>,
     /// The keys released on this frame
     pub keys_released: Vec<Key>,
+    /// What key modifiers are currently down?
+    pub key_modifiers: KeyModifiers,
+    /// What text was inputted this frame?
+    pub text: String,
     /// Is the keyboard currently captured by a node in the UI tree?
     pub keyboard_captured: bool,
 
@@ -120,6 +124,8 @@ impl Input {
             keys: HashMap::new(),
             keys_pressed: Vec::new(),
             keys_released: Vec::new(),
+            key_modifiers: KeyModifiers::empty(),
+            text: String::new(),
             ime_preedit: String::new(),
             ime_commit: None,
             keyboard_captured: false,
@@ -158,6 +164,8 @@ impl Input {
         for key in self.keys_released.clone() {
             self.key_state_mut(&key).release();
         }
+        self.key_modifiers = raw_input.key_modifiers;
+        self.text = std::mem::replace(&mut raw_input.text, String::new());
 
         self.ime_preedit = raw_input.ime_preedit.clone();
         self.ime_commit = std::mem::replace(&mut raw_input.ime_commit, None);

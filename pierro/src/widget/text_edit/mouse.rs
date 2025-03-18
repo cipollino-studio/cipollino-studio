@@ -1,7 +1,7 @@
 
 use cosmic_text::Edit;
 
-use crate::{theme, Key, Response, UI};
+use crate::{theme, KeyModifiers, Response, UI};
 use super::{font_system, TextEditMemory};
 
 pub(super) fn text_edit_mouse_input(ui: &mut UI, text_edit: &Response, memory: &mut TextEditMemory) {
@@ -10,7 +10,7 @@ pub(super) fn text_edit_mouse_input(ui: &mut UI, text_edit: &Response, memory: &
     if let Some(mouse_pos) = text_edit.mouse_pos(ui) {
         let mouse_pos = mouse_pos - widget_margin.min;
         if text_edit.mouse_pressed() {
-            if !ui.input().key_down(&Key::SHIFT) {
+            if !ui.input().key_modifiers.contains(KeyModifiers::SHIFT) {
                 memory.editor.set_selection(cosmic_text::Selection::None);
                 memory.editor.action(font_system(ui), cosmic_text::Action::Click { x: (mouse_pos.x + memory.scroll) as i32, y: mouse_pos.y as i32 });
             } else {

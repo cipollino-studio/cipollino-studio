@@ -7,7 +7,9 @@ use winit::{
 
 use crate::{vec2, Input, Memory, Painter, RawInput, Rect, RenderResources, UITree, Vec2, WindowConfig, UI};
 
-use super::{CursorIcon, Key, LayoutMemory, LogicalKey, TextRenderCache, Texture};
+use super::{CursorIcon, LayoutMemory, TextRenderCache, Texture};
+
+mod input;
 
 pub trait App {
 
@@ -115,64 +117,7 @@ impl<T: App> AppHandler<'_, T> {
 
 }
 
-fn winit_to_pierro_key(key: winit::keyboard::Key) -> Option<Key> {
 
-    macro_rules! handle_logical_key {
-        ($key: ident) => {
-            if key == winit::keyboard::Key::Named(winit::keyboard::NamedKey::$key) {
-                return Some(Key {
-                    text: None,
-                    logical_key: Some(LogicalKey::$key)
-                });
-            }   
-        };
-    }
-
-    handle_logical_key!(Alt);
-    handle_logical_key!(CapsLock);
-    handle_logical_key!(Control);
-    handle_logical_key!(Fn);
-    handle_logical_key!(Shift);
-    if key == winit::keyboard::Key::Named(winit::keyboard::NamedKey::Super) {
-        return Some(Key {
-            text: None,
-            logical_key: Some(LogicalKey::Command)
-        });
-    }
-    handle_logical_key!(Enter);
-    handle_logical_key!(Tab);
-    handle_logical_key!(Space);
-    handle_logical_key!(ArrowDown);
-    handle_logical_key!(ArrowLeft);
-    handle_logical_key!(ArrowRight);
-    handle_logical_key!(ArrowUp);
-    handle_logical_key!(Backspace);
-    handle_logical_key!(Delete);
-    handle_logical_key!(Escape);
-    handle_logical_key!(Home);
-    handle_logical_key!(End);
-    handle_logical_key!(F1);
-    handle_logical_key!(F2);
-    handle_logical_key!(F3);
-    handle_logical_key!(F4);
-    handle_logical_key!(F5);
-    handle_logical_key!(F6);
-    handle_logical_key!(F7);
-    handle_logical_key!(F8);
-    handle_logical_key!(F9);
-    handle_logical_key!(F10);
-    handle_logical_key!(F11);
-    handle_logical_key!(F12);
-
-    if let winit::keyboard::Key::Character(text) = key {
-        return Some(Key {
-            text: Some(text.into()),
-            logical_key: None,
-        });
-    }
-
-    None
-}
 
 fn pierro_to_winit_cursor(cursor: CursorIcon) -> winit::window::CursorIcon {
     match cursor {
@@ -219,17 +164,12 @@ impl<T: App> ApplicationHandler for AppHandler<'_, T> {
     }
 
     fn device_event(
-            &mut self,
-            _event_loop: &dyn ActiveEventLoop,
-            _device_id: Option<DeviceId>,
-            event: DeviceEvent,
-        ) {
-        match event {
-            DeviceEvent::TabletPressure(pressure) => {
-                self.raw_input.pressure = pressure;
-            },
-            _ => {}
-        }
+        &mut self,
+        _event_loop: &dyn ActiveEventLoop,
+        _device_id: Option<DeviceId>,
+        event: DeviceEvent,
+    ) {
+        self.handle_device_event(event);
     }
 
     fn window_event(
@@ -238,82 +178,7 @@ impl<T: App> ApplicationHandler for AppHandler<'_, T> {
         _window_id: WindowId,
         event: WindowEvent,
     ) {
-        let Some(render_resources) = &mut self.render_resources else { return; };
-        if event != WindowEvent::RedrawRequested {
-            self.redraw_counter = 2;
-            render_resources.request_redraw();
-        }
-        match event {
-            WindowEvent::SurfaceResized(new_size) => {
-                render_resources.resize(new_size);
-            },
-            WindowEvent::RedrawRequested => {
-                let delta_time = self.prev_redraw_time.elapsed().as_secs_f32();
-                self.prev_redraw_time = std::time::Instant::now();
-                self.raw_input.delta_time = delta_time;
-                Self::tick(&mut self.app, render_resources, self.clipboard.as_mut(), &mut self.textures, &mut self.raw_input, &mut self.input, &mut self.memory);
-                if self.redraw_counter > 0 {
-                    self.redraw_counter -= 1;
-                    render_resources.request_redraw();
-                }
-            },
-
-            WindowEvent::PointerButton { device_id: _, state, button, .. } => {
-                match button {
-                    ButtonSource::Mouse(MouseButton::Left) => {
-                        self.raw_input.l_mouse_down = state.is_pressed();
-                    },
-                    ButtonSource::Mouse(MouseButton::Right) => {
-                        self.raw_input.r_mouse_down = state.is_pressed();
-                    },
-                    _ => {}
-                }
-            },
-            WindowEvent::PointerLeft { .. } => {
-                self.raw_input.mouse_pos = None;
-            },
-            WindowEvent::PointerMoved { device_id: _, position, .. } => {
-                self.raw_input.mouse_pos = Some(vec2(position.x as f32, position.y as f32))
-            },
-            WindowEvent::MouseWheel { device_id: _, delta, phase: _ } => {
-                match delta {
-                    MouseScrollDelta::LineDelta(x, y) => {
-                        self.raw_input.scroll += vec2(x, y) * 5.0;
-                    },
-                    MouseScrollDelta::PixelDelta(physical_position) => {
-                        self.raw_input.scroll += vec2(physical_position.x as f32, physical_position.y as f32);
-                    },
-                }
-            },
-
-            WindowEvent::KeyboardInput { device_id: _, event, is_synthetic: _ } => {
-                if let Some(key) = winit_to_pierro_key(event.logical_key) {
-                    if event.state.is_pressed() {
-                        self.raw_input.keys_pressed.push(key);
-                    } else {
-                        self.raw_input.keys_released.push(key);
-                    }
-                }
-            },
-
-            WindowEvent::Focused(focused) => {
-                if !focused {
-                    self.raw_input.lost_focus = true;
-                } 
-            }
-
-            WindowEvent::Ime(Ime::Preedit(preedit, _)) => {
-                self.raw_input.ime_preedit = preedit;
-            },
-            WindowEvent::Ime(Ime::Commit(text)) => {
-                self.raw_input.ime_commit = Some(text);
-            },
-
-            WindowEvent::CloseRequested => {
-                event_loop.exit();
-            },
-            _ => {} 
-        }
+        self.handle_window_event(event_loop, event);        
     }
 
 }
