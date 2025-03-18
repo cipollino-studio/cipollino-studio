@@ -80,7 +80,7 @@ impl Editor {
             }
         }
 
-        self.state.editor.selection.begin_frame(ui.key_down(&pierro::Key::SHIFT));
+        self.state.editor.selection.begin_frame(ui.input().key_modifiers.contains(pierro::KeyModifiers::SHIFT));
 
         // Render the docking panels 
         if self.docking.render(ui, &mut self.state) {

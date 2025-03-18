@@ -90,7 +90,7 @@ impl FrameArea {
                             frame_area.request_focus(ui);
                         }
                         if frame_area.drag_started() {
-                            if !editor.selection.selected(frame_ptr.ptr()) && !ui.input().key_down(&pierro::Key::SHIFT) {
+                            if !editor.selection.selected(frame_ptr.ptr()) && !ui.input().key_down(&pierro::Key::Backspace) {
                                 editor.selection.clear();
                             }
                             editor.selection.select(frame_ptr.ptr());

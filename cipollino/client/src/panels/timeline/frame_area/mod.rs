@@ -99,7 +99,7 @@ impl FrameArea {
                 self.drag_state = DragState::BoxSelect { from: origin, to: origin }; 
                 frame_area.request_focus(ui);
             }
-            if ui.input().key_down(&pierro::Key::SHIFT) {
+            if ui.input().key_modifiers.contains(pierro::KeyModifiers::SHIFT) {
                 editor.selection.keep_selection();
             }
         }
@@ -109,7 +109,7 @@ impl FrameArea {
         }
 
         // Deleting frames
-        let delete_shortcut = pierro::KeyboardShortcut::new(pierro::KeyModifiers::empty(), pierro::Key::DELETE);
+        let delete_shortcut = pierro::KeyboardShortcut::new(pierro::KeyModifiers::empty(), pierro::Key::Backspace);
         if delete_shortcut.used_globally(ui) {
             Self::delete_frame_selection(project, editor);
         }

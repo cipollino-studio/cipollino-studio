@@ -62,7 +62,7 @@ impl ScenePanel {
         }
 
         // Panning
-        let panning = ui.input().key_down(&pierro::Key::COMMAND);
+        let panning = ui.input().key_modifiers.contains(pierro::KeyModifiers::CONTROL);
         if panning && response.dragging() {
             let drag_delta = response.drag_delta(ui);
             let drag_delta = malvina::vec2(-drag_delta.x, drag_delta.y) * self.cam_size;
