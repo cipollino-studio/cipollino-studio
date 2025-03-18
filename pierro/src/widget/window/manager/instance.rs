@@ -7,7 +7,7 @@ use super::{Window, WindowDyn};
 pub(super) struct WindowInstance<C> {
     window: Box<dyn WindowDyn<Context = C>>,
     pos: Vec2,
-    opened_on_last_frame: bool
+    just_opened: bool
 }
 
 impl<C: 'static> WindowInstance<C> {
@@ -23,14 +23,13 @@ impl<C: 'static> WindowInstance<C> {
             // Once we know the size, this will be set to position the window at the center of the screen
             // Until then, we set the position far outside the app's window so it won't be seen
             pos: Vec2::splat(100000.0),
-            opened_on_last_frame: false
+            just_opened: true
         }
     }
 
     fn render_contents(&mut self, ui: &mut UI, context: &mut C) -> (bool, bool) {
         let window = ui.curr_parent();
         let window_id = ui.get_node_id(window);
-        let just_opened = !ui.memory().has::<LayoutInfo>(window_id);
         let window_size = ui.memory().get::<LayoutInfo>(window_id).rect.size();
 
         let window_margin = ui.style::<theme::WindowMargin>();
@@ -63,12 +62,12 @@ impl<C: 'static> WindowInstance<C> {
             window_bar.release_focus(ui);
         }
         self.pos += window_bar.drag_delta(ui);
-        if window_size.x > 0.0 {
+        if window_size.x > 0.0 && !self.just_opened {
+            if self.pos.x > 10000.0 {
+                self.pos = (ui.window_size() - window_size) / 2.0;
+            }
             self.pos = self.pos.max(Vec2::ZERO);
             self.pos = self.pos.min(ui.window_size() - window_size);
-        }
-        if self.opened_on_last_frame {
-            self.pos = (ui.window_size() - window_size) / 2.0;
         }
 
         let mut window_wants_close = false; 
@@ -76,10 +75,10 @@ impl<C: 'static> WindowInstance<C> {
             self.window.render(ui, &mut window_wants_close, context);
         });
 
-        if just_opened {
+        if self.just_opened {
             ui.request_redraw();
         }
-        self.opened_on_last_frame = just_opened;
+        self.just_opened = false;
 
         (close_window || window_wants_close, window_bar.mouse_pressed())
     }
