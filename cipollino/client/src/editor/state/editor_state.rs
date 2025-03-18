@@ -1,13 +1,13 @@
 
 use std::{cell::RefCell, collections::HashMap};
 use std::rc::Rc;
-use project::{Clip, ClipInner, Layer, Ptr, Stroke};
+use project::{Clip, ClipInner, Layer, Project, Ptr, Stroke};
 
 use crate::{SelectTool, ToolDyn};
 
 use crate::{Selection, SelectionKind};
 
-use super::State;
+use super::{ProjectState, State};
 
 pub struct EditorState {
     pub time: f32,
@@ -25,7 +25,9 @@ pub struct EditorState {
 
     pub color: pierro::Color,
 
-    windows_to_open: Vec<Box<dyn pierro::WindowDyn<Context = State>>>
+    windows_to_open: Vec<Box<dyn pierro::WindowDyn<Context = State>>>,
+
+    on_load_callbacks: Vec<Box<dyn Fn(&ProjectState, &mut EditorState) -> bool>>
 }
 
 impl EditorState {
@@ -47,7 +49,9 @@ impl EditorState {
 
             color: pierro::Color::BLACK,
 
-            windows_to_open: Vec::new()
+            windows_to_open: Vec::new(),
+
+            on_load_callbacks: Vec::new()
         }
     }
 
@@ -85,6 +89,29 @@ impl EditorState {
         for window in std::mem::replace(&mut self.windows_to_open, Vec::new()) {
             windows.open_window_dyn(window);
         }
+    }
+
+    pub fn on_load<O: project::alisa::Object<Project = Project>, F: Fn(&ProjectState, &mut EditorState, &O) + 'static>(&mut self, project: &ProjectState, obj_ptr: Ptr<O>, on_load: F) {
+        if let Some(obj) = project.client.get(obj_ptr) {
+            on_load(project, self, obj);
+            return;
+        }
+
+        project.client.request_load(obj_ptr);
+        self.on_load_callbacks.push(Box::new(move |project, editor| {
+            if let Some(obj) = project.client.get(obj_ptr) {
+                on_load(project, editor, obj);
+                true
+            } else {
+                false
+            }
+        }));
+    }
+    
+    pub fn process_on_load_callbacks(&mut self, project: &ProjectState) {
+        let mut callbacks = std::mem::replace(&mut self.on_load_callbacks, Vec::new());
+        callbacks.retain(|callback| !callback(project, self));
+        self.on_load_callbacks.append(&mut callbacks);
     }
 
 }

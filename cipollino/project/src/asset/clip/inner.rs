@@ -97,4 +97,7 @@ impl alisa::Operation for CreateClipInner {
 
 }
 
+alisa::object_set_property_operation!(ClipInner, width, u32);
+alisa::object_set_property_operation!(ClipInner, height, u32);
 alisa::object_set_property_operation!(ClipInner, length, u32);
+alisa::object_set_property_operation!(ClipInner, framerate, f32);

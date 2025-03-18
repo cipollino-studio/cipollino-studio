@@ -14,7 +14,7 @@ mod list;
 pub use list::*;
 
 mod clip_dialog;
-
+pub use clip_dialog::*;
 pub trait AssetUI: Asset {
 
     const ICON: &'static str;
@@ -22,6 +22,9 @@ pub trait AssetUI: Asset {
     fn create(ptr: Ptr<Self>, parent: Ptr<Folder>, action: &mut Action);
     fn asset_list(list: &AssetList) -> &HashSet<Ptr<Self>>;
     fn asset_list_mut(list: &mut AssetList) -> &mut HashSet<Ptr<Self>>;
+    fn context_menu(_ui: &mut pierro::UI, _project: &ProjectState, _editor: &mut EditorState, _ptr: Ptr<Self>, _context_menu_id: pierro::Id) {
+        
+    }
 
     /// Called when the asset is double-clicked in the UI
     fn on_open(_ptr: Ptr<Self>, _project: &ProjectState, _state: &mut EditorState) {
@@ -72,6 +75,31 @@ impl AssetUI for Clip {
 
     fn asset_list_mut(list: &mut AssetList) -> &mut HashSet<Ptr<Self>> {
         &mut list.clips
+    }
+
+    fn context_menu(ui: &mut pierro::UI, project: &ProjectState, editor: &mut EditorState, clip_ptr: Ptr<Self>, context_menu_id: pierro::Id) {
+        if pierro::menu_button(ui, "Properties...").mouse_clicked() {
+            if let Some(clip) = project.client.get(clip_ptr) {
+                let name = clip.name.clone();
+                let clip_inner_ptr = clip.inner;
+                editor.on_load(project, clip_inner_ptr, move |_, editor, clip_inner| {
+                    let properties = ClipProperties {
+                        name: name.clone(),
+                        length: clip_inner.length,
+                        framerate: clip_inner.framerate,
+                        width: clip_inner.width,
+                        height: clip_inner.height,
+                    };
+
+                    editor.open_window(ClipPropertiesDialog {
+                        properties,
+                        clip_ptr,
+                        clip_inner_ptr
+                    });
+                });
+            }
+            pierro::close_context_menu(ui, context_menu_id);
+        }
     }
 
 }

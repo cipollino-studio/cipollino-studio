@@ -38,7 +38,7 @@ impl AssetsPanel {
         *self.started_renaming.borrow_mut() = true;
     }
 
-    fn asset_label_context_menu<A: AssetUI>(&self, ui: &mut pierro::UI, state: &ProjectState, ptr: Ptr<A>, name: &String, response: &pierro::Response) {
+    fn asset_label_context_menu<A: AssetUI>(&self, ui: &mut pierro::UI, project: &ProjectState, editor: &mut EditorState, ptr: Ptr<A>, name: &String, response: &pierro::Response) {
         pierro::context_menu(ui, response, |ui| {
             if pierro::menu_button(ui, "Rename").mouse_clicked() {
                 self.start_rename(name, ptr);
@@ -46,9 +46,10 @@ impl AssetsPanel {
             }
             if pierro::menu_button(ui, "Delete").mouse_clicked() {
                 let selection = AssetList::single(ptr);
-                state.delete_assets(selection);
+                project.delete_assets(selection);
                 pierro::close_context_menu(ui, response.id);
             }
+            A::context_menu(ui, project, editor, ptr, response.id);
         });
     }
 
@@ -62,7 +63,7 @@ impl AssetsPanel {
 
             self.asset_dnd_source.borrow_mut().source_without_cursor_icon(ui, &response, || AssetList::single(asset_ptr));
             
-            self.asset_label_context_menu(ui, project, asset_ptr, asset.name(), &response);
+            self.asset_label_context_menu(ui, project, editor, asset_ptr, asset.name(), &response);
 
             if response.mouse_double_clicked() {
                 A::on_open(asset_ptr, project, editor);
@@ -80,7 +81,7 @@ impl AssetsPanel {
             }, |ui| {
                 self.render_folder_contents(ui, &folder.folders, &folder.clips, project, editor); 
             });
-            self.asset_label_context_menu(ui, project, folder_ptr, &folder.name, &folder_response); 
+            self.asset_label_context_menu(ui, project, editor, folder_ptr, &folder.name, &folder_response); 
 
             self.asset_dnd_source.borrow_mut().source_without_cursor_icon(ui, &folder_response, || AssetList::single(folder_ptr));
         });

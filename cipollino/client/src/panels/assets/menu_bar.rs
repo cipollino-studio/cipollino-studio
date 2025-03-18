@@ -3,7 +3,7 @@ use project::{alisa::Action, ActionContext, Clip, Folder, Ptr};
 
 use crate::{ProjectState, State};
 
-use super::{clip_dialog::ClipDialog, AssetUI, AssetsPanel};
+use super::{CreateClipDialog, AssetUI, AssetsPanel};
 
 impl AssetsPanel {
 
@@ -18,7 +18,7 @@ impl AssetsPanel {
     }
 
     fn create_clip(state: &mut State) {
-        state.editor.open_window(ClipDialog::new());
+        state.editor.open_window(CreateClipDialog::new());
     }
     
     fn clip_menu_bar_icon(&self, ui: &mut pierro::UI, state: &mut State) {

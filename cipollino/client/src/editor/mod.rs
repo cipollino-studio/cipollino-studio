@@ -108,6 +108,9 @@ impl Editor {
         // Update the project client
         self.state.project.tick();
         self.state.project.client.tick(&mut ());
+        
+        // On load callbacks
+        self.state.editor.process_on_load_callbacks(&self.state.project);
     }
 
 }
