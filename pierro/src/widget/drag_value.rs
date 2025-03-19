@@ -57,7 +57,7 @@ impl<'value, N: Numeric> DragValue<'value, N> {
         let mut done_editing = false;
 
         if drag_value.mouse_clicked() && !drag_value.is_focused(ui) {
-            text_edit_begin_editing(ui, &drag_value, &mut self.val.to_string());
+            text_edit_begin_editing(ui, &drag_value, &mut self.val.to_str());
         }
 
         let drag_delta = drag_value.drag_delta(ui);
@@ -103,7 +103,7 @@ impl<'value, N: Numeric> DragValue<'value, N> {
             });
         }
 
-        let mut text = self.val.to_string();
+        let mut text = self.val.to_str();
         let text_edit_response = text_edit_interaction(ui, drag_value, &mut text);
         if text_edit_response.done_editing {
             if let Ok(mut new_val) = N::from_str(&text) {
