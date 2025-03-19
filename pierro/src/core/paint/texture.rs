@@ -60,7 +60,7 @@ impl Texture {
     }
 
     pub fn create_render_texture(device: &wgpu::Device, width: u32, height: u32) -> Self {
-        Self::create_with_usage(device, width, height, wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING)
+        Self::create_with_usage(device, width, height, wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_SRC)
     }
 
     pub fn create(device: &wgpu::Device, queue: &wgpu::Queue, width: u32, height: u32, data: &[u8]) -> Self {
