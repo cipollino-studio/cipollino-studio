@@ -10,7 +10,8 @@ use video_writer::*;
 
 pub(super) struct ExportDialog {
     export_path: String,
-    scale: f32
+    scale: f32,
+    msaa: u32,
 }
 
 impl ExportDialog {
@@ -18,7 +19,8 @@ impl ExportDialog {
     pub fn new() -> Self {
         Self {
             export_path: String::new(),
-            scale: 1.0
+            scale: 1.0,
+            msaa: 2
         }
     }
 
@@ -48,6 +50,9 @@ impl pierro::Window for ExportDialog {
             return;
         };
 
+        let output_w = ((clip_inner.width as f32) * self.scale).round() as u32;
+        let output_h = ((clip_inner.height as f32) * self.scale).round() as u32;
+
         pierro::key_value_layout(ui, |builder| {
             builder.labeled("Export Path:", |ui| {
                 pierro::text_edit(ui, &mut self.export_path);
@@ -63,6 +68,22 @@ impl pierro::Window for ExportDialog {
                     .with_max(10.0)
                     .render(ui);
             });
+            builder.labeled("Output Resolution:", |ui| {
+                pierro::label(ui, format!("{} x {}", output_w, output_h));
+            });
+            builder.labeled("Anti Aliasing:", |ui| {
+                pierro::dropdown(ui, format!("x{}", self.msaa * self.msaa), |ui| {
+                    if pierro::menu_button(ui, "x1").mouse_clicked() {
+                        self.msaa = 1;
+                    }
+                    if pierro::menu_button(ui, "x4").mouse_clicked() {
+                        self.msaa = 2;
+                    }
+                    if pierro::menu_button(ui, "x16").mouse_clicked() {
+                        self.msaa = 4;
+                    }
+                });
+            });
         });
 
         pierro::v_spacing(ui, 5.0);
@@ -72,8 +93,9 @@ impl pierro::Window for ExportDialog {
                     ExportProgressModal::new(
                         self.export_path.clone().into(),
                         clip.inner,
-                        clip_inner.width,
-                        clip_inner.height,
+                        output_w,
+                        output_h,
+                        self.msaa,
                         clip_inner.framerate,
                         ui.wgpu_device()
                     )

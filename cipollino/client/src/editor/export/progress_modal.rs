@@ -14,6 +14,10 @@ pub(super) struct ExportProgressModal {
 
     width: u32,
     height: u32,
+    msaa: u32,
+
+    render_texture_width: u32,
+    x_padding_offset: u32,
 
     render_texture: pierro::Texture,
     pixel_buffer: pierro::wgpu::Buffer
@@ -22,17 +26,48 @@ pub(super) struct ExportProgressModal {
 
 impl ExportProgressModal {
 
-    pub fn new(out: PathBuf, clip_ptr: Ptr<ClipInner>, width: u32, height: u32, framerate: f32, device: &pierro::wgpu::Device) -> Self {
+    pub fn new(out: PathBuf, clip_ptr: Ptr<ClipInner>, width: u32, height: u32, msaa: u32, framerate: f32, device: &pierro::wgpu::Device) -> Self {
+        // Can't encode videos with odd dimensions
+        let width = if width % 2 == 0 {
+            width
+        } else {
+            width + 1
+        };
+
+        let height = if height % 2 == 0 {
+           height 
+        } else {
+            height + 1
+        };
+
+        let render_texture_width = width * msaa;
+        let render_texture_height = height * msaa;
+
+        let padding_step = pierro::wgpu::COPY_BYTES_PER_ROW_ALIGNMENT / 4;
+        let padded_render_texture_width = if render_texture_width % padding_step == 0 {
+            render_texture_width
+        } else {
+            render_texture_width + padding_step - (render_texture_width % padding_step)
+        };
+
+        let x_padding_offset = (padded_render_texture_width - render_texture_width) / 2;
+
         Self {
             writer: VideoWriter::new(out, width, height, framerate).unwrap(),
             time: 0,
             clip_ptr,
-            render_texture: pierro::Texture::create_render_texture(device, width, height),
+
             width,
             height,
+            msaa,
+
+            render_texture_width: padded_render_texture_width,
+            x_padding_offset,
+
+            render_texture: pierro::Texture::create_render_texture(device, padded_render_texture_width, render_texture_height),
             pixel_buffer: device.create_buffer(&pierro::wgpu::BufferDescriptor {
                 label: Some("cipollino_export_pixel_buffer"),
-                size: (width * height * 4) as u64,
+                size: (padded_render_texture_width * render_texture_height * msaa * msaa * 4) as u64,
                 usage: pierro::wgpu::BufferUsages::COPY_DST | pierro::wgpu::BufferUsages::MAP_READ,
                 mapped_at_creation: false,
             })
@@ -54,7 +89,7 @@ impl ExportProgressModal {
         };
 
         // Render the scene into the render texture
-        let camera = malvina::Camera::new(0.0, 0.0, 1.0);
+        let camera = malvina::Camera::new(0.0, 0.0, (self.msaa as f32) * (self.width as f32) / (clip.width as f32));
         renderer.render(ui.wgpu_device(), ui.wgpu_queue(), self.render_texture.texture(), camera, malvina::glam::Vec4::ONE, 1.0, |rndr| {
             render_scene(rndr, &project.client, editor, clip, self.time);
         });
@@ -71,31 +106,53 @@ impl ExportProgressModal {
         };
         let texture_copy_dest = pierro::wgpu::ImageCopyBufferBase {
             buffer: &self.pixel_buffer,
-            layout: pierro::wgpu::ImageDataLayout { offset: 0, bytes_per_row: Some(self.width * 4), rows_per_image: None },
+            layout: pierro::wgpu::ImageDataLayout { offset: 0, bytes_per_row: Some(self.render_texture_width * 4), rows_per_image: None },
         };
-        encoder.copy_texture_to_buffer(texture_copy_source, texture_copy_dest, pierro::wgpu::Extent3d { width: self.width, height: self.height, depth_or_array_layers: 1 });
+        encoder.copy_texture_to_buffer(texture_copy_source, texture_copy_dest, pierro::wgpu::Extent3d { width: self.render_texture_width, height: self.height * self.msaa, depth_or_array_layers: 1 });
         ui.wgpu_queue().submit([encoder.finish()]);
 
         // Read the pixel copy buffer to the CPU
         self.pixel_buffer.slice(..).map_async(pierro::wgpu::MapMode::Read, |_| {});
         ui.wgpu_device().poll(pierro::wgpu::MaintainBase::Wait);
         let pixel_data = self.pixel_buffer.slice(..).get_mapped_range();
+
+        // Extract the RGB pixel data and apply MSAA to get the frame that will be sent to the video writer
+        // TODO: potentially apply MSAA on the GPU to speed up exports
         let mut rgb_data = Vec::new();
-        for i in 0..((self.width * self.height) as usize) {
-            rgb_data.push(pixel_data[i * 4 + 0]);
-            rgb_data.push(pixel_data[i * 4 + 1]);
-            rgb_data.push(pixel_data[i * 4 + 2]);
+        for y in 0..self.height {
+            for x in 0..self.width {
+                let mut r = 0.0;
+                let mut g = 0.0;
+                let mut b = 0.0;
+                for i in 0..self.msaa {
+                    for j in 0..self.msaa {
+                        let x_coord = x * self.msaa + i + self.x_padding_offset;
+                        let y_coord = y * self.msaa + j;
+                        let pixel_idx = x_coord + y_coord * self.render_texture_width;
+                        let pixel_byte_idx = (pixel_idx as usize) * 4;
+                        r += pixel_data[pixel_byte_idx + 0] as f32;
+                        g += pixel_data[pixel_byte_idx + 1] as f32;
+                        b += pixel_data[pixel_byte_idx + 2] as f32;
+                    }
+                }
+                r /= (self.msaa * self.msaa) as f32;
+                g /= (self.msaa * self.msaa) as f32;
+                b /= (self.msaa * self.msaa) as f32;
+                rgb_data.push(r.clamp(0.0, 255.0).round() as u8);
+                rgb_data.push(g.clamp(0.0, 255.0).round() as u8);
+                rgb_data.push(b.clamp(0.0, 255.0).round() as u8);
+            }
         }
+
+        // Write the frame to the video file
+        let _ = self.writer.write_frame(rgb_data);
+
+        // Unmap the pixel buffer
         drop(pixel_data);
         self.pixel_buffer.unmap();
 
-        println!("{}", rgb_data[3000]);
-
-        let _ = self.writer.write_frame(rgb_data);
-
         self.time += 1;
 
- 
     }
 
 }
