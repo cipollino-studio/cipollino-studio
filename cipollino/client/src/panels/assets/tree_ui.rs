@@ -95,13 +95,15 @@ impl AssetsPanel {
         }
     }
 
-    fn render_folder(&self, ui: &mut pierro::UI, folder_ptr: Ptr<Folder>, project: &ProjectState, editor: &mut EditorState) {
-        let Some(folder) = project.client.get(folder_ptr) else { return; };
+    fn render_folder(&self, ui: &mut pierro::UI, folder: &Folder, folder_ptr: Ptr<Folder>, project: &ProjectState, editor: &mut EditorState) {
+        let text_color = ui.style::<pierro::theme::TextColor>();
 
         ui.push_id_seed(&folder_ptr);
         let (_, moved_assets) = pierro::dnd_drop_zone::<AssetList, _>(ui, |ui| {
-            let folder_response = pierro::collapsing_header(ui, |ui| {
-                self.renamable_asset_label(ui, &folder.name, folder_ptr, project);
+            let folder_response = pierro::collapsing_header(ui, |ui, response| {
+                if let Some(folder_name_response) = self.renamable_asset_label(ui, &folder.name, folder_ptr, project) {
+                    pierro::button_text_color_animation(ui, folder_name_response.node_ref, response, text_color);
+                }
             }, |ui| {
                 self.render_folder_contents(ui, &folder.folders, &folder.clips, project, editor); 
             });
@@ -122,9 +124,17 @@ impl AssetsPanel {
         project: &ProjectState,
         editor: &mut EditorState
     ) {
-        for folder in folders.iter() {
-            self.render_folder(ui, folder.ptr(), project, editor);
+
+        let mut folders = folders.iter().filter_map(|ptr| {
+            let folder = project.client.get(ptr.ptr())?;
+            Some((folder.name(), folder, ptr.ptr()))
+        }).collect::<Vec<_>>();
+        folders.sort_by_key(|(name, _, _)| *name);
+
+        for (_, folder, ptr) in folders {
+            self.render_folder(ui, folder, ptr, project, editor);
         }
+
         self.render_assets(ui, project, editor, clips);
     }
 
