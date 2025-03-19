@@ -1,7 +1,7 @@
 
 use crate::{icons, Response, Size, UINodeParams, UI};
 
-use super::{h_spacing, horizontal_fit, horizontal_fit_centered, icon, label, v_spacing, vertical_fit};
+use super::{button_text_color_animation, h_spacing, horizontal_fit, horizontal_fit_centered, icon, label, theme, v_spacing, vertical_fit};
 
 struct CollapsingHeaderMemory {
     open: bool
@@ -17,7 +17,7 @@ impl Default for CollapsingHeaderMemory {
 
 }
 
-pub fn collapsing_header<H: FnOnce(&mut UI), F: FnOnce(&mut UI)>(ui: &mut UI, header: H, contents: F) -> Response {
+pub fn collapsing_header<H: FnOnce(&mut UI, &Response), F: FnOnce(&mut UI)>(ui: &mut UI, header: H, contents: F) -> Response {
     let container = ui.node(UINodeParams::new(Size::fit(), Size::fit()));
 
     ui.with_parent(container.node_ref, |ui| {
@@ -30,9 +30,13 @@ pub fn collapsing_header<H: FnOnce(&mut UI), F: FnOnce(&mut UI)>(ui: &mut UI, he
             };
             icon(ui, icon_text);
             h_spacing(ui, 3.0);
-            header(ui);
         });
         ui.set_sense_mouse(header_response.node_ref, true);
+
+        // Add the header now that we have access to the response data
+        ui.with_parent(header_response.node_ref, |ui| {
+            header(ui, &header_response);
+        });
 
         if header_response.mouse_clicked() {
             let memory = ui.memory().get::<CollapsingHeaderMemory>(container.id);    
@@ -54,7 +58,9 @@ pub fn collapsing_header<H: FnOnce(&mut UI), F: FnOnce(&mut UI)>(ui: &mut UI, he
 } 
 
 pub fn collapsing_label<S: Into<String>, F: FnOnce(&mut UI)>(ui: &mut UI, label_text: S, contents: F) -> Response {
-    collapsing_header(ui, |ui| {
-        label(ui, label_text);
+    let text_color = ui.style::<theme::TextColor>();
+    collapsing_header(ui, |ui, response| {
+        let label_response = label(ui, label_text);
+        button_text_color_animation(ui, label_response.node_ref, response, text_color);
     }, contents) 
 }
