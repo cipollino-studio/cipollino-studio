@@ -7,7 +7,7 @@ use super::{AssetList, AssetUI, AssetsPanel};
 
 impl AssetsPanel {
 
-    fn renamable_asset_label<A: Asset>(&self, ui: &mut pierro::UI, curr_name: &String, ptr: Ptr<A>, state: &ProjectState) {
+    fn renamable_asset_label<A: Asset>(&self, ui: &mut pierro::UI, curr_name: &String, ptr: Ptr<A>, state: &ProjectState) -> Option<pierro::Response> {
         let mut renaming = self.renaming_state.borrow_mut();
         let renaming_state = &mut *renaming;
 
@@ -28,8 +28,11 @@ impl AssetsPanel {
                 }
             }
         }
+
         if !renaming {
-            pierro::label(ui, curr_name);
+            Some(pierro::label(ui, curr_name))
+        } else {
+            None
         }
     }
 
@@ -53,21 +56,42 @@ impl AssetsPanel {
         });
     }
 
-    fn render_asset<A: AssetUI>(&self, ui: &mut pierro::UI, asset_ptr: Ptr<A>, project: &ProjectState, editor: &mut EditorState) {
-        if let Some(asset) = project.client.get(asset_ptr) {
-            let (response, _) = pierro::horizontal_fit_centered(ui, |ui| {
-                pierro::icon(ui, A::ICON);
-                pierro::h_spacing(ui, 3.0);
-                self.renamable_asset_label(ui, asset.name(), asset_ptr, project);
-            });
+    fn render_asset<A: AssetUI>(&self, ui: &mut pierro::UI, asset: &A, asset_ptr: Ptr<A>, project: &ProjectState, editor: &mut EditorState) {
+        
+        // Render the asset
+        let (response, (label_resp, icon_resp)) = pierro::horizontal_fit_centered(ui, |ui| {
+            let icon_resp = pierro::icon(ui, A::ICON);
+            pierro::h_spacing(ui, 3.0);
+            let label_resp = self.renamable_asset_label(ui, asset.name(), asset_ptr, project);
 
-            self.asset_dnd_source.borrow_mut().source_without_cursor_icon(ui, &response, || AssetList::single(asset_ptr));
-            
-            self.asset_label_context_menu(ui, project, editor, asset_ptr, asset.name(), &response);
+            (label_resp, icon_resp)
+        });
 
-            if response.mouse_double_clicked() {
-                A::on_open(asset_ptr, project, editor);
-            }
+        // Hover/click animation
+        let text_color = ui.style::<pierro::theme::TextColor>();
+        if let Some(label_resp) = label_resp {
+            pierro::button_text_color_animation(ui, label_resp.node_ref, &response, text_color);
+        }
+        pierro::button_text_color_animation(ui, icon_resp.node_ref, &response, text_color);
+
+        self.asset_dnd_source.borrow_mut().source_without_cursor_icon(ui, &response, || AssetList::single(asset_ptr));
+        
+        self.asset_label_context_menu(ui, project, editor, asset_ptr, asset.name(), &response);
+
+        // Opening
+        if response.mouse_double_clicked() {
+            A::on_open(asset_ptr, project, editor);
+        }
+    }
+
+    fn render_assets<A: AssetUI>(&self, ui: &mut pierro::UI, project: &ProjectState, editor: &mut EditorState, assets: &UnorderedChildList<project::alisa::LoadingPtr<A>>) {
+        let mut assets = assets.iter().filter_map(|ptr| {
+            let asset = project.client.get(ptr.ptr())?;
+            Some((asset.name(), asset, ptr.ptr()))
+        }).collect::<Vec<_>>();
+        assets.sort_by_key(|(name, _, _)| *name);
+        for (_, asset, asset_ptr) in assets {
+            self.render_asset(ui, asset, asset_ptr, project, editor);
         }
     }
 
@@ -101,9 +125,7 @@ impl AssetsPanel {
         for folder in folders.iter() {
             self.render_folder(ui, folder.ptr(), project, editor);
         }
-        for clip in clips.iter() {
-            self.render_asset(ui, clip.ptr(), project, editor);
-        } 
+        self.render_assets(ui, project, editor, clips);
     }
 
 }

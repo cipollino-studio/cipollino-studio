@@ -30,9 +30,13 @@ impl AssetsPanel {
     pub(crate) fn menu_bar(&self, ui: &mut pierro::UI, state: &mut State) {
         let button_color = ui.style::<pierro::theme::BgDark>();
         ui.with_style::<pierro::theme::BgButton, _, _>(button_color, |ui| {
-            pierro::menu_bar(ui, |ui| {
-                self.asset_menu_bar_icon::<Folder>(ui, &state.project); 
-                self.clip_menu_bar_icon(ui, state);
+            ui.with_style::<pierro::theme::WidgetMargin, _, _>(pierro::Margin::same(3.5), |ui| {
+                ui.with_style::<pierro::theme::LabelFontSize, _, _>(15.0, |ui| {
+                    pierro::menu_bar(ui, |ui| {
+                        self.asset_menu_bar_icon::<Folder>(ui, &state.project); 
+                        self.clip_menu_bar_icon(ui, state);
+                    });
+                });
             });
         });
     }
