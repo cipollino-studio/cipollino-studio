@@ -20,7 +20,7 @@ pub struct EditorState {
 
     pub selection: Selection,
 
-    pub stroke_mesh_cache: HashMap<Ptr<Stroke>, malvina::StrokeMesh>,
+    pub stroke_mesh_cache: RefCell<HashMap<Ptr<Stroke>, malvina::StrokeMesh>>,
     pub stroke_preview: Option<malvina::StrokeMesh>,
 
     pub color: pierro::Color,
@@ -44,7 +44,7 @@ impl EditorState {
 
             selection: Selection::new(),
 
-            stroke_mesh_cache: HashMap::new(),
+            stroke_mesh_cache: RefCell::new(HashMap::new()),
             stroke_preview: None,
 
             color: pierro::Color::BLACK,

@@ -12,7 +12,8 @@ impl ScenePanel {
                         continue;
                     }
                     let Some(stroke) = client.get(stroke_ptr.ptr()) else { continue; };
-                    let Some(stroke_mesh) = editor.stroke_mesh_cache.get(&stroke_ptr.ptr()) else { continue; };
+                    let stroke_mesh_cache = editor.stroke_mesh_cache.borrow();
+                    let Some(stroke_mesh) = stroke_mesh_cache.get(&stroke_ptr.ptr()) else { continue; };
                     rndr.render_stroke_selection(stroke_mesh, stroke.color.into());
                 },
             }

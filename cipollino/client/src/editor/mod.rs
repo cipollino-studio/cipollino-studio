@@ -17,6 +17,11 @@ pub use selection::*;
 
 mod shortcuts;
 
+mod menu_bar;
+
+mod export;
+use export::*;
+
 pub struct Editor {
     state: State,
     docking: pierro::DockingState<EditorPanel>,
@@ -49,22 +54,7 @@ impl Editor {
 
     pub fn tick(&mut self, ui: &mut pierro::UI, systems: &mut AppSystems) {
 
-        // Menu bar
-        pierro::menu_bar(ui, |ui| {
-            pierro::menu_bar_item(ui, "File", |ui| {
-                if pierro::menu_button(ui, "Open").mouse_clicked() {
-                    
-                }
-            });
-            pierro::menu_bar_item(ui, "Edit", |ui| {
-                if pierro::menu_button(ui, "Undo").mouse_clicked() {
-                    self.state.project.client.undo();
-                }
-                if pierro::menu_button(ui, "Redo").mouse_clicked() {
-                    self.state.project.client.redo();
-                }
-            });
-        });
+        self.menu_bar(ui);
 
         // Collab
         if let Some(socket) = &mut self.socket {

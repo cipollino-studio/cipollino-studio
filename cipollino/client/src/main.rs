@@ -13,6 +13,9 @@ pub use tool::*;
 mod systems;
 pub use systems::*;
 
+mod render;
+pub use render::*;
+
 use std::path::PathBuf;
 use clap::Parser;
 use splash::SplashScreen;
@@ -96,6 +99,13 @@ fn main() {
             systems
         }
     };
+
+    // Make sure that the working directory is the folder the executable's in
+    // This is important for starting the FFMPEG process when the app is bundled
+    #[cfg(not(debug_assertions))]
+    use std::env::{current_exe, set_current_dir};
+    #[cfg(not(debug_assertions))]
+    set_current_dir(current_exe().unwrap().parent().unwrap()).unwrap();
 
     pierro::run(app);
 }

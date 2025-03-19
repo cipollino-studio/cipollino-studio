@@ -1,12 +1,11 @@
 
 use project::{ClipInner, SceneChildPtr};
 
-use crate::{EditorState, ProjectState, ToolContext};
+use crate::{render_scene, EditorState, ProjectState, ToolContext};
 
 use super::ScenePanel;
 
 mod util;
-mod render;
 mod picking;
 mod selection;
 
@@ -123,7 +122,7 @@ impl ScenePanel {
 
         // Render the scene
         renderer.render(ui.wgpu_device(), ui.wgpu_queue(), texture.texture(), camera, malvina::glam::vec4(1.0, 1.0, 1.0, 1.0), ui.scale_factor(), |rndr| {
-            self.render_layer_list(rndr, &project.client, &editor, clip, &clip.layers); 
+            render_scene(rndr, &project.client, editor, clip, clip.frame_idx(editor.time));
             self.render_selection(rndr, &editor, &project.client, render_list);
             rndr.render_canvas_border(malvina::vec2(clip.width as f32, clip.height as f32));
         });
@@ -150,17 +149,7 @@ impl ScenePanel {
 
         // Get the list of things to render in the scene
         let render_list = Self::render_list(&project.client, editor, clip);
-        let rendered_strokes = Self::rendered_strokes(&render_list);
-
-        // Update the stroke mesh cache
-        for stroke_ptr in rendered_strokes.iter() {
-            if !editor.stroke_mesh_cache.contains_key(stroke_ptr) {
-                if let Some(stroke) = project.client.get(*stroke_ptr) {
-                    let mesh = malvina::StrokeMesh::new(ui.wgpu_device(), &stroke.stroke.0);
-                    editor.stroke_mesh_cache.insert(*stroke_ptr, mesh);
-                }
-            }
-        }
+        let _rendered_strokes = Self::rendered_strokes(&render_list);
 
         let canvas_container = ui.node(pierro::UINodeParams::new(pierro::Size::fr(1.0), pierro::Size::fr(1.0)));
 
