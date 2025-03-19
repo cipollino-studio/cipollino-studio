@@ -12,6 +12,8 @@ pub trait Window: Any {
 
     /// True if there can be at most one of this kind of window open at once.
     const UNIQUE: bool = false;
+    /// Should the window be a modal?
+    const MODAL: bool = false;
 
     fn title(&self) -> impl Into<String>;
     fn render(&mut self, ui: &mut UI, close: &mut bool, context: &mut Self::Context);
@@ -25,6 +27,7 @@ pub trait WindowDyn {
     fn title(&self) -> String;
     fn render(&mut self, ui: &mut UI, close: &mut bool, context: &mut Self::Context);
     fn unique(&self) -> bool;
+    fn modal(&self) -> bool;
 
 }
 
@@ -41,6 +44,10 @@ impl<W: Window> WindowDyn for W {
 
     fn unique(&self) -> bool {
         Self::UNIQUE
+    }
+
+    fn modal(&self) -> bool {
+        Self::MODAL
     }
 
 }

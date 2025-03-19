@@ -1,7 +1,7 @@
 
 use std::any::{Any, TypeId};
 
-use crate::{clickable_icon, h_line, h_spacing, icon_gap, icons, margin, theme, vertical_centered, widget::label, window, Layout, LayoutInfo, Margin, Size, TSTransform, UINodeParams, Vec2, UI};
+use crate::{clickable_icon, h_line, h_spacing, icon_gap, icons, margin, modal, theme, vertical_centered, widget::label, window, Layout, LayoutInfo, Margin, Response, Size, TSTransform, UINodeParams, Vec2, UI};
 use super::{Window, WindowDyn};
 
 pub(super) struct WindowInstance<C> {
@@ -27,14 +27,8 @@ impl<C: 'static> WindowInstance<C> {
         }
     }
 
-    fn render_contents(&mut self, ui: &mut UI, context: &mut C) -> (bool, bool) {
-        let window = ui.curr_parent();
-        let window_id = ui.get_node_id(window);
-        let window_size = ui.memory().get::<LayoutInfo>(window_id).rect.size();
-
-        let window_margin = ui.style::<theme::WindowMargin>();
+    fn render_window_header(&mut self, ui: &mut UI) -> (Response, bool) {
         let window_bar_bg = ui.style::<theme::BgDark>();
-
         let (window_bar, close_window) = ui.with_node(
             UINodeParams::new(Size::fr(1.0), Size::fit())
                 .with_layout(Layout::horizontal())
@@ -54,6 +48,16 @@ impl<C: 'static> WindowInstance<C> {
             }
         );
         h_line(ui);
+        (window_bar, close_window)
+    }
+
+    fn render_window_contents(&mut self, ui: &mut UI, context: &mut C) -> (bool, bool) {
+        let window = ui.curr_parent();
+        let window_id = ui.get_node_id(window);
+        let window_size = ui.memory().get::<LayoutInfo>(window_id).rect.size();
+        let window_margin = ui.style::<theme::WindowMargin>();
+        
+        let (window_bar, close_window) = self.render_window_header(ui);
 
         if window_bar.drag_started() {
             window_bar.request_focus(ui);
@@ -83,10 +87,10 @@ impl<C: 'static> WindowInstance<C> {
         (close_window || window_wants_close, window_bar.mouse_pressed())
     }
 
-    pub fn render(&mut self, ui: &mut UI, context: &mut C) -> (bool, bool) {
+    fn render_window(&mut self, ui: &mut UI, context: &mut C) -> (bool, bool) {
         let (layer, (close, bring_forward)) = ui.layer(|ui| {
             let (window_response, (close, bring_forward)) = window(ui, |ui| {
-                let (close, bring_forward) = self.render_contents(ui, context);
+                let (close, bring_forward) = self.render_window_contents(ui, context);
                 (close, bring_forward)
             });
             (close, bring_forward || window_response.mouse_pressed())
@@ -95,6 +99,27 @@ impl<C: 'static> WindowInstance<C> {
         ui.set_transform(layer, TSTransform::translation(self.pos));
 
         (close, bring_forward)
+    }
+
+    fn render_modal(&mut self, ui: &mut UI, context: &mut C) -> (bool, bool) {
+        let window_margin = ui.style::<theme::WindowMargin>();
+
+        modal(ui, |ui| {
+            let (window_bar, close_window) = self.render_window_header(ui);
+            let mut window_wants_close = false;
+            margin(ui, window_margin, |ui| {
+                self.window.render(ui, &mut window_wants_close, context);
+            });
+            (close_window || window_wants_close, window_bar.mouse_clicked())
+        })
+    }
+
+    pub fn render(&mut self, ui: &mut UI, context: &mut C) -> (bool, bool) {
+        if self.window.modal() {
+            self.render_modal(ui, context)
+        } else {
+            self.render_window(ui, context)
+        }
     }
 
     pub fn type_id(&self) -> TypeId {

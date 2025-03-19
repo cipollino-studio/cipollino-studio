@@ -1,3 +1,6 @@
 [submodule "cipollino/client/libs/curve-fit"]
 	path = cipollino/client/libs/curve-fit
 	url = https://github.com/ideasman42/curve-fit-nd.git
+[submodule "cipollino/client/libs/ffmpeg"]
+	path = cipollino/client/libs/ffmpeg
+	url = https://github.com/cipollino-studio/ffmpeg.git
