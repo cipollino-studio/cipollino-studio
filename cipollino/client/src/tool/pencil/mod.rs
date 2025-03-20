@@ -66,7 +66,12 @@ impl PencilTool {
 }
 
 impl Tool for PencilTool {
+
     const ICON: &'static str = pierro::icons::PENCIL;
+    const SHORTCUT: pierro::KeyboardShortcut = pierro::KeyboardShortcut::new(
+        pierro::KeyModifiers::empty(),
+        pierro::Key::D
+    );
 
     fn mouse_clicked(&mut self, ctx: &mut ToolContext, pos: malvina::Vec2) {
         let stroke = malvina::Stroke::point(pos, 1.0);

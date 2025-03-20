@@ -10,6 +10,10 @@ pub struct SelectTool {
 impl Tool for SelectTool {
 
     const ICON: &'static str = pierro::icons::CURSOR;
+    const SHORTCUT: pierro::KeyboardShortcut = pierro::KeyboardShortcut::new(
+        pierro::KeyModifiers::empty(),
+        pierro::Key::V
+    );
 
     fn mouse_dragged(&mut self, _ctx: &mut ToolContext, _pos: malvina::Vec2) {
         

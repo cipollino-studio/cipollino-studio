@@ -54,6 +54,7 @@ impl ToolContext<'_> {
 pub trait Tool: Default {
 
     const ICON: &'static str;
+    const SHORTCUT: pierro::KeyboardShortcut;
 
     fn mouse_pressed(&mut self, _ctx: &mut ToolContext, _pos: malvina::Vec2) {}
     fn mouse_released(&mut self, _ctx: &mut ToolContext, _pos: malvina::Vec2) {}

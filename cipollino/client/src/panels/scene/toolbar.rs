@@ -23,6 +23,10 @@ impl ScenePanel {
                 *editor.curr_tool.borrow_mut() = Box::new(T::default());
             }
         }
+
+        if T::SHORTCUT.used_globally(ui) {
+            *editor.curr_tool.borrow_mut() = Box::new(T::default());
+        }
     }
 
     fn color_picker(&mut self, ui: &mut pierro::UI, editor: &mut EditorState) {
@@ -54,6 +58,7 @@ impl ScenePanel {
                 ui.with_style::<pierro::theme::LabelFontSize, _, _>(20.0, |ui| {
                     ui.with_node(
                         pierro::UINodeParams::new(pierro::Size::fit(), pierro::Size::fr(1.0))
+                            .with_layout(pierro::Layout::vertical().with_vertical_overflow())
                             .with_fill(bg)
                             .with_margin(margin),
                         |ui| {
