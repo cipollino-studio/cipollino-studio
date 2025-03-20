@@ -1,4 +1,6 @@
+
 use frame_area::FrameArea;
+use framebar::Framebar;
 use layers::{LayerDropLocation, LayerList};
 use project::{alisa::AnyPtr, Ptr};
 use render_list::RenderList;
@@ -19,6 +21,8 @@ pub struct TimelinePanel {
 
     clip_length_preview: u32,
 
+    framebar: Framebar,
+
     renaming_state: Option<(AnyPtr, String)>,
     started_renaming: bool,
 
@@ -37,6 +41,8 @@ impl Default for TimelinePanel {
             scroll_state: pierro::ScrollAreaState::default(),
 
             clip_length_preview: 0,
+
+            framebar: Framebar::new(),
 
             renaming_state: None,
             started_renaming: false,
@@ -118,7 +124,7 @@ impl Panel for TimelinePanel {
             let n_frames = clip_inner.length + (frame_container_width / Self::FRAME_WIDTH).ceil() as u32;
 
             let (framebar_scroll_response, frame_area_scroll_response) = ui.with_parent(frame_container.node_ref, |ui| {
-                let framebar_response = self.framebar(ui, editor, clip_inner, n_frames);
+                let framebar_response = self.framebar.render(ui, editor, clip_inner, n_frames, &mut self.scroll_state);
                 let frame_area_response = self.frame_area(ui, editor, project, &render_list, clip_inner, n_frames);
                 (framebar_response, frame_area_response)
             });

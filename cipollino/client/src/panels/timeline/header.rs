@@ -8,6 +8,8 @@ use super::TimelinePanel;
 impl TimelinePanel {
 
     pub(super) fn header(&mut self, ui: &mut pierro::UI, project: &ProjectState, editor: &mut EditorState, clip_ptr: Ptr<Clip>, clip_inner_ptr: Ptr<ClipInner>, clip: &ClipInner) {
+        
+        // Add keyframe
         if pierro::icon_button(ui, pierro::icons::PLUS).mouse_clicked() {
             if let Some(ptr) = project.client.next_ptr() {
                 editor.playing = false;
@@ -21,6 +23,8 @@ impl TimelinePanel {
                 }));
             }
         }
+
+        // Add layer
         if pierro::icon_button(ui, pierro::icons::FILE_PLUS).mouse_clicked() {
             if let Some(ptr) = project.client.next_ptr() {
                 project.client.queue_action(Action::single(ActionContext::new("New Layer"), CreateLayer {
@@ -36,6 +40,21 @@ impl TimelinePanel {
             }
         }
 
+        // Onion skin
+        pierro::h_spacing(ui, 5.0);
+        let onion_skin = editor.show_onion_skin;
+        if onion_skin {
+            let color = ui.style::<pierro::theme::BgDark>();
+            ui.push_style::<pierro::theme::BgButton>(color);
+        }
+        if pierro::icon_button(ui, pierro::icons::SUBTRACT).mouse_clicked() {
+            editor.show_onion_skin = !editor.show_onion_skin; 
+        }
+        if onion_skin {
+            ui.pop_style();
+        }
+
+        // Play buttons
         pierro::centered_horizontal(ui, |ui| {
             let widget_rounding = ui.style::<pierro::theme::WidgetRounding>();
             let widget_stroke = ui.style::<pierro::theme::WidgetStroke>();
@@ -72,6 +91,7 @@ impl TimelinePanel {
             });
         });
 
+        // Clip length
         pierro::label(ui, "Length: ");
         let clip_length_resp = pierro::DragValue::new(&mut self.clip_length_preview).with_min(1).render(ui);
         if clip_length_resp.done_editing {

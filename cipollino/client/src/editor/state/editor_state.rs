@@ -20,6 +20,10 @@ pub struct EditorState {
 
     pub selection: Selection,
 
+    pub show_onion_skin: bool,
+    pub onion_skin_prev_frames: u32,
+    pub onion_skin_next_frames: u32,
+
     pub stroke_mesh_cache: RefCell<HashMap<Ptr<Stroke>, malvina::StrokeMesh>>,
     pub stroke_preview: Option<malvina::StrokeMesh>,
 
@@ -43,6 +47,10 @@ impl EditorState {
             curr_tool: Rc::new(RefCell::new(Box::new(SelectTool::default()))),
 
             selection: Selection::new(),
+
+            show_onion_skin: false,
+            onion_skin_prev_frames: 2,
+            onion_skin_next_frames: 2,
 
             stroke_mesh_cache: RefCell::new(HashMap::new()),
             stroke_preview: None,
