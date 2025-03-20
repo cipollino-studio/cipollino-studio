@@ -482,6 +482,7 @@ impl UITree {
         layout_mem.screen_rect = screen_rect; 
         layout_mem.interaction_rect = screen_rect.grow(node.params.interaction_margin);
         layout_mem.transform = node.transform;
+        layout_mem.clip = node.params.clip;
         layout_mem.first_child = node.first_child.as_option().map(|child| self.get(child).id);
         layout_mem.next = node.next.as_option().map(|next| self.get(next).id);
         layout_mem.sense = node.params.sense;
@@ -511,6 +512,8 @@ pub(crate) struct LayoutMemory {
     pub(crate) interaction_rect: Rect,
     /// The full transformation applied to the node
     pub(crate) transform: TSTransform,
+    pub(crate) clip: bool,
+
     pub(crate) first_child: Option<Id>,
     pub(crate) next: Option<Id>,
 
@@ -525,6 +528,7 @@ impl Default for LayoutMemory {
             screen_rect: Rect::ZERO,
             interaction_rect: Rect::ZERO,
             transform: TSTransform::IDENTITY,
+            clip: true,
             first_child: None,
             next: None,
             sense: Sense::empty()

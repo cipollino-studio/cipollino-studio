@@ -4,6 +4,11 @@ use crate::{Id, LayoutMemory, Memory, Sense, Vec2};
 use super::{Input, Interaction, MouseButton};
 
 fn find_interacted_node(memory: &mut Memory, node: Id, pos: Vec2, criteria: Sense) -> Option<Id> {
+    let layout_mem = memory.get::<LayoutMemory>(node);
+    if !layout_mem.interaction_rect.contains(pos) && layout_mem.clip {
+        return None;
+    }
+
     // Check priority nodes first
     let mut child = memory.get::<LayoutMemory>(node).first_child;
     while let Some(child_id) = child {
