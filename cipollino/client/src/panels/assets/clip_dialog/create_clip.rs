@@ -1,5 +1,5 @@
 
-use project::{Action, ActionContext, Client, Clip, ClipTreeData, CreateClip, Ptr};
+use project::{Action, ActionContext, Client, Clip, ClipTreeData, CreateClip, CreateLayer, LayerParent, LayerTreeData, Ptr};
 
 use crate::State;
 
@@ -20,7 +20,10 @@ impl CreateClipDialog {
     fn create_clip(&self, client: &Client) -> Option<Ptr<Clip>> {
         let clip_ptr = client.next_ptr()?;
         let inner_ptr = client.next_ptr()?;
-        client.queue_action(Action::single(ActionContext::new("Create Clip"), CreateClip {
+        let layer_ptr = client.next_ptr()?;
+
+        let mut action = Action::new(ActionContext::new("Create Clip"));
+        action.push(CreateClip {
             ptr: clip_ptr,
             parent: Ptr::null(),
             data: ClipTreeData {
@@ -32,7 +35,18 @@ impl CreateClipDialog {
                 inner_ptr,
                 ..Default::default()
             },
-        }));
+        });
+        action.push(CreateLayer {
+            ptr: layer_ptr,
+            parent: LayerParent::Clip(clip_ptr),
+            idx: 0,
+            data: LayerTreeData {
+                name: "Layer".to_string(),
+                ..Default::default()
+            },
+        });
+
+        client.queue_action(action);
         Some(clip_ptr)
     }
 

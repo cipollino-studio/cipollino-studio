@@ -79,6 +79,7 @@ impl EditorState {
     pub fn open_clip(&mut self, clip_ptr: Ptr<Clip>) {
         self.open_clip = clip_ptr;
         self.jump_to(0.0);
+        self.active_layer = Ptr::null();
     }
 
     pub fn open_window<W: pierro::Window<Context = State>>(&mut self, window: W) {

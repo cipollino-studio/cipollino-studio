@@ -10,6 +10,7 @@ impl TimelinePanel {
     pub(super) fn header(&mut self, ui: &mut pierro::UI, project: &ProjectState, editor: &mut EditorState, clip_ptr: Ptr<Clip>, clip_inner_ptr: Ptr<ClipInner>, clip: &ClipInner) {
         if pierro::icon_button(ui, pierro::icons::PLUS).mouse_clicked() {
             if let Some(ptr) = project.client.next_ptr() {
+                editor.playing = false;
                 project.client.queue_action(Action::single(ActionContext::new("New Frame"), CreateFrame {
                     ptr,
                     layer: editor.active_layer,

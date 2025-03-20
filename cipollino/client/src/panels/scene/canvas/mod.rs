@@ -66,6 +66,7 @@ impl ScenePanel {
             let drag_delta = response.drag_delta(ui);
             let drag_delta = malvina::vec2(-drag_delta.x, drag_delta.y) * self.cam_size;
             self.cam_pos += drag_delta;
+            editor.selection.keep_selection();
         }
 
         // Use the current tool
@@ -91,28 +92,39 @@ impl ScenePanel {
             clear_stroke_preview: false,
             pressure: ui.input().pressure
         };
+        let mut pause = false;
         if let Some(mouse_pos) = mouse_pos {
-            if response.mouse_clicked() {
+            if response.mouse_clicked() && !panning {
+                pause = true;
                 tool.mouse_clicked(&mut tool_context, mouse_pos);
             }
-            if response.mouse_pressed() {
+            if response.mouse_pressed() && !panning {
+                pause = true;
                 tool.mouse_pressed(&mut tool_context, mouse_pos);
             }
-            if response.mouse_released() {
+            if response.mouse_released() && !panning {
+                pause = true;
                 tool.mouse_released(&mut tool_context, mouse_pos);
             }
             if response.drag_started() && !panning {
+                pause = true;
                 tool.mouse_drag_started(&mut tool_context, mouse_pos);
             }
             if response.dragging() && !panning {
+                pause = true;
                 tool.mouse_dragged(&mut tool_context, mouse_pos);
             }
             if response.drag_stopped() && !panning {
+                pause = true;
                 tool.mouse_drag_stopped(&mut tool_context, mouse_pos);
             }
         }
         let tool_cursor_icon = tool.cursor_icon();
         let clear_stroke_preview = tool_context.clear_stroke_preview;
+
+        if pause {
+            editor.playing = false;
+        }
         
         drop(picking_buffer); // We mutably borrow self later on, so we need to drop this here
 

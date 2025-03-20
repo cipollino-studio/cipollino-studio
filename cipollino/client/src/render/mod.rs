@@ -26,10 +26,11 @@ fn render_frame(rndr: &mut malvina::LayerRenderer, editor: &EditorState, client:
 }
 
 fn render_layer(rndr: &mut malvina::LayerRenderer, client: &Client, editor: &EditorState, layer: &Layer, layer_ptr: Ptr<Layer>, time: i32) {
-    let Some(frame_ptr) = layer.frame_at(client, time) else { return; };
-    if let Some(frame) = client.get(frame_ptr) {
-        render_frame(rndr, editor, client, frame);
-    }
+    if let Some(frame_ptr) = layer.frame_at(client, time) {
+        if let Some(frame) = client.get(frame_ptr) {
+            render_frame(rndr, editor, client, frame);
+        }
+    } 
 
     if layer_ptr == editor.active_layer {
         if let Some(stroke_preview) = &editor.stroke_preview {

@@ -1,6 +1,6 @@
 use frame_area::FrameArea;
 use layers::{LayerDropLocation, LayerList};
-use project::alisa::AnyPtr;
+use project::{alisa::AnyPtr, Ptr};
 use render_list::RenderList;
 
 use crate::State;
@@ -78,6 +78,25 @@ impl Panel for TimelinePanel {
         };
 
         let render_list = RenderList::make(&project.client, clip_inner);
+
+        // Update active layer
+        let mut found_active_layer = false;
+        let mut first_layer = None;
+        for render_layer in render_list.iter() {
+            match render_layer.kind {
+                render_list::RenderLayerKind::Layer(ptr, _) => {
+                    if ptr == editor.active_layer {
+                        found_active_layer = true;
+                    }
+                    if first_layer.is_none() {
+                        first_layer = Some(ptr);
+                    }
+                },
+            }
+        }
+        if !found_active_layer {
+            editor.active_layer = first_layer.unwrap_or(Ptr::null());
+        }
 
         pierro::margin_with_size(ui, pierro::Margin::same(3.0), pierro::Size::fr(1.0), pierro::Size::fit(), |ui| {
             pierro::horizontal_centered(ui, |ui| {
