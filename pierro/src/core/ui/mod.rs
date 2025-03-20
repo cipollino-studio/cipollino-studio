@@ -259,6 +259,10 @@ impl<'a, 'b> UI<'a, 'b> {
     pub fn set_sense_dnd_hover(&mut self, node: UIRef, dnd_hover: bool) {
         self.tree.get_mut(node).params.sense.set(Sense::DND_HOVER, dnd_hover);
     }
+
+    pub fn set_reject_focus(&mut self, node: UIRef, reject_focus: bool) {
+        self.tree.get_mut(node).params.sense.set(Sense::REJECT_FOCUS, reject_focus);
+    }
     
     pub fn set_on_paint<F: FnOnce(&mut Painter, Rect) + 'static>(&mut self, node: UIRef, on_paint: F) {
         self.tree.get_mut(node).params.on_paint = Some(Box::new(on_paint));

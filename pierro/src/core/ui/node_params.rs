@@ -14,6 +14,7 @@ bitflags::bitflags! {
         const DND_HOVER = 1 << 2;
         const KEYBOARD = 1 << 3;
 
+        const REJECT_FOCUS = 1 << 6;
         const INTERACTION_PRIORITY = 1 << 7;
     }
 
@@ -177,6 +178,11 @@ impl UINodeParams {
 
     pub fn sense_keyboard(mut self) -> Self {
         self.sense |= Sense::KEYBOARD;
+        self
+    }
+
+    pub fn reject_focus(mut self) -> Self {
+        self.sense |= Sense::REJECT_FOCUS;
         self
     }
 

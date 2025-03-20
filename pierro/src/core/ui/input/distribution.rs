@@ -60,13 +60,20 @@ impl Input {
     /// Distribute the input to nodes, taking foucs into account.
     pub(crate) fn distribute(&mut self, memory: &mut Memory) {
 
-        // Take away focus if we clicked outside the focused node
         if let Some(focused_node) = memory.get_focus() {
+
+            // Take away focus if we clicked outside the focused node
             let focused_node_memory = memory.get::<LayoutMemory>(focused_node);
             if let Some(mouse_pos) = self.mouse_pos {
                 if (self.l_mouse.pressed() || self.r_mouse.pressed()) && !focused_node_memory.interaction_rect.contains(mouse_pos) {
                     memory.release_focus();
                 }
+            }
+
+            // Take away focus if the focused node rejects focus 
+            let focused_node_memory = memory.get::<LayoutMemory>(focused_node);
+            if focused_node_memory.sense.contains(Sense::REJECT_FOCUS) {
+                memory.release_focus();
             }
         }
 

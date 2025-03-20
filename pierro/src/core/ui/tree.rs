@@ -124,7 +124,7 @@ impl UITree {
         let layer = self.add_node(UINode::new(
             Id(0),
             self.layers.len() as u64,
-            UINodeParams::new(Size::px(size.x), Size::px(size.y)) 
+            UINodeParams::new(Size::px(size.x), Size::px(size.y)).reject_focus() 
         ));
         self.layers.push(layer);
         layer

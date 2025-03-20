@@ -56,6 +56,7 @@ impl DndSource {
                 contents(ui);
             });
             ui.set_transform(layer, TSTransform::translation(self.offset));
+            ui.set_reject_focus(layer, false);
 
             let layer_id = ui.get_node_id(layer);
             ui.memory().request_focus(layer_id);
