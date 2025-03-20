@@ -159,17 +159,6 @@ fn winit_to_pierro_key(key: winit::keyboard::Key) -> Option<Key> {
     None
 }
 
-fn winit_to_pierro_key_modifiers(key: winit::keyboard::Key) -> KeyModifiers {
-    match key {
-        winit::keyboard::Key::Named(winit::keyboard::NamedKey::Shift) => KeyModifiers::SHIFT,
-        #[cfg(target_os = "macos")]
-        winit::keyboard::Key::Named(winit::keyboard::NamedKey::Super) => KeyModifiers::CONTROL,
-        #[cfg(not(target_os = "macos"))]
-        winit::keyboard::Key::Named(winit::keyboard::NamedKey::Control) => KeyModifiers::CONTROL,
-        _ => KeyModifiers::empty()
-    }
-}
-
 impl<T: App> AppHandler<'_, T> {
 
     pub(super) fn handle_device_event(&mut self, event: winit::event::DeviceEvent) {
@@ -239,18 +228,26 @@ impl<T: App> AppHandler<'_, T> {
                     }
                 }
 
-                let modifiers = winit_to_pierro_key_modifiers(event.logical_key.clone());
-                if event.state.is_pressed() {
-                    self.raw_input.key_modifiers |= modifiers;
-                } else {
-                    self.raw_input.key_modifiers &= !modifiers;
-                }
-
                 if event.state.is_pressed() {
                     if let winit::keyboard::Key::Character(str) = event.logical_key {
                         self.raw_input.text += &str; 
                     }
                 }
+            },
+            winit::event::WindowEvent::ModifiersChanged(modifiers) => {
+                self.raw_input.key_modifiers = KeyModifiers::empty();
+                if modifiers.state().shift_key() {
+                    self.raw_input.key_modifiers |= KeyModifiers::SHIFT;
+                }
+                #[cfg(target_os = "macos")]
+                if modifiers.state().super_key() {
+                    self.raw_input.key_modifiers |= KeyModifiers::CONTROL;
+                }
+                #[cfg(not(target_os = "macos"))]
+                if modifiers.state().control_key() {
+                    self.raw_input.key_modifiers |= KeyModifiers::CONTROL;
+                }
+
             },
 
             winit::event::WindowEvent::Focused(focused) => {
@@ -258,7 +255,6 @@ impl<T: App> AppHandler<'_, T> {
                     self.raw_input.lost_focus = true;
                 } 
             }
-
             winit::event::WindowEvent::Ime(winit::event::Ime::Preedit(preedit, _)) => {
                 self.raw_input.ime_preedit = preedit;
             },

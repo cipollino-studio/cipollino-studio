@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use crate::Vec2;
 
 mod button_input;
+use bitflags::Flags;
 pub use button_input::*;
 
 mod mouse_button;
@@ -186,6 +187,7 @@ impl Input {
                 self.keys_released.push(key.clone());
             }
             self.keys.clear();
+            self.key_modifiers.clear();
             
             raw_input.lost_focus = false;
         }

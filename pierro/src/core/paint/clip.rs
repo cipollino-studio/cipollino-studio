@@ -20,4 +20,10 @@ impl Painter<'_> {
         *clip_rect
     }
 
+    pub fn with_clip_rect<F: FnOnce(&mut Self)>(&mut self, rect: Rect, contents: F) {
+        self.push_clip_rect(rect);
+        contents(self);
+        self.pop_clip_rect();
+    }
+
 }

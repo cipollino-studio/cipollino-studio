@@ -113,7 +113,7 @@ pub enum Key {
 
 bitflags::bitflags! {
 
-    #[derive(Clone, Copy, PartialEq, Eq)]
+    #[derive(Clone, Copy, PartialEq, Eq, Debug)]
     pub struct KeyModifiers: u8 {
         const CONTROL = 1 << 0;
         const SHIFT = 1 << 1;
