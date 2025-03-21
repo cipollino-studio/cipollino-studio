@@ -316,6 +316,7 @@ impl RectResources {
 
 }
 
+#[derive(Clone)]
 pub struct PaintRect {
     rect: Rect,
     fill: Color,
@@ -338,6 +339,11 @@ impl PaintRect {
             rounding: Rounding::ZERO,
             stroke: Stroke::NONE
         }
+    }
+
+    pub fn with_fill(mut self, fill: Color) -> Self {
+        self.fill = fill;
+        self
     }
     
     pub fn with_texture(mut self, texture: Texture) -> Self {

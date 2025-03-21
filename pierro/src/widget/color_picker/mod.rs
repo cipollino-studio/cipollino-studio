@@ -13,7 +13,7 @@ mod color_bar;
 use color_bar::*;
 
 const N_CELLS: i32 = 100;
-const TOLERANCE: f32 = 0.005;
+const TOLERANCE: f32 = 0.0001;
 
 pub fn color_picker<C: ColorSpace>(ui: &mut UI, color: &mut Color) {
     let stroke = ui.style::<theme::WidgetStroke>();
