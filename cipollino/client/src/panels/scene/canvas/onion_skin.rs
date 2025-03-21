@@ -9,10 +9,16 @@ impl ScenePanel {
         let render_list = Self::render_list(client, clip, time);
         for scene_obj in render_list {
             match scene_obj {
-                project::SceneChildPtr::Stroke(stroke) => {
-                    let stroke_mesh_cache = editor.stroke_mesh_cache.borrow();
-                    if let Some(stroke) = stroke_mesh_cache.get(&stroke.ptr()) {
-                        rndr.render_stroke(stroke, color);
+                project::SceneChildPtr::Stroke(stroke_ptr) => {
+                    if let Some(stroke) = client.get(stroke_ptr.ptr()) {
+                        let mut stroke_mesh_cache = editor.stroke_mesh_cache.borrow_mut();
+                        if let Some(stroke) = stroke_mesh_cache.get(&stroke_ptr.ptr()) {
+                            rndr.render_stroke(stroke, color);
+                        } else {
+                            let mesh = malvina::StrokeMesh::new(rndr.device(), &stroke.stroke.0);
+                            rndr.render_stroke(&mesh, color);
+                            stroke_mesh_cache.insert(stroke_ptr.ptr(), mesh);
+                        }
                     }
                 },
             }
