@@ -2,7 +2,7 @@
 use std::collections::HashSet;
 
 use project::{Client, ClipInner, Frame, Layer, LayerChildList, LayerChildPtr, Ptr, SceneChildPtr, Stroke};
-use crate::{EditorState, ScenePanel};
+use crate::ScenePanel;
 
 impl ScenePanel {
 
@@ -10,28 +10,28 @@ impl ScenePanel {
         list.extend(frame.scene.iter().rev());
     }
 
-    fn get_layer_render_list(client: &Client, editor: &EditorState, clip: &ClipInner, layer: &Layer, list: &mut Vec<SceneChildPtr>) {
-        let Some(frame_ptr) = layer.frame_at(client, clip.frame_idx(editor.time)) else { return; };
+    fn get_layer_render_list(client: &Client, layer: &Layer, list: &mut Vec<SceneChildPtr>, time: i32) {
+        let Some(frame_ptr) = layer.frame_at(client, time) else { return; };
         if let Some(frame) = client.get(frame_ptr) {
             Self::get_frame_render_list(frame, list);
         }
     }
 
-    fn get_layer_list_render_list(client: &Client, editor: &EditorState, clip: &ClipInner, layer_list: &LayerChildList, list: &mut Vec<SceneChildPtr>) {
+    fn get_layer_list_render_list(client: &Client, layer_list: &LayerChildList, list: &mut Vec<SceneChildPtr>, time: i32) {
         for layer in layer_list.iter().rev() {
             match layer {
                 LayerChildPtr::Layer(layer_ptr) => {
                     if let Some(layer) = client.get(layer_ptr.ptr()) {
-                        Self::get_layer_render_list(client, editor, clip, layer, list);
+                        Self::get_layer_render_list(client, layer, list, time);
                     }
                 }
             } 
         }
     }
 
-    pub(super) fn render_list(client: &Client, editor: &EditorState, clip: &ClipInner) -> Vec<SceneChildPtr> {
+    pub(super) fn render_list(client: &Client, clip: &ClipInner, time: i32) -> Vec<SceneChildPtr> {
         let mut list = Vec::new();
-        Self::get_layer_list_render_list(client, editor, clip, &clip.layers, &mut list);
+        Self::get_layer_list_render_list(client, &clip.layers, &mut list, time);
         list
     }
 

@@ -10,6 +10,9 @@ use super::Panel;
 use std::cell::RefCell;
 use std::rc::Rc;
 
+pub const ONION_SKIN_PREV_COLOR: pierro::Color = pierro::Color::rgb(0.8588, 0.3764, 0.8196);
+pub const ONION_SKIN_NEXT_COLOR: pierro::Color = pierro::Color::rgb(0.4666, 0.8588, 0.3764);
+
 pub struct ScenePanel {
     cam_pos: malvina::Vec2,
     cam_size: f32,

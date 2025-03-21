@@ -1,7 +1,7 @@
 
 use project::ClipInner;
 
-use crate::{EditorState, TimelinePanel};
+use crate::{EditorState, TimelinePanel, ONION_SKIN_NEXT_COLOR, ONION_SKIN_PREV_COLOR};
 
 use super::Framebar;
 
@@ -31,7 +31,7 @@ impl Framebar {
                 painter.with_clip_rect(left_onion_skin_rect.left_half(), |painter| {
                     painter.rect(
                         pierro::PaintRect::new(left_onion_skin_rect, pierro::Color::TRANSPARENT)
-                            .with_stroke(pierro::Stroke::new(pierro::Color::hex(0xDB60D1FF), 1.5))
+                            .with_stroke(pierro::Stroke::new(ONION_SKIN_PREV_COLOR, 1.5))
                             .with_rounding(pierro::Rounding::same(3.0))
                     );
                 });
@@ -40,7 +40,7 @@ impl Framebar {
                 painter.with_clip_rect(right_onion_skin_rect.right_half(), |painter| {
                     painter.rect(
                         pierro::PaintRect::new(right_onion_skin_rect, pierro::Color::TRANSPARENT)
-                            .with_stroke(pierro::Stroke::new(pierro::Color::hex(0x77DB60FF), 1.5))
+                            .with_stroke(pierro::Stroke::new(ONION_SKIN_NEXT_COLOR, 1.5))
                             .with_rounding(pierro::Rounding::same(3.0))
                     );
                 });
