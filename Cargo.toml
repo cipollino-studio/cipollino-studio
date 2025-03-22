@@ -1,6 +1,7 @@
 
 [workspace]
 members = [
+    "elic",
     "verter",
 
     "alisa/alisa-proc-macros",
