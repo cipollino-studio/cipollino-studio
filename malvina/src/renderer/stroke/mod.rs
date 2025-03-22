@@ -7,10 +7,9 @@ use super::{BrushTexture, BrushTextureResources};
 #[repr(C)]
 #[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
 struct StrokeUniforms {
-    view_proj: glam::Mat4,
-    pub color: glam::Vec4,
-    pub resolution: glam::Vec2,
-    padding: [f32; 2]
+    view_proj: [[f32; 4]; 4],
+    pub color: [f32; 4],
+    pub resolution: [f32; 2]
 }
 
 pub(super) struct StrokeRenderer {
@@ -111,41 +110,38 @@ impl StrokeRenderer {
         }
     }
 
-    pub fn render(&mut self, render_pass: &mut wgpu::RenderPass, stroke: &StrokeMesh, texture: &BrushTexture, color: glam::Vec4, resolution: glam::Vec2, view_proj: glam::Mat4) {
+    pub fn render(&mut self, render_pass: &mut wgpu::RenderPass, stroke: &StrokeMesh, texture: &BrushTexture, color: elic::Color, resolution: elic::Vec2, view_proj: elic::Mat4) {
         render_pass.set_pipeline(&self.render_pipeline);
         render_pass.set_push_constants(wgpu::ShaderStages::VERTEX_FRAGMENT, 0, bytemuck::cast_slice(&[StrokeUniforms {
-            view_proj,
-            resolution,
-            color,
-            padding: [0.0, 0.0]
+            view_proj: view_proj.into(),
+            resolution: resolution.into(),
+            color: color.into(),
         }]));
         render_pass.set_bind_group(0, &texture.bind_group, &[]);
         render_pass.set_vertex_buffer(0, stroke.instance_buffer.slice(..));
         render_pass.draw(0..6, 0..stroke.n_stamps);
     }
 
-    pub fn render_picking(&mut self, render_pass: &mut wgpu::RenderPass, stroke: &StrokeMesh, texture: &BrushTexture, color: glam::Vec4, resolution: glam::Vec2, view_proj: glam::Mat4) {
+    pub fn render_picking(&mut self, render_pass: &mut wgpu::RenderPass, stroke: &StrokeMesh, texture: &BrushTexture, color: elic::Color, resolution: elic::Vec2, view_proj: elic::Mat4) {
         render_pass.set_pipeline(&self.picking_pipeline);
         render_pass.set_push_constants(wgpu::ShaderStages::VERTEX_FRAGMENT, 0, bytemuck::cast_slice(&[StrokeUniforms {
-            view_proj,
-            resolution,
-            color,
-            padding: [0.0, 0.0]
+            view_proj: view_proj.into(),
+            resolution: resolution.into(),
+            color: color.into(),
         }]));
         render_pass.set_bind_group(0, &texture.bind_group, &[]);
         render_pass.set_vertex_buffer(0, stroke.instance_buffer.slice(..));
         render_pass.draw(0..6, 0..stroke.n_stamps);
     }
 
-    pub fn render_selection(&mut self, render_pass: &mut wgpu::RenderPass, stroke: &StrokeMesh, texture: &BrushTexture, color: glam::Vec4, resolution: glam::Vec2, view_proj: glam::Mat4) {
-        let color = if (color.x + color.y + color.w) / 3.0 > 0.5 { 0.0 } else { 1.0 };
-        let color = glam::vec4(color, color, color, 1.0);
+    pub fn render_selection(&mut self, render_pass: &mut wgpu::RenderPass, stroke: &StrokeMesh, texture: &BrushTexture, color: elic::Color, resolution: elic::Vec2, view_proj: elic::Mat4) {
+        let color = if (color.r + color.g + color.b) / 3.0 > 0.5 { 0.0 } else { 1.0 };
+        let color = elic::Color::rgba(color, color, color, 1.0);
         render_pass.set_pipeline(&self.selected_pipeline);
         render_pass.set_push_constants(wgpu::ShaderStages::VERTEX_FRAGMENT, 0, bytemuck::cast_slice(&[StrokeUniforms {
-            view_proj,
-            resolution,
-            color,
-            padding: [0.0, 0.0]
+            view_proj: view_proj.into(),
+            resolution: resolution.into(),
+            color: color.into(),
         }]));
         render_pass.set_bind_group(0, &texture.bind_group, &[]);
         render_pass.set_vertex_buffer(0, stroke.instance_buffer.slice(..));

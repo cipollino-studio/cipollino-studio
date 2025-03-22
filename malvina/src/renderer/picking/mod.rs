@@ -10,7 +10,7 @@ pub struct PickingRenderer<'a, 'rndr> {
 
 impl PickingRenderer<'_, '_> {
 
-    fn id_to_color(id: u32) -> glam::Vec4 {
+    fn id_to_color(id: u32) -> elic::Color {
         let r = (id >> 0)  & 0xFF;
         let g = (id >> 8)  & 0xFF;
         let b = (id >> 16) & 0xFF;
@@ -19,7 +19,7 @@ impl PickingRenderer<'_, '_> {
         let g = (g as f32) / 255.0;
         let b = (b as f32) / 255.0;
 
-        glam::vec4(r, g, b, 1.0)
+        elic::Color::rgba(r, g, b, 1.0)
     }
 
     pub fn render_stroke(&mut self, stroke: &StrokeMesh, id: u32) {
@@ -36,7 +36,7 @@ impl Renderer {
             return;
         };
 
-        self.render(device, queue, texture, camera, glam::vec4(0.0, 0.0, 0.0, 1.0), 1.0, |rndr| {
+        self.render(device, queue, texture, camera, elic::Color::BLACK, 1.0, |rndr| {
             let mut rndr = PickingRenderer {
                 renderer: rndr,
             };

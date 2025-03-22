@@ -1,19 +1,17 @@
 
 use std::ops::{Add, Mul};
 
-use crate::{BezierPath, BezierPoint, HasMagnitude, Linear, Turnable};
-
 mod meshgen;
 
 #[derive(Clone, Copy)]
 pub struct StrokePoint {
-    pub pt: glam::Vec2,
+    pub pt: elic::Vec2,
     pub pressure: f32
 }
 
 impl StrokePoint {
 
-    pub fn new(pt: glam::Vec2, pressure: f32) -> Self {
+    pub fn new(pt: elic::Vec2, pressure: f32) -> Self {
         Self {
             pt,
             pressure
@@ -48,22 +46,19 @@ impl Mul<f32> for StrokePoint {
 
 }
 
-impl Linear for StrokePoint {}
+impl elic::Linear for StrokePoint {
 
-impl HasMagnitude for StrokePoint {
-
-    fn magnitude(&self) -> f32 {
-        self.pt.length()
+    fn add(&self, other: Self) -> Self {
+        Self {
+            pt: self.pt + other.pt,
+            pressure: self.pressure + other.pressure,
+        }
     }
 
-}
-
-impl Turnable for StrokePoint {
-
-    fn turn_cw(&self) -> Self {
+    fn scale(&self, scl: f32) -> Self {
         Self {
-            pt: self.pt.turn_cw(),
-            pressure: self.pressure
+            pt: self.pt * scl,
+            pressure: self.pressure * scl,
         }
     }
 
@@ -71,22 +66,22 @@ impl Turnable for StrokePoint {
 
 #[derive(Clone)]
 pub struct Stroke {
-    pub path: BezierPath<StrokePoint>
+    pub path: elic::BezierPath<StrokePoint>
 }
 
 impl Stroke {
 
     pub fn empty() -> Self {
         Self {
-            path: BezierPath::empty()
+            path: elic::BezierPath::empty()
         }
     }  
 
-    pub fn point(pt: glam::Vec2, pressure: f32) -> Self {
+    pub fn point(pt: elic::Vec2, pressure: f32) -> Self {
         Self {
-            path: BezierPath {
+            path: elic::BezierPath {
                 pts: vec![
-                    BezierPoint {
+                    elic::BezierPoint {
                         prev: StrokePoint::new(pt, pressure),
                         pt: StrokePoint::new(pt, pressure),
                         next: StrokePoint::new(pt, pressure),

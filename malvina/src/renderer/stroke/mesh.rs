@@ -5,10 +5,10 @@ use crate::Stroke;
 #[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
 pub(crate) struct StrokeStampInstance {
     /// The position of the stamp
-    pub pos: glam::Vec2,
+    pub pos: [f32; 2],
     /// The vector pointing to the right, relative to the stamps rotation.
     /// The magnitude is equal to the stamp's radius(half the width/height of the quad) 
-    pub right: glam::Vec2
+    pub right: [f32; 2] 
 }
 
 impl StrokeStampInstance {

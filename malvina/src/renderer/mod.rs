@@ -14,12 +14,16 @@ pub use picking::*;
 mod canvas_border;
 use canvas_border::*;
 
+mod overlay;
+pub(crate) use overlay::*;
+
 mod brush;
 pub use brush::*;
 
 pub struct Renderer {
     stroke: StrokeRenderer,
     canvas_border: CanvasBorderRenderer,
+    line_renderer: OverlayLineRenderer,
     circle_brush: BrushTexture
 }
 
@@ -29,10 +33,12 @@ impl Renderer {
         let brush_texture_resources = BrushTextureResources::new(device);
         let stroke = StrokeRenderer::new(device, &brush_texture_resources);
         let canvas_border = CanvasBorderRenderer::new(device);
+        let line_renderer = OverlayLineRenderer::new(device);
         let circle_brush = BrushTexture::circle(device, queue, &brush_texture_resources, 100);
         Self {
             stroke,
             canvas_border,
+            line_renderer,
             circle_brush
         }
     }
@@ -42,13 +48,13 @@ impl Renderer {
         queue: &wgpu::Queue,
         texture: &wgpu::Texture,
         camera: Camera,
-        fill_color: glam::Vec4,
+        fill_color: elic::Color,
         dpi_factor: f32,
         contents: F
     ) {
 
         let texture_view = texture.create_view(&wgpu::TextureViewDescriptor::default());
-        let resolution = glam::vec2(texture.width() as f32, texture.height() as f32);
+        let resolution = elic::vec2(texture.width() as f32, texture.height() as f32);
 
         let view_proj = camera.calc_view_proj(resolution);
 
@@ -64,10 +70,10 @@ impl Renderer {
                     resolve_target: None,
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Clear(wgpu::Color {
-                            r: fill_color.x as f64,
-                            g: fill_color.y as f64,
-                            b: fill_color.z as f64,
-                            a: fill_color.w as f64
+                            r: fill_color.r as f64,
+                            g: fill_color.g as f64,
+                            b: fill_color.b as f64,
+                            a: fill_color.a as f64
                         }),
                         store: wgpu::StoreOp::Store
                     }
@@ -84,8 +90,10 @@ impl Renderer {
                 view_proj: view_proj,
                 resolution,
                 dpi_factor,
+                zoom: camera.zoom,
                 stroke_renderer: &mut self.stroke,
                 canvas_border_renderer: &mut self.canvas_border,
+                overlay_line_renderer: &mut self.line_renderer,
                 circle_brush: &self.circle_brush
             };
 

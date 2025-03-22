@@ -1,5 +1,5 @@
 
-use crate::{sample, sample_derivative, HasMagnitude, StrokeStampInstance};
+use crate::StrokeStampInstance;
 
 use super::Stroke;
 
@@ -13,8 +13,8 @@ impl Stroke {
         if self.path.pts.len() == 1 {
             return vec![
                 StrokeStampInstance {
-                    pos: self.path.pts[0].pt.pt,
-                    right: glam::Vec2::X * 3.0
+                    pos: self.path.pts[0].pt.pt.into(),
+                    right: (elic::Vec2::X * 3.0).into()
                 }
             ];
         }
@@ -29,18 +29,18 @@ impl Stroke {
                 let a = &self.path.pts[i];
                 let b = &self.path.pts[i + 1];
 
-                let bezier_pt = sample(a, b, t);
+                let bezier_pt = elic::sample_bezier(a, b, t);
                 let pos = bezier_pt.pt;
                 let pressure = bezier_pt.pressure;
-                let derivative = sample_derivative(a, b, t).pt;
+                let derivative = elic::sample_bezier_derivative(a, b, t).pt;
                 let tangent = derivative.normalize();
                 let right = tangent * 3.0 * pressure;
                 stamps.push(StrokeStampInstance {
-                    pos, 
-                    right
+                    pos: pos.into(),
+                    right: right.into()
                 });
 
-                t += spacing / derivative.magnitude(); 
+                t += spacing / derivative.length(); 
             }
         }
 
