@@ -1,11 +1,13 @@
 
 mod select;
+use std::collections::HashSet;
+
 pub use select::*;
 
 mod pencil;
 pub use pencil::*;
 
-use project::{Action, ClipInner, CreateFrame, Frame, FrameTreeData, Layer, Ptr};
+use project::{Action, ClipInner, CreateFrame, Frame, FrameTreeData, Layer, Ptr, Stroke};
 
 use crate::{EditorState, ProjectState};
 
@@ -18,6 +20,8 @@ pub struct ToolContext<'ctx> {
     pub clip: &'ctx ClipInner,
     pub active_layer: Ptr<Layer>,
     pub frame_time: i32,
+
+    pub rendered_strokes: &'ctx HashSet<Ptr<Stroke>>,
 
     // Picking
     pub picking_buffer: &'ctx mut malvina::PickingBuffer,
@@ -64,7 +68,7 @@ pub trait Tool: Default {
     fn mouse_drag_stopped(&mut self, _ctx: &mut ToolContext, _pos: malvina::Vec2) {}
     fn mouse_dragged(&mut self, _ctx: &mut ToolContext, _pos: malvina::Vec2) {}
 
-    fn render_overlay(&self, _rndr: &mut malvina::LayerRenderer) {}
+    fn render_overlay(&self, _rndr: &mut malvina::LayerRenderer, _accent_color: elic::Color) {}
 
     fn cursor_icon(&self) -> pierro::CursorIcon {
         pierro::CursorIcon::Default
@@ -84,7 +88,7 @@ pub trait ToolDyn {
     fn mouse_drag_stopped(&mut self, _ctx: &mut ToolContext, _pos: malvina::Vec2);
     fn mouse_dragged(&mut self, _ctx: &mut ToolContext, _pos: malvina::Vec2);
 
-    fn render_overlay(&self, rndr: &mut malvina::LayerRenderer);
+    fn render_overlay(&self, rndr: &mut malvina::LayerRenderer, accent_color: elic::Color);
 
     fn cursor_icon(&self) -> pierro::CursorIcon;
 
@@ -120,8 +124,8 @@ impl<T: Tool> ToolDyn for T {
         self.mouse_dragged(ctx, pos);
     }
 
-    fn render_overlay(&self, rndr: &mut malvina::LayerRenderer) {
-        self.render_overlay(rndr);
+    fn render_overlay(&self, rndr: &mut malvina::LayerRenderer, accent_color: elic::Color) {
+        self.render_overlay(rndr, accent_color);
     }
 
     fn cursor_icon(&self) -> pierro::CursorIcon {
