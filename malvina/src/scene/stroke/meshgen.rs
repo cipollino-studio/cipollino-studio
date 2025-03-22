@@ -28,11 +28,12 @@ impl Stroke {
             while t < 1.0 {
                 let a = &self.path.pts[i];
                 let b = &self.path.pts[i + 1];
+                let segment = elic::BezierSegment::from_points(*a, *b);
 
-                let bezier_pt = elic::sample_bezier(a, b, t);
+                let bezier_pt = segment.sample(t); 
                 let pos = bezier_pt.pt;
                 let pressure = bezier_pt.pressure;
-                let derivative = elic::sample_bezier_derivative(a, b, t).pt;
+                let derivative = segment.sample_derivative(t).pt;
                 let tangent = derivative.normalize();
                 let right = tangent * 3.0 * pressure;
                 stamps.push(StrokeStampInstance {

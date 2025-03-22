@@ -8,7 +8,6 @@ struct StrokeUniforms {
     view_proj: mat4x4<f32>,
     color: vec4<f32>,
     resolution: vec2<f32>,
-    padding: vec2<f32>
 }
 
 var<push_constant> uniforms: StrokeUniforms;

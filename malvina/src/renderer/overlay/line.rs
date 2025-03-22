@@ -3,6 +3,7 @@
 #[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
 pub(super) struct LineUniforms {
     view_proj: [[f32; 4]; 4],
+    color: [f32; 4],
     a: [f32; 2],
     b: [f32; 2],
     r: f32,
@@ -23,7 +24,7 @@ impl OverlayLineRenderer {
             bind_group_layouts: &[],
             push_constant_ranges: &[
                 wgpu::PushConstantRange {
-                    stages: wgpu::ShaderStages::VERTEX,
+                    stages: wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
                     range: 0..(size_of::<LineUniforms>() as u32),
                 }
             ],
@@ -72,14 +73,15 @@ impl OverlayLineRenderer {
         }
     }
 
-    pub fn render_line(&mut self, render_pass: &mut wgpu::RenderPass, a: elic::Vec2, b: elic::Vec2, r: f32, view_proj: elic::Mat4) {
+    pub fn render_line(&mut self, render_pass: &mut wgpu::RenderPass, a: elic::Vec2, b: elic::Vec2, r: f32, color: elic::Color, view_proj: elic::Mat4) {
         render_pass.set_pipeline(&self.render_pipeline);
-        render_pass.set_push_constants(wgpu::ShaderStages::VERTEX, 0, bytemuck::cast_slice(&[
+        render_pass.set_push_constants(wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT, 0, bytemuck::cast_slice(&[
             LineUniforms {
                 view_proj: view_proj.into(),
                 a: a.into(),
                 b: b.into(),
-                r
+                r,
+                color: color.into() 
             }
         ]));
         render_pass.draw(0..6, 0..1);

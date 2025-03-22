@@ -44,8 +44,8 @@ impl LayerRenderer<'_> {
         self.canvas_border_renderer.render(self.render_pass, canvas_size, self.view_proj);
     }
 
-    pub fn overlay_line(&mut self, a: elic::Vec2, b: elic::Vec2) {
-        self.overlay_line_renderer.render_line(self.render_pass, a, b, 0.5 * self.dpi_factor / self.zoom, self.view_proj);
+    pub fn overlay_line(&mut self, a: elic::Vec2, b: elic::Vec2, color: elic::Color) {
+        self.overlay_line_renderer.render_line(self.render_pass, a, b, 0.5 * self.dpi_factor / self.zoom, color, self.view_proj);
     }
 
 }

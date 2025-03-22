@@ -1,10 +1,10 @@
 
 struct Uniforms {
     view_proj: mat4x4<f32>,
+    color: vec4<f32>,
     a: vec2<f32>,
     b: vec2<f32>,
     r: f32,
-    padding: vec3<f32>
 }
 
 var<push_constant> uniforms: Uniforms;
@@ -37,5 +37,5 @@ fn vs_main(
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    return vec4<f32>(1.0, 0.0, 0.0, 1.0);
+    return uniforms.color; 
 }
