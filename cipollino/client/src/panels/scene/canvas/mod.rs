@@ -134,12 +134,15 @@ impl ScenePanel {
         let camera = self.calc_camera(ui.scale_factor());
 
         // Render the scene
-        renderer.render(ui.wgpu_device(), ui.wgpu_queue(), texture.texture(), camera, malvina::glam::vec4(1.0, 1.0, 1.0, 1.0), ui.scale_factor(), |rndr| {
+        renderer.render(ui.wgpu_device(), ui.wgpu_queue(), texture.texture(), camera, elic::Color::WHITE, ui.scale_factor(), |rndr| {
             if editor.show_onion_skin {
                 self.render_onion_skin(rndr, &project.client, &editor, clip);
             }
             render_scene(rndr, &project.client, editor, clip, clip.frame_idx(editor.time));
             self.render_selection(rndr, &editor, &project.client, render_list);
+
+            tool.render_overlay(rndr);
+
             rndr.render_canvas_border(malvina::vec2(clip.width as f32, clip.height as f32));
         });
 

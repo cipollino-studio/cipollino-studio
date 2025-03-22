@@ -34,7 +34,7 @@ fn render_layer(rndr: &mut malvina::LayerRenderer, client: &Client, editor: &Edi
 
     if layer_ptr == editor.active_layer {
         if let Some(stroke_preview) = &editor.stroke_preview {
-            rndr.render_stroke(stroke_preview, malvina::glam::vec4(editor.color.r, editor.color.g, editor.color.b, editor.color.a));
+            rndr.render_stroke(stroke_preview, editor.color);
         }
     } 
 }

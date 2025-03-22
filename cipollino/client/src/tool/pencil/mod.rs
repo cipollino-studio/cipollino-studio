@@ -27,11 +27,11 @@ impl PencilTool {
             let prev = malvina::StrokePoint::new(malvina::vec2(curve_pts[i * 9 + 0], curve_pts[i * 9 + 1]), curve_pts[i * 9 + 2] / pressure_sensitivity);
             let pt   = malvina::StrokePoint::new(malvina::vec2(curve_pts[i * 9 + 3], curve_pts[i * 9 + 4]), curve_pts[i * 9 + 5] / pressure_sensitivity);
             let next = malvina::StrokePoint::new(malvina::vec2(curve_pts[i * 9 + 6], curve_pts[i * 9 + 7]), curve_pts[i * 9 + 8] / pressure_sensitivity);
-            stroke_pts.push(malvina::BezierPoint { prev, pt, next });
+            stroke_pts.push(elic::BezierPoint { prev, pt, next });
         }
 
         malvina::Stroke {
-            path: malvina::BezierPath {
+            path: elic::BezierPath {
                 pts: stroke_pts
             }
         }

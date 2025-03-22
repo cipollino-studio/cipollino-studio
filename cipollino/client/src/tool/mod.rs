@@ -64,6 +64,8 @@ pub trait Tool: Default {
     fn mouse_drag_stopped(&mut self, _ctx: &mut ToolContext, _pos: malvina::Vec2) {}
     fn mouse_dragged(&mut self, _ctx: &mut ToolContext, _pos: malvina::Vec2) {}
 
+    fn render_overlay(&self, _rndr: &mut malvina::LayerRenderer) {}
+
     fn cursor_icon(&self) -> pierro::CursorIcon {
         pierro::CursorIcon::Default
     }
@@ -81,6 +83,8 @@ pub trait ToolDyn {
     fn mouse_drag_started(&mut self, _ctx: &mut ToolContext, _pos: malvina::Vec2);
     fn mouse_drag_stopped(&mut self, _ctx: &mut ToolContext, _pos: malvina::Vec2);
     fn mouse_dragged(&mut self, _ctx: &mut ToolContext, _pos: malvina::Vec2);
+
+    fn render_overlay(&self, rndr: &mut malvina::LayerRenderer);
 
     fn cursor_icon(&self) -> pierro::CursorIcon;
 
@@ -114,6 +118,10 @@ impl<T: Tool> ToolDyn for T {
 
     fn mouse_dragged(&mut self, ctx: &mut ToolContext, pos: malvina::Vec2) {
         self.mouse_dragged(ctx, pos);
+    }
+
+    fn render_overlay(&self, rndr: &mut malvina::LayerRenderer) {
+        self.render_overlay(rndr);
     }
 
     fn cursor_icon(&self) -> pierro::CursorIcon {

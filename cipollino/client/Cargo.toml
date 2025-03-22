@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 project = { path = "../project" }
 
+elic = { path = "../../elic" }
 pierro = { path = "../../pierro", features = ["serde"] } 
 malvina = { path = "../../malvina" }
 

@@ -71,7 +71,7 @@ impl FrameArea {
         // Box selection
         if let Some(selection_rect) = selection_rect {
             painter.rect(
-                pierro::PaintRect::new(selection_rect.shift(rect.tl()).grow(pierro::Margin::same(0.5)), accent_color.with_alpha(0.1))
+                pierro::PaintRect::new(selection_rect.shift(pierro::Margin::same(0.5).grow(rect).tl()), accent_color.with_alpha(0.1))
                     .with_stroke(pierro::Stroke::new(accent_color, 1.0))
                     .with_rounding(pierro::Rounding::same(3.0))
             );

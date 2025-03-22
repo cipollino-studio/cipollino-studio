@@ -52,14 +52,14 @@ impl<P: alisa::Project> alisa::Serializable<P> for StrokeData {
             if pts.len() != 3 {
                 return None;
             }
-            Some(malvina::BezierPoint {
+            Some(elic::BezierPoint {
                 prev: pts[0],
                 pt: pts[1],
                 next: pts[2],
             })
         }).collect();
         Some(Self(malvina::Stroke {
-            path: malvina::BezierPath { pts: bezier_points },
+            path: elic::BezierPath { pts: bezier_points },
         }))
     }
 
