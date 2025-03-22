@@ -7,7 +7,7 @@ use winit::{
 
 use crate::{text::TextResources, PainterResources, WindowConfig};
 
-use super::{TextRenderCache, Vec2};
+use crate::{TextRenderCache, Vec2};
 
 pub(crate) struct RenderResources<'a> {
     pub(crate) window: Arc<Box<dyn Window>>,

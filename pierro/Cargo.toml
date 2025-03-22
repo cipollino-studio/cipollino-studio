@@ -13,9 +13,11 @@ edition = "2021"
 license = "MIT"
 
 [features]
-serde = ["dep:serde"]
+serde = ["dep:serde", "elic/serde"]
 
 [dependencies]
+elic = { path = "../elic" }
+
 winit = { git = "https://github.com/cipollino-studio/winit.git", rev = "a394408" } 
 wgpu = { workspace = true }
 bitflags = "2.9.0"

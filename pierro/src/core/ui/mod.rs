@@ -33,7 +33,7 @@ pub use redraw_signal::*;
 
 use crate::{Color, Rect, Vec2};
 
-use super::{hash, text::FontId, Margin, Painter, PerAxis, RenderResources, Stroke, TSTransform, Texture};
+use crate::{hash, text::FontId, Margin, Painter, PerAxis, RenderResources, Stroke, TSTransform, Texture};
 
 pub struct UI<'a, 'b> {
     input: &'a Input,

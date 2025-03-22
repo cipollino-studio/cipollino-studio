@@ -2,7 +2,7 @@
 mod window_config;
 
 pub use window_config::*;
-use super::TSTransform;
+use crate::TSTransform;
 
 mod texture;
 pub use texture::*;

@@ -1,7 +1,6 @@
 use std::ops::{Div, Mul};
 
-use super::{vec2, Axis, Range, Rect, Vec2};
-
+use crate::{vec2, Axis, Range, Rect, Vec2};
 
 #[derive(Clone, Copy)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
@@ -70,6 +69,10 @@ impl Margin {
             self.apply_on_axis(rect.x_range(), Axis::X),
             self.apply_on_axis(rect.y_range(), Axis::Y) 
         )
+    }
+
+    pub fn grow(&self, rect: Rect) -> Rect {
+        Rect::min_max(rect.tl() - self.min, rect.br() + self.max)
     }
 
 }

@@ -480,7 +480,7 @@ impl UITree {
         layout_mem.rect = node.rect;
         let screen_rect = node.transform * node.rect;
         layout_mem.screen_rect = screen_rect; 
-        layout_mem.interaction_rect = screen_rect.grow(node.params.interaction_margin);
+        layout_mem.interaction_rect = node.params.interaction_margin.grow(screen_rect);
         layout_mem.transform = node.transform;
         layout_mem.clip = node.params.clip;
         layout_mem.first_child = node.first_child.as_option().map(|child| self.get(child).id);
