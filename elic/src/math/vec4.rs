@@ -51,6 +51,10 @@ impl Vec4 {
         (*self - other).length()
     }
 
+    pub fn dot(&self, other: Vec4) -> f32 {
+        self.x * other.x + self.y * other.y + self.z * other.z + self.w * other.w
+    }
+
     pub fn min(&self, other: Vec4) -> Self {
         vec4(
             self.x.min(other.x),

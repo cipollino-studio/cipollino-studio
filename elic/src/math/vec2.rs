@@ -66,6 +66,10 @@ impl Vec2 {
         (*self - other).length()
     }
 
+    pub fn dot(&self, other: Vec2) -> f32 {
+        self.x * other.x + self.y * other.y
+    }
+
     pub fn map(&self, from: Rect, to: Rect) -> Self {
         vec2(
             map(self.x,from.x_range(), to.x_range()),

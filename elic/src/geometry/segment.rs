@@ -1,7 +1,7 @@
 
 use crate::{vec2, Vec2};
 
-use super::Line;
+use super::{BezierSegment, Line};
 
 #[derive(Clone, Copy)]
 pub struct Segment {
@@ -17,10 +17,27 @@ impl Segment {
 
     pub fn intersect(&self, other: Segment) -> Option<Vec2> {
         let p = self.line().intersect(other.line())?;
+        if !self.potentially_contains_point(p) || !other.potentially_contains_point(p) {
+            return None;
+        }
+        Some(p)
+    }
+
+    pub fn intersect_line(&self, other: Line) -> Option<Vec2> {
+        let p = self.line().intersect(other)?;
         if !self.potentially_contains_point(p) {
             return None;
         }
         Some(p)
+    }
+
+    pub fn intersect_bezier_ts(&self, segment: &BezierSegment<Vec2>) -> Vec<f32> {
+        let mut ts = self.line().intersect_bezier_ts(segment);
+        ts.retain(|t| {
+            let pt = segment.sample(*t); 
+            self.potentially_contains_point(pt)
+        });
+        ts
     }
 
     pub fn line(&self) -> Line {

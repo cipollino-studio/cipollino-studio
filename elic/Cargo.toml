@@ -9,4 +9,5 @@ license = "MIT"
 serde = ["dep:serde"]
 
 [dependencies]
+roots = "0.0.8"
 serde = { workspace = true, optional = true, features = ["derive"] }
