@@ -121,7 +121,7 @@ impl Panel for TimelinePanel {
 
             let (frame_container, _) = pierro::vertical_fill(ui, |_| {});
             let frame_container_width = ui.memory().get::<pierro::LayoutInfo>(frame_container.id).screen_rect.width();
-            let n_frames = clip_inner.length + (frame_container_width / Self::FRAME_WIDTH).ceil() as u32;
+            let n_frames = (clip_inner.length + (frame_container_width / Self::FRAME_WIDTH).ceil() as u32).min(50000);
 
             let (framebar_scroll_response, frame_area_scroll_response) = ui.with_parent(frame_container.node_ref, |ui| {
                 let framebar_response = self.framebar.render(ui, editor, clip_inner, n_frames, &mut self.scroll_state);

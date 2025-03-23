@@ -93,7 +93,7 @@ impl TimelinePanel {
 
         // Clip length
         pierro::label(ui, "Length: ");
-        let clip_length_resp = pierro::DragValue::new(&mut self.clip_length_preview).with_min(1).render(ui);
+        let clip_length_resp = pierro::DragValue::new(&mut self.clip_length_preview).with_min(1).with_max(50000).render(ui);
         if clip_length_resp.done_editing {
             project.client.queue_action(Action::single(ActionContext::new("Set Clip Length"), SetClipInnerLength {
                 ptr: clip_inner_ptr,
