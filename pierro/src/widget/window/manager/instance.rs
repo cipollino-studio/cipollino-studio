@@ -104,14 +104,16 @@ impl<C: 'static> WindowInstance<C> {
     fn render_modal(&mut self, ui: &mut UI, context: &mut C) -> (bool, bool) {
         let window_margin = ui.style::<theme::WindowMargin>();
 
-        modal(ui, |ui| {
+        let (_, result) = modal(ui, |ui| {
             let (window_bar, close_window) = self.render_window_header(ui);
             let mut window_wants_close = false;
             margin(ui, window_margin, |ui| {
                 self.window.render(ui, &mut window_wants_close, context);
             });
             (close_window || window_wants_close, window_bar.mouse_clicked())
-        })
+        });
+
+        result
     }
 
     pub fn render(&mut self, ui: &mut UI, context: &mut C) -> (bool, bool) {

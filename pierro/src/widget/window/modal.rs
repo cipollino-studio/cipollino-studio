@@ -1,10 +1,10 @@
 
-use crate::{Color, UI};
+use crate::{Color, Response, UI};
 
 use crate::{centered, window};
 
-pub fn modal<R, F: FnOnce(&mut UI) -> R>(ui: &mut UI, contents: F) -> R {
-    let (layer, (_, inner)) = ui.layer(|ui| {
+pub fn modal<R, F: FnOnce(&mut UI) -> R>(ui: &mut UI, contents: F) -> (Response, R) {
+    let (layer, (response, inner)) = ui.layer(|ui| {
         centered(ui, |ui| {
             window(ui, contents)
         })
@@ -15,5 +15,5 @@ pub fn modal<R, F: FnOnce(&mut UI) -> R>(ui: &mut UI, contents: F) -> R {
     ui.set_sense_dnd_hover(layer, true);
     ui.set_fill(layer, Color::rgba(0.0, 0.0, 0.0, 0.3));
 
-    inner
+    (response, inner)
 }

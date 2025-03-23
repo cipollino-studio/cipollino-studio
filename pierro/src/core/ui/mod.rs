@@ -35,6 +35,8 @@ use crate::{Color, Rect, Vec2};
 
 use crate::{hash, text::FontId, Margin, Painter, PerAxis, RenderResources, Stroke, TSTransform, Texture};
 
+use super::Rounding;
+
 pub struct UI<'a, 'b> {
     input: &'a Input,
     memory: &'a mut Memory,
@@ -226,6 +228,10 @@ impl<'a, 'b> UI<'a, 'b> {
 
     pub fn set_fill(&mut self, node: UIRef, fill: Color) {
         self.tree.get_mut(node).params.fill = fill;
+    }
+
+    pub fn set_rounding(&mut self, node: UIRef, rounding: Rounding) {
+        self.tree.get_mut(node).params.rounding = rounding;
     }
 
     pub fn set_texture(&mut self, node: UIRef, texture: Texture) {
