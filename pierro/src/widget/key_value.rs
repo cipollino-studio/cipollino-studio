@@ -1,7 +1,7 @@
 
 use crate::{Layout, Size, UINodeParams, UIRef, UI};
 
-use super::{h_spacing, horizontal, label};
+use super::{h_spacing, horizontal_fit, label};
 
 pub struct KeyValueBuilder<'ui, 'a, 'b> {
     ui: &'ui mut UI<'a, 'b>,
@@ -11,7 +11,7 @@ pub struct KeyValueBuilder<'ui, 'a, 'b> {
 
 impl KeyValueBuilder<'_, '_, '_> {
 
-    pub fn labeled_with_size<F: FnOnce(&mut UI)>(&mut self, label_text: impl Into<String>, size: f32, value: F) {
+    pub fn labeled_with_size<R, F: FnOnce(&mut UI) -> R>(&mut self, label_text: impl Into<String>, size: f32, value: F) -> R {
         self.ui.with_parent(self.key_column, |ui| {
             ui.with_node(
                 UINodeParams::new(Size::fit(), Size::px(size))
@@ -26,20 +26,20 @@ impl KeyValueBuilder<'_, '_, '_> {
                 UINodeParams::new(Size::fit(), Size::px(size))
                     .with_layout(Layout::horizontal().align_center()),
                 |ui| {
-                    value(ui);
+                    value(ui)
                 }
-            );
-        });
+            ).1
+        })
     }
 
-    pub fn labeled<F: FnOnce(&mut UI)>(&mut self, label_text: impl Into<String>, value: F) {
-        self.labeled_with_size(label_text, 25.0, value);
+    pub fn labeled<R, F: FnOnce(&mut UI) -> R>(&mut self, label_text: impl Into<String>, value: F) -> R {
+        self.labeled_with_size(label_text, 25.0, value)
     }
 
 }
 
-pub fn key_value_layout<F: FnOnce(&mut KeyValueBuilder)>(ui: &mut UI, contents: F) {
-    horizontal(ui, |ui| {
+pub fn key_value_layout<R, F: FnOnce(&mut KeyValueBuilder) -> R>(ui: &mut UI, contents: F) -> R {
+    horizontal_fit(ui, |ui| {
         let key_column = ui.node(
             UINodeParams::new(Size::fit(), Size::fit())
                 .with_layout(Layout::vertical().align_max())
@@ -56,6 +56,6 @@ pub fn key_value_layout<F: FnOnce(&mut KeyValueBuilder)>(ui: &mut UI, contents: 
             value_column
         };
 
-        contents(&mut builder);
-    });
+        contents(&mut builder)
+    }).1
 }

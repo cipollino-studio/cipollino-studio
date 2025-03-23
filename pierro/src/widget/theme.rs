@@ -21,9 +21,11 @@ style!(BgPopup, Color, Color::hex(0x373A3BFF));
 style!(BgButton, Color, Color::hex(0x55585AFF));
 style!(BgTextField, Color, Color::hex(0x242428FF));
 style!(TextColor, Color, Color::hex(0xB9BDC1FF));
+style!(WeakTextColor, Color, Color::hex(0x999DA1FF));
 style!(ActiveTextColor, Color, Color::hex(0xE8ECEFFF));
 style!(LinkColor, Color, Color::hex(0x3d98ffFF));
 style!(AccentColor, Color, Color::hex(0x6AC3C1FF));
+style!(ErrorColor, Color, Color::hex(0xF07470FF));
 
 style!(LabelFontSize, f32, 14.0);
 
@@ -49,6 +51,24 @@ pub fn pressed_color(base: Color) -> Color {
 pub fn label_text_style(ui: &mut UI) -> TextStyle {
     TextStyle {
         color: ui.style::<TextColor>(),
+        font_size: ui.style::<LabelFontSize>(),
+        line_height: 1.0,
+        font: ui.text_font(),
+    }
+}
+
+pub fn weak_label_text_style(ui: &mut UI) -> TextStyle {
+    TextStyle {
+        color: ui.style::<WeakTextColor>(),
+        font_size: ui.style::<LabelFontSize>(),
+        line_height: 1.0,
+        font: ui.text_font(),
+    }
+}
+
+pub fn error_label_text_style(ui: &mut UI) -> TextStyle {
+    TextStyle {
+        color: ui.style::<ErrorColor>(),
         font_size: ui.style::<LabelFontSize>(),
         line_height: 1.0,
         font: ui.text_font(),
