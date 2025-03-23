@@ -1,6 +1,8 @@
 
 mod render;
 mod command;
+mod layout;
+pub use layout::*;
 
 use std::{collections::HashMap, usize};
 
@@ -74,6 +76,14 @@ struct DockingTree<Tab: DockingTab> {
 }
 
 impl<Tab: DockingTab> DockingTree<Tab> {
+
+    fn empty() -> Self {
+        Self {
+            nodes: HashMap::new(),
+            curr_id: 1,
+            root: DockingNodeId::NULL,
+        }
+    }
 
     fn new(tabs: Vec<Tab>) -> Self {
         let mut nodes = HashMap::new();
