@@ -33,10 +33,13 @@ impl UserPref for DockingLayoutPref {
     type Type = pierro::DockingState<EditorPanel>;
 
     fn default() -> Self::Type {
-        pierro::DockingState::new(vec![
-            EditorPanel::new::<ScenePanel>(),
-            EditorPanel::new::<AssetsPanel>(),
-        ])
+        pierro::DockingLayout::Split(pierro::Axis::Y, vec![
+            (0.7, pierro::DockingLayout::Split(pierro::Axis::X, vec![
+                (0.8, pierro::DockingLayout::Tabs(vec![EditorPanel::new::<ScenePanel>()])),
+                (0.2, pierro::DockingLayout::Tabs(vec![EditorPanel::new::<AssetsPanel>()]))
+            ])),
+            (0.3, pierro::DockingLayout::Tabs(vec![EditorPanel::new::<TimelinePanel>()]))
+        ]).into_state()
     }
 
     fn name() -> &'static str {
