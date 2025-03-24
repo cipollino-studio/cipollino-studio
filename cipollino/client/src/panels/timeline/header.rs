@@ -1,9 +1,25 @@
 
-use project::{Action, ActionContext, Clip, ClipInner, CreateFrame, CreateLayer, FrameTreeData, LayerParent, LayerTreeData, Ptr, SetClipInnerLength};
+use project::{Action, ActionContext, Client, Clip, ClipInner, CreateFrame, CreateLayer, FrameTreeData, LayerParent, LayerTreeData, Ptr, SetClipInnerLength};
 
 use crate::{EditorState, ProjectState};
 
 use super::TimelinePanel;
+
+fn jump_to_prev_frame(client: &Client, editor: &mut EditorState, clip: &ClipInner) {
+    let Some(layer) = client.get(editor.active_layer) else { return; };
+    let time = clip.frame_idx(editor.time); 
+    let Some(frame_ptr) = layer.frame_before(client, time) else { return; };
+    let Some(frame) = client.get(frame_ptr) else { return; };
+    editor.jump_to(clip.frame_len() * (frame.time as f32));
+}
+
+fn jump_to_next_frame(client: &Client, editor: &mut EditorState, clip: &ClipInner) {
+    let Some(layer) = client.get(editor.active_layer) else { return; };
+    let time = clip.frame_idx(editor.time); 
+    let Some(frame_ptr) = layer.frame_after(client, time) else { return; };
+    let Some(frame) = client.get(frame_ptr) else { return; };
+    editor.jump_to(clip.frame_len() * (frame.time as f32));
+}
 
 impl TimelinePanel {
 
@@ -67,7 +83,9 @@ impl TimelinePanel {
                 });
                 pierro::v_line(ui);
                 ui.with_style::<pierro::theme::WidgetRounding, _, _>(pierro::Rounding::ZERO, |ui| {
-                    pierro::icon_button(ui, pierro::icons::CARET_LINE_LEFT);
+                    if pierro::icon_button(ui, pierro::icons::CARET_LINE_LEFT).mouse_clicked() {
+                        jump_to_prev_frame(&project.client, editor, clip);
+                    }
                     pierro::v_line(ui);
 
                     let play_icon = if editor.playing {
@@ -80,7 +98,9 @@ impl TimelinePanel {
                     }
                     pierro::v_line(ui);
 
-                    pierro::icon_button(ui, pierro::icons::CARET_LINE_RIGHT);
+                    if pierro::icon_button(ui, pierro::icons::CARET_LINE_RIGHT).mouse_clicked() {
+                        jump_to_next_frame(&project.client, editor, clip);
+                    }
                 });
                 pierro::v_line(ui);
                 ui.with_style::<pierro::theme::WidgetRounding, _, _>(widget_rounding.right_side(), |ui| {

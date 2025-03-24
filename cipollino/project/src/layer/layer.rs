@@ -125,4 +125,22 @@ impl Layer {
         max_frame
     } 
 
+    pub fn frame_before(&self, client: &Client, t: i32) -> Option<alisa::Ptr<Frame>> {
+        self.frame_at(client, t - 1)
+    }
+
+    pub fn frame_after(&self, client: &Client, t: i32) -> Option<alisa::Ptr<Frame>> {
+        let mut min_frame = None;
+        let mut min_time = i32::MAX;
+        for frame_ptr in self.frames.iter() {
+            if let Some(frame) = client.get(frame_ptr.ptr()) {
+                if frame.time < min_time && frame.time > t {
+                    min_frame = Some(frame_ptr.ptr());
+                    min_time = frame.time;
+                }
+            }
+        }
+        min_frame
+    }
+
 }
