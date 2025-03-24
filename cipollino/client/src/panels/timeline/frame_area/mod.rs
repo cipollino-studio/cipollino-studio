@@ -54,10 +54,10 @@ impl FrameArea {
         }
     }
 
-    fn render_layers(&mut self, ui: &mut pierro::UI, project: &ProjectState, editor: &mut EditorState, frame_area: &pierro::Response, paint_commands: &mut PaintCommands, render_list: &RenderList) {
+    fn render_layers(&mut self, ui: &mut pierro::UI, project: &ProjectState, editor: &mut EditorState, frame_area: &pierro::Response, paint_commands: &mut PaintCommands, clip: &ClipInner, render_list: &RenderList) {
         for (idx, render_layer) in render_list.iter().enumerate() {
             match render_layer.kind {
-                RenderLayerKind::Layer(_ptr, layer) => self.render_layer_contents(ui, project, editor, frame_area, paint_commands, idx, layer),
+                RenderLayerKind::Layer(_ptr, layer) => self.render_layer_contents(ui, project, editor, frame_area, paint_commands, clip, idx, layer),
             }
         }
     }
@@ -92,7 +92,7 @@ impl FrameArea {
 
         // Rendering
         let mut paint_commands = PaintCommands::new();
-        self.render_layers(ui, project, editor, &frame_area, &mut paint_commands, render_list);
+        self.render_layers(ui, project, editor, &frame_area, &mut paint_commands, clip, render_list);
 
         if frame_area.drag_started() && !self.drag_consumed {
             if let Some(origin) = frame_area.mouse_pos(ui) {

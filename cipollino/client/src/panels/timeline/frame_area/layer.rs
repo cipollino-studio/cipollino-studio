@@ -1,5 +1,5 @@
 
-use project::Layer;
+use project::{ClipInner, Layer};
 
 use crate::{EditorState, ProjectState, TimelinePanel};
 
@@ -8,7 +8,9 @@ use super::{DragState, FrameArea, PaintCommands};
 pub(super) struct FrameDot {
     pub layer_idx: usize, 
     pub time: i32,
-    pub selected: bool
+    pub end_time: i32,
+    pub selected: bool,
+    pub empty: bool
 }
 
 impl FrameDot {
@@ -18,6 +20,19 @@ impl FrameDot {
             rect.tl() + TimelinePanel::FRAME_SIZE * pierro::vec2(self.time as f32, self.layer_idx as f32),
             TimelinePanel::FRAME_SIZE 
         );
+
+        let frame_dot_width = TimelinePanel::FRAME_WIDTH * 0.6;
+        let frame_dot_rounding = pierro::Rounding::same(frame_dot_width / 1.5);
+
+        let end_time_center_point = rect.tl() + TimelinePanel::FRAME_SIZE * pierro::vec2(self.end_time as f32 + 0.5, self.layer_idx as f32 + 0.5);
+        let frame_extent_rect = pierro::Margin::same(frame_dot_width / 2.0).grow(pierro::Rect::min_max(frame_rect.center(), end_time_center_point));
+        if !self.empty {
+            painter.rect(
+                pierro::PaintRect::new(frame_extent_rect, pierro::Color::white_alpha(0.1))
+                    .with_rounding(frame_dot_rounding)
+            );
+        } 
+
         if self.selected {
             painter.rect(
                 pierro::PaintRect::new(frame_rect, pierro::Color::TRANSPARENT)
@@ -26,10 +41,16 @@ impl FrameDot {
             );
         }
 
-        let frame_dot_rect = pierro::Rect::center_size(frame_rect.center(), pierro::Vec2::splat(TimelinePanel::FRAME_WIDTH * 0.6));
+        let frame_dot_rect = pierro::Rect::center_size(frame_rect.center(), pierro::Vec2::splat(frame_dot_width));
+        let (fill, stroke) = if self.empty {
+            (pierro::Color::TRANSPARENT, pierro::Stroke::new(text_color, 1.5))
+        } else {
+            (text_color, pierro::Stroke::NONE)
+        };
         painter.rect(
-            pierro::PaintRect::new(frame_dot_rect, text_color)
-                .with_rounding(pierro::Rounding::same(frame_dot_rect.width() / 1.5))
+            pierro::PaintRect::new(frame_dot_rect, fill)
+                .with_stroke(stroke)
+                .with_rounding(frame_dot_rounding)
         );
     }
 
@@ -48,9 +69,12 @@ impl FrameArea {
         editor: &mut EditorState,
         frame_area: &pierro::Response,
         paint_commands: &mut PaintCommands,
+        clip: &ClipInner,
         layer_idx: usize,
         layer: &Layer
     ) {
+
+        let mut frames_to_render = Vec::new();
 
         for frame_ptr in layer.frames.iter() {
             if let Some(frame) = project.client.get(frame_ptr.ptr()) {
@@ -75,13 +99,8 @@ impl FrameArea {
                 };
                 let display_time = display_time.max(0);
 
-                paint_commands.frame_dots.push(FrameDot {
-                    layer_idx,
-                    time: display_time,
-                    selected: selected || in_selection_rect
-                });
-                
-                
+                frames_to_render.push((display_time, frame.scene.as_slice().is_empty(), selected || in_selection_rect));
+
                 if let Some(mouse_pos) = frame_area.mouse_pos(ui) {
                     
                     if frame_interaction_rect.contains(mouse_pos) {
@@ -102,6 +121,24 @@ impl FrameArea {
                 }
                 
             }
+        }
+
+        frames_to_render.sort();
+        for i in 0..frames_to_render.len() {
+            let (time, empty, selected) = frames_to_render[i];
+            let end_time = if i == frames_to_render.len() - 1 {
+                clip.length as i32 - 1
+            } else {
+                frames_to_render[i + 1].0 - 1
+            };
+
+            paint_commands.frame_dots.push(FrameDot {
+                layer_idx,
+                time,
+                end_time,
+                selected,
+                empty
+            });
         }
 
     }
