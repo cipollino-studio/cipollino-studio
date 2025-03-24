@@ -34,24 +34,28 @@ impl CollabScreen {
 
     pub fn render(&mut self, ui: &mut pierro::UI, next_state: &mut Option<SplashScreenState>, next_app_state: &mut Option<AppState>, systems: &mut AppSystems) {
 
-        pierro::margin(ui, pierro::Margin::same(10.0), |ui| {
+        // Back button
+        if pierro::clickable_icon(ui, pierro::icons::ARROW_LEFT).mouse_clicked() {
+            *next_state = Some(SplashScreenState::Menu);
+        }
+        pierro::v_spacing(ui, 5.0);
 
-            // Back button
-            if pierro::clickable_icon(ui, pierro::icons::ARROW_LEFT).mouse_clicked() {
-                *next_state = Some(SplashScreenState::Menu);
-            }
-            pierro::v_spacing(ui, 5.0);
+        // URL
+        pierro::vertical_centered(ui, |ui| {
 
-            // URL
-            pierro::horizontal_fit_centered(ui, |ui| {
-                pierro::label(ui, "URL: ");
-                pierro::text_edit(ui, &mut self.url);
+            pierro::key_value_layout(ui, |builder| {
+                builder.labeled("URL:", |ui| {
+                    pierro::text_edit(ui, &mut self.url);
+                });
+                builder.labeled("", |ui| {
+                    pierro::error_label(ui, &self.error);
+                })
             });
-            pierro::label(ui, &self.error);
-            pierro::v_spacing(ui, 15.0);
-            
-            pierro::vertical_centered(ui, |ui| {
-                if let Some(socket) = &mut self.socket {
+            pierro::v_spacing(ui, 10.0);
+        
+            if let Some(socket) = &mut self.socket {
+                let widget_margin = ui.style::<pierro::theme::WidgetMargin>();
+                pierro::margin(ui, widget_margin, |ui| {
                     pierro::horizontal_fit_centered(ui, |ui| {
                         pierro::label(ui, "Connecting");
                         pierro::h_spacing(ui, 7.0);
@@ -65,37 +69,37 @@ impl CollabScreen {
                         }
                     });
                     ui.request_redraw();
+                });
 
-                    if let Some(welcome_msg) = socket.receive() {
-                        let socket = self.socket.take().unwrap();
-                        if let Some(editor) = Editor::collab(socket, &welcome_msg, systems) {
-                            *next_app_state = Some(AppState::Editor(editor));
-                        } else {
-                            self.error = "Invalid server protocol.".to_owned();
-                        }
-                    } else if let Some(err) = socket.take_error() {
-                        self.error = err;
-                        self.socket = None;
-                    } else if socket.closed() {
-                        self.error = "Could not connect to server.".to_owned();
-                        self.socket = None;
+                if let Some(welcome_msg) = socket.receive() {
+                    let socket = self.socket.take().unwrap();
+                    if let Some(editor) = Editor::collab(socket, &welcome_msg, systems) {
+                        *next_app_state = Some(AppState::Editor(editor));
+                    } else {
+                        self.error = "Invalid server protocol.".to_owned();
                     }
-                } else {
-                    if pierro::button(ui, "Connect").mouse_clicked() {
-                        self.error.clear();
-                        match Socket::new(self.url.as_str()) {
-                            Ok(new_socket) => {
-                                self.socket = Some(new_socket);
-                            },
-                            Err(msg) => {
-                                self.error = msg;
-                            },
-                        }
+                } else if let Some(err) = socket.take_error() {
+                    self.error = err;
+                    self.socket = None;
+                } else if socket.closed() {
+                    self.error = "Could not connect to server.".to_owned();
+                    self.socket = None;
+                }
+            } else {
+                if pierro::button(ui, "Connect").mouse_clicked() {
+                    self.error.clear();
+                    match Socket::new(self.url.as_str()) {
+                        Ok(new_socket) => {
+                            self.socket = Some(new_socket);
+                        },
+                        Err(msg) => {
+                            self.error = msg;
+                        },
                     }
                 }
-            });
-
+            }
         });
+
     }
 
 }

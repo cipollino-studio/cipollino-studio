@@ -24,8 +24,16 @@ pub fn add_recent(prefs: &mut UserPrefs, path: PathBuf) {
         recents.remove(idx);
     }
     recents.insert(0, path);
-    if recents.len() > 3 {
+    if recents.len() > 50 {
         recents.pop();
+    }
+    prefs.set::<Recents>(&recents);
+}
+
+pub fn remove_recent(prefs: &mut UserPrefs, path: &PathBuf) {
+    let mut recents = prefs.get::<Recents>();
+    if let Some(idx) = recents.iter().position(|recent| recent == path) {
+        recents.remove(idx);
     }
     prefs.set::<Recents>(&recents);
 }

@@ -22,5 +22,8 @@ pathdiff = "0.2.1"
 serde = { workspace = true }
 serde_json = { workspace = true }
 
+include-lines = "1.1.2"
+rand = "0.9.0"
+
 [build-dependencies]
 cc = "1.0"
