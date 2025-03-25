@@ -99,6 +99,7 @@ impl ScenePanel {
             clear_stroke_preview: false,
             pressure: ui.input().pressure
         };
+        tool.tick(&mut tool_context);
         let mut pause = false;
         if let Some(mouse_pos) = mouse_pos {
             if response.mouse_clicked() && !panning {

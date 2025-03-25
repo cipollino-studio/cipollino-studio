@@ -12,6 +12,8 @@ pub use socket::*;
 mod state;
 pub use state::*;
 
+mod undo_redo;
+
 mod selection;
 pub use selection::*;
 
@@ -55,6 +57,7 @@ impl Editor {
     pub fn tick(&mut self, ui: &mut pierro::UI, systems: &mut AppSystems) {
 
         self.menu_bar(ui);
+        self.use_shortcuts(ui, systems);
 
         // Collab
         if let Some(socket) = &mut self.socket {
@@ -93,7 +96,7 @@ impl Editor {
             }
         }
 
-        self.use_shortcuts(ui, systems);
+        self.tick_undo_redo(); 
 
         // Update the project client
         self.state.project.tick(&self.state.editor);

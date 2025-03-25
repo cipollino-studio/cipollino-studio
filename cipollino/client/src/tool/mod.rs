@@ -60,6 +60,8 @@ pub trait Tool: Default {
     const ICON: &'static str;
     const SHORTCUT: pierro::KeyboardShortcut;
 
+    fn tick(&mut self, _ctx: &mut ToolContext) {}
+
     fn mouse_pressed(&mut self, _ctx: &mut ToolContext, _pos: malvina::Vec2) {}
     fn mouse_released(&mut self, _ctx: &mut ToolContext, _pos: malvina::Vec2) {}
     fn mouse_clicked(&mut self, _ctx: &mut ToolContext, _pos: malvina::Vec2) {}
@@ -80,6 +82,8 @@ pub trait ToolDyn {
 
     fn icon(&self) -> &'static str;
 
+    fn tick(&mut self, _ctx: &mut ToolContext);
+
     fn mouse_pressed(&mut self, _ctx: &mut ToolContext, _pos: malvina::Vec2);
     fn mouse_released(&mut self, _ctx: &mut ToolContext, _pos: malvina::Vec2);
     fn mouse_clicked(&mut self, _ctx: &mut ToolContext, _pos: malvina::Vec2);
@@ -98,6 +102,10 @@ impl<T: Tool> ToolDyn for T {
 
     fn icon(&self) -> &'static str {
         Self::ICON
+    }
+
+    fn tick(&mut self, ctx: &mut ToolContext) {
+        self.tick(ctx); 
     }
 
     fn mouse_pressed(&mut self, ctx: &mut ToolContext, pos: malvina::Vec2) {

@@ -7,7 +7,8 @@ mod curve_fit;
 
 #[derive(Default)]
 pub struct PencilTool {
-    pts: Vec<malvina::StrokePoint>
+    pts: Vec<malvina::StrokePoint>,
+    drawing_stroke: bool,
 }
 
 impl PencilTool {
@@ -73,6 +74,16 @@ impl Tool for PencilTool {
         pierro::Key::D
     );
 
+    fn tick(&mut self, ctx: &mut ToolContext) {
+        // If the user undo/redoes while drawing as stroke, reset the pencil tool
+        if (ctx.editor.will_undo || ctx.editor.will_redo) && !self.pts.is_empty() {
+            ctx.editor.will_undo = false;
+            self.pts.clear();
+            self.drawing_stroke = false;
+            ctx.editor.stroke_preview.take();
+        }
+    }
+
     fn mouse_clicked(&mut self, ctx: &mut ToolContext, pos: malvina::Vec2) {
         let stroke = malvina::Stroke::point(pos, 1.0);
         Self::create_stroke(ctx, stroke); 
@@ -84,9 +95,14 @@ impl Tool for PencilTool {
             pt: pos,
             pressure: ctx.pressure,
         });
+        self.drawing_stroke = true;
     }
 
     fn mouse_dragged(&mut self, ctx: &mut ToolContext, pos: malvina::Vec2) {
+        if !self.drawing_stroke {
+            return;
+        }
+
         self.add_point(malvina::StrokePoint {
             pt: pos,
             pressure: ctx.pressure,
@@ -98,7 +114,7 @@ impl Tool for PencilTool {
 
     fn mouse_released(&mut self, ctx: &mut ToolContext, pos: malvina::Vec2) {
         ctx.clear_stroke_preview = true;
-        if self.pts.is_empty() {
+        if self.pts.is_empty() || !self.drawing_stroke {
             return;
         }
 
@@ -109,6 +125,7 @@ impl Tool for PencilTool {
 
         let stroke = self.calc_stroke();
         self.pts.clear();
+        self.drawing_stroke = false;
         Self::create_stroke(ctx, stroke); 
     }
 

@@ -13,10 +13,10 @@ impl Editor {
             });
             pierro::menu_bar_item(ui, "Edit", |ui| {
                 if pierro::menu_button(ui, "Undo").mouse_clicked() {
-                    self.state.project.client.undo();
+                    self.state.editor.will_undo = true;
                 }
                 if pierro::menu_button(ui, "Redo").mouse_clicked() {
-                    self.state.project.client.redo();
+                    self.state.editor.will_redo = true;
                 }
             });
         });

@@ -1,7 +1,7 @@
 
 use std::{cell::RefCell, collections::HashMap};
 use std::rc::Rc;
-use project::{ActionContext, Clip, ClipInner, Layer, Project, Ptr, Stroke};
+use project::{Clip, ClipInner, Layer, Project, Ptr, Stroke};
 
 use crate::{SelectTool, ToolDyn};
 
@@ -19,6 +19,9 @@ pub struct EditorState {
     pub curr_tool: Rc<RefCell<Box<dyn ToolDyn>>>,
 
     pub selection: Selection,
+
+    pub will_undo: bool,
+    pub will_redo: bool,
 
     pub show_onion_skin: bool,
     pub onion_skin_prev_frames: u32,
@@ -47,6 +50,9 @@ impl EditorState {
             curr_tool: Rc::new(RefCell::new(Box::new(SelectTool::default()))),
 
             selection: Selection::new(),
+
+            will_undo: false,
+            will_redo: false,
 
             show_onion_skin: false,
             onion_skin_prev_frames: 2,
@@ -121,10 +127,6 @@ impl EditorState {
         let mut callbacks = std::mem::replace(&mut self.on_load_callbacks, Vec::new());
         callbacks.retain(|callback| !callback(project, self));
         self.on_load_callbacks.append(&mut callbacks);
-    }
-
-    pub fn action_context<S: Into<String>>(&self, name: S) -> ActionContext {
-        ActionContext::new(name, self.open_clip, self.time)
     }
 
 }
