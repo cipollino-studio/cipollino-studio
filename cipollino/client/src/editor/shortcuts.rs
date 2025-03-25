@@ -15,10 +15,16 @@ impl Editor {
         let redo_shortcut = pierro::KeyboardShortcut::new(pierro::KeyModifiers::CONTROL | pierro::KeyModifiers::SHIFT, pierro::Key::Z);
         
         if undo_shortcut.used_globally(ui) {
-            self.state.project.client.undo();
+            if let Some(context) = self.state.project.client.undo() {
+                self.state.editor.open_clip = context.open_clip;
+                self.state.editor.jump_to(context.time);
+            }
         }
         if redo_shortcut.used_globally(ui) {
-            self.state.project.client.redo();
+            if let Some(context) = self.state.project.client.redo() {
+                self.state.editor.open_clip = context.open_clip;
+                self.state.editor.jump_to(context.time);
+            }
         }
 
     }

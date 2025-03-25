@@ -1,5 +1,5 @@
 
-use project::{Action, ActionContext, CreateStroke, StrokeData, StrokeTreeData};
+use project::{Action, CreateStroke, StrokeData, StrokeTreeData};
 
 use super::{Tool, ToolContext};
 
@@ -38,7 +38,7 @@ impl PencilTool {
     }
 
     fn create_stroke(ctx: &ToolContext, stroke: malvina::Stroke) {
-        let mut action = Action::new(ActionContext::new("New Stroke"));
+        let mut action = Action::new(ctx.editor.action_context("New Stroke"));
         let Some(ptr) = ctx.project.client.next_ptr() else { return; };
         let Some(frame) = ctx.active_frame(&mut action) else { return; };
         action.push(CreateStroke {

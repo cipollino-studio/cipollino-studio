@@ -2,6 +2,8 @@
 use std::cell::RefCell;
 use crate::AssetList;
 
+use super::EditorState;
+
 pub struct ProjectState {
     pub client: project::Client,
 
@@ -21,10 +23,10 @@ impl ProjectState {
         self.assets_to_delete.borrow_mut().push(selection);
     }
 
-    pub fn tick(&self) {
+    pub fn tick(&self, editor: &EditorState) {
         let to_delete = self.assets_to_delete.borrow_mut().pop();
         if let Some(to_delete) = to_delete {
-            if !to_delete.try_delete(&self.client) {
+            if !to_delete.try_delete(&self.client, editor) {
                 to_delete.deep_load_all(&self.client);
                 self.assets_to_delete.borrow_mut().push(to_delete);
             }

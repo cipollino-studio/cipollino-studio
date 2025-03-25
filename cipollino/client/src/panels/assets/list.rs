@@ -1,9 +1,9 @@
 
 use std::collections::HashSet;
 
-use project::{alisa::{self, TreeObj}, deep_load_clip, deep_load_folder, Action, ActionContext, Client, Clip, DeleteClip, DeleteFolder, Folder, Ptr, TransferClip, TransferFolder};
+use project::{alisa::{self, TreeObj}, deep_load_clip, deep_load_folder, Action, Client, Clip, DeleteClip, DeleteFolder, Folder, Ptr, TransferClip, TransferFolder};
 
-use crate::ProjectState;
+use crate::{EditorState, ProjectState};
 
 use super::AssetUI;
  
@@ -24,7 +24,7 @@ impl AssetList {
         }
     }
 
-    pub fn try_delete(&self, client: &Client) -> bool {
+    pub fn try_delete(&self, client: &Client, editor: &EditorState) -> bool {
         // Check to make sure we can delete the selection
         for folder in self.folders.iter() {
             if !Folder::can_delete(*folder, &client.context(), alisa::OperationSource::Local) {
@@ -37,7 +37,7 @@ impl AssetList {
             }
         }
 
-        let mut action = Action::new(ActionContext::new("Delete Assets"));
+        let mut action = Action::new(editor.action_context("Delete Assets"));
         for folder in self.folders.iter() {
             action.push(DeleteFolder {
                 ptr: *folder,
@@ -54,8 +54,8 @@ impl AssetList {
         true
     }
 
-    pub fn transfer(self, new_parent: Ptr<Folder>, state: &ProjectState) {
-        let mut action = Action::new(ActionContext::new("Transfer Assets")); 
+    pub fn transfer(self, new_parent: Ptr<Folder>, project: &ProjectState, editor: &EditorState) {
+        let mut action = Action::new(editor.action_context("Transfer Assets")); 
         for moved_folder in self.folders {
             action.push(TransferFolder {
                 ptr: moved_folder,
@@ -68,7 +68,7 @@ impl AssetList {
                 new_folder: new_parent,
             });
         }
-        state.client.queue_action(action);
+        project.client.queue_action(action);
     }
 
     pub fn add<A: AssetUI>(&mut self, asset: Ptr<A>) {

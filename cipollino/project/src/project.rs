@@ -29,15 +29,20 @@ pub struct Objects {
     pub strokes: alisa::ObjList<Stroke>
 }
 
+#[derive(Clone)]
 pub struct ActionContext {
-    pub name: String
+    pub name: String,
+    pub open_clip: alisa::Ptr<Clip>,
+    pub time: f32
 }
 
 impl ActionContext {
 
-    pub fn new<S: Into<String>>(name: S) -> Self {
+    pub fn new<S: Into<String>>(name: S, open_clip: alisa::Ptr<Clip>, time: f32) -> Self {
         Self {
-            name: name.into()
+            name: name.into(),
+            open_clip,
+            time
         }
     }
 

@@ -96,7 +96,7 @@ impl Editor {
         self.use_shortcuts(ui, systems);
 
         // Update the project client
-        self.state.project.tick();
+        self.state.project.tick(&self.state.editor);
         self.state.project.client.tick(&mut ());
         
         // On load callbacks

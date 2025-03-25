@@ -2,7 +2,7 @@
 mod toolbar;
 mod canvas;
 
-use project::{Action, ActionContext, DeleteStroke};
+use project::{Action, DeleteStroke};
 
 use crate::{EditorState, ProjectState, State};
 use super::Panel;
@@ -35,7 +35,7 @@ impl Default for ScenePanel {
 impl ScenePanel {
 
     fn delete_scene_selection(project: &ProjectState, editor: &mut EditorState) {
-        let mut action = Action::new(ActionContext::new("Delete Strokes"));
+        let mut action = Action::new(editor.action_context("Delete Strokes"));
         for stroke in editor.selection.iter() {
             action.push(DeleteStroke {
                 ptr: stroke

@@ -7,7 +7,7 @@ use super::{AssetList, AssetUI, AssetsPanel};
 
 impl AssetsPanel {
 
-    fn renamable_asset_label<A: Asset>(&self, ui: &mut pierro::UI, curr_name: &String, ptr: Ptr<A>, state: &ProjectState) -> Option<pierro::Response> {
+    fn renamable_asset_label<A: Asset>(&self, ui: &mut pierro::UI, curr_name: &String, ptr: Ptr<A>, project: &ProjectState, open_clip: Ptr<Clip>, time: f32) -> Option<pierro::Response> {
         let mut renaming = self.renaming_state.borrow_mut();
         let renaming_state = &mut *renaming;
 
@@ -21,9 +21,9 @@ impl AssetsPanel {
                     text_edit.response.request_focus(ui);
                 }
                 if text_edit.done_editing {
-                    let mut action = Action::new(ActionContext::new(format!("Rename {}", A::NAME)));
+                    let mut action = Action::new(ActionContext::new(format!("Rename {}", A::NAME), open_clip, time));
                     A::rename(&mut action, ptr, new_name.clone());
-                    state.client.queue_action(action);
+                    project.client.queue_action(action);
                     *renaming_state = None;
                 }
             }
@@ -62,7 +62,7 @@ impl AssetsPanel {
         let (response, (label_resp, icon_resp)) = pierro::horizontal_fit_centered(ui, |ui| {
             let icon_resp = pierro::icon(ui, A::ICON);
             pierro::h_spacing(ui, 3.0);
-            let label_resp = self.renamable_asset_label(ui, asset.name(), asset_ptr, project);
+            let label_resp = self.renamable_asset_label(ui, asset.name(), asset_ptr, project, editor.open_clip, editor.time);
 
             (label_resp, icon_resp)
         });
@@ -100,8 +100,10 @@ impl AssetsPanel {
 
         ui.push_id_seed(&folder_ptr);
         let (_, moved_assets) = pierro::dnd_drop_zone::<AssetList, _>(ui, |ui| {
+            let open_clip = editor.open_clip;
+            let time = editor.time;
             let folder_response = pierro::collapsing_header(ui, |ui, response| {
-                if let Some(folder_name_response) = self.renamable_asset_label(ui, &folder.name, folder_ptr, project) {
+                if let Some(folder_name_response) = self.renamable_asset_label(ui, &folder.name, folder_ptr, project, open_clip, time) {
                     pierro::button_text_color_animation(ui, folder_name_response.node_ref, response, text_color);
                 }
             }, |ui| {
@@ -113,7 +115,7 @@ impl AssetsPanel {
         });
 
         if let Some(moved_assets) = moved_assets {
-            moved_assets.transfer(folder_ptr, project);
+            moved_assets.transfer(folder_ptr, project, &editor);
         }
     }
 

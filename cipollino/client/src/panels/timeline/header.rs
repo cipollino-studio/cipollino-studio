@@ -1,5 +1,5 @@
 
-use project::{Action, ActionContext, Client, Clip, ClipInner, CreateFrame, CreateLayer, FrameTreeData, LayerParent, LayerTreeData, Ptr, SetClipInnerLength};
+use project::{Action, Client, Clip, ClipInner, CreateFrame, CreateLayer, FrameTreeData, LayerParent, LayerTreeData, Ptr, SetClipInnerLength};
 
 use crate::{EditorState, ProjectState};
 
@@ -29,7 +29,7 @@ impl TimelinePanel {
         if pierro::icon_button(ui, pierro::icons::PLUS).mouse_clicked() {
             if let Some(ptr) = project.client.next_ptr() {
                 editor.playing = false;
-                project.client.queue_action(Action::single(ActionContext::new("New Frame"), CreateFrame {
+                project.client.queue_action(Action::single(editor.action_context("New Frame"), CreateFrame {
                     ptr,
                     layer: editor.active_layer,
                     data: FrameTreeData {
@@ -43,7 +43,7 @@ impl TimelinePanel {
         // Add layer
         if pierro::icon_button(ui, pierro::icons::FILE_PLUS).mouse_clicked() {
             if let Some(ptr) = project.client.next_ptr() {
-                project.client.queue_action(Action::single(ActionContext::new("New Layer"), CreateLayer {
+                project.client.queue_action(Action::single(editor.action_context("New Layer"), CreateLayer {
                     ptr,
                     parent: LayerParent::Clip(clip_ptr),
                     idx: clip.layers.n_children(),
@@ -115,7 +115,7 @@ impl TimelinePanel {
         pierro::label(ui, "Length: ");
         let clip_length_resp = pierro::DragValue::new(&mut self.clip_length_preview).with_min(1).with_max(50000).render(ui);
         if clip_length_resp.done_editing {
-            project.client.queue_action(Action::single(ActionContext::new("Set Clip Length"), SetClipInnerLength {
+            project.client.queue_action(Action::single(editor.action_context("Set Clip Length"), SetClipInnerLength {
                 ptr: clip_inner_ptr,
                 length_value: self.clip_length_preview,
             }));

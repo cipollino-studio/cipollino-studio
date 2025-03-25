@@ -1,7 +1,7 @@
 
 use std::collections::HashSet;
 
-use project::{alisa::Object, Action, ActionContext, Layer, Project, Ptr, SetLayerName};
+use project::{alisa::Object, Action, Layer, Project, Ptr, SetLayerName};
 
 use crate::{EditorState, ProjectState};
 
@@ -56,7 +56,7 @@ pub struct LayerDropLocation {
 
 impl TimelinePanel {
 
-    fn renameable_layer_label<L: LayerUI>(&mut self, ui: &mut pierro::UI, project: &ProjectState, curr_name: &String, ptr: Ptr<L>) -> pierro::Response {
+    fn renameable_layer_label<L: LayerUI>(&mut self, ui: &mut pierro::UI, project: &ProjectState, editor: &EditorState, curr_name: &String, ptr: Ptr<L>) -> pierro::Response {
         
         if let Some((curr_renaming, new_name)) = &mut self.renaming_state {
             if *curr_renaming == ptr.any() { 
@@ -70,7 +70,7 @@ impl TimelinePanel {
                     text_edit.response.request_focus(ui);
                 }
                 if text_edit.done_editing {
-                    let mut action = Action::new(ActionContext::new(format!("Rename {}", L::NAME)));
+                    let mut action = Action::new(editor.action_context(format!("Rename {}", L::NAME)));
                     L::rename(&mut action, ptr, new_name.clone());
                     project.client.queue_action(action);
                     self.renaming_state = None;
@@ -162,7 +162,7 @@ impl TimelinePanel {
             });
 
             if let Some(dropped_layers) = self.layer_dnd_dropped_payload.take() {
-                let mut action = Action::new(ActionContext::new("Move Layers"));
+                let mut action = Action::new(editor.action_context("Move Layers"));
                 let (new_parent, new_idx) = render_list.get_transfer_location(layer_dnd_hover_pos);
                 dropped_layers.transfer(&mut action, new_parent, new_idx);
                 project.client.queue_action(action);

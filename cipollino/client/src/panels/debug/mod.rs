@@ -34,14 +34,14 @@ impl Panel for DebugPanel {
     }
 
     fn render(&mut self, ui: &mut pierro::UI, state: &mut State) {
-        let undo = state.project.client.undo_stack();
+        let undo = state.project.client.undo_stack().borrow();
         pierro::collapsing_label(ui, format!("Undo: {}", undo.len()), |ui| {
             for action in undo.iter().rev() {
                 self.action_info(ui, action);
             }
         });
 
-        let redo = state.project.client.redo_stack();
+        let redo = state.project.client.redo_stack().borrow();
         pierro::collapsing_label(ui, format!("Redo: {}", redo.len()), |ui| {
             for action in redo.iter().rev() {
                 self.action_info(ui, action);

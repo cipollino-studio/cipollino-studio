@@ -1,5 +1,5 @@
 
-use project::{Action, ActionContext, DeleteLayer, Layer, Ptr};
+use project::{Action, DeleteLayer, Layer, Ptr};
 
 use crate::{EditorState, ProjectState, TimelinePanel};
 
@@ -7,9 +7,9 @@ use super::LayerList;
 
 impl TimelinePanel {
 
-    fn layer_context_menu(&mut self, ui: &mut pierro::UI, project: &ProjectState, layer_ptr: Ptr<Layer>) {
+    fn layer_context_menu(&mut self, ui: &mut pierro::UI, project: &ProjectState, editor: &EditorState, layer_ptr: Ptr<Layer>) {
         if pierro::menu_button(ui, "Delete").mouse_clicked() {
-            project.client.queue_action(Action::single(ActionContext::new("Delete Layer"), DeleteLayer {
+            project.client.queue_action(Action::single(editor.action_context("Delete Layer"), DeleteLayer {
                 ptr: layer_ptr,
             }));
         }
@@ -17,7 +17,7 @@ impl TimelinePanel {
 
     fn layer_mouse_interaction(&mut self, ui: &mut pierro::UI, project: &ProjectState, editor: &mut EditorState, layer_response: &pierro::Response, layer: &Layer, layer_ptr: Ptr<Layer>, render_list_idx: usize) {
         pierro::context_menu(ui, layer_response, |ui| {
-            self.layer_context_menu(ui, project, layer_ptr); 
+            self.layer_context_menu(ui, project, &editor, layer_ptr); 
         });
 
         self.layer_dnd_source.source_without_cursor_icon(ui, &layer_response, || LayerList::single(layer_ptr));
@@ -53,7 +53,7 @@ impl TimelinePanel {
                 }
                 pierro::h_spacing(ui, 2.0);
 
-                self.renameable_layer_label(ui, project, &layer.name, layer_ptr); 
+                self.renameable_layer_label(ui, project, &editor, &layer.name, layer_ptr); 
             });
 
             pierro::container(ui, pierro::Size::fit(), pierro::Size::fr(1.0), pierro::Layout::horizontal().align_center(), |ui| {

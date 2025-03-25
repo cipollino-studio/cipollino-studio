@@ -1,7 +1,7 @@
 
 use std::{cell::RefCell, collections::HashMap};
 use std::rc::Rc;
-use project::{Clip, ClipInner, Layer, Project, Ptr, Stroke};
+use project::{ActionContext, Clip, ClipInner, Layer, Project, Ptr, Stroke};
 
 use crate::{SelectTool, ToolDyn};
 
@@ -121,6 +121,10 @@ impl EditorState {
         let mut callbacks = std::mem::replace(&mut self.on_load_callbacks, Vec::new());
         callbacks.retain(|callback| !callback(project, self));
         self.on_load_callbacks.append(&mut callbacks);
+    }
+
+    pub fn action_context<S: Into<String>>(&self, name: S) -> ActionContext {
+        ActionContext::new(name, self.open_clip, self.time)
     }
 
 }

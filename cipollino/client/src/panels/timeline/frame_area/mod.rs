@@ -1,6 +1,6 @@
 
 use paint::PaintCommands;
-use project::{Action, ActionContext, ClipInner, DeleteFrame};
+use project::{Action, ClipInner, DeleteFrame};
 
 use crate::{EditorState, ProjectState};
 
@@ -142,7 +142,7 @@ impl FrameArea {
     }
 
     fn delete_frame_selection(project: &ProjectState, editor: &mut EditorState) {
-        let mut action = Action::new(ActionContext::new("Delete Frames"));
+        let mut action = Action::new(editor.action_context("Delete Frames"));
         for frame in editor.selection.iter() {
             action.push(DeleteFrame {
                 ptr: frame

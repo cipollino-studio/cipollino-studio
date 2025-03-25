@@ -130,7 +130,7 @@ impl Panel for AssetsPanel {
             });
         });
         if let Some(moved_assets) = moved_assets {
-            moved_assets.transfer(Ptr::null(), &state.project);
+            moved_assets.transfer(Ptr::null(), &state.project, &state.editor);
         }
 
         self.asset_dnd_source.borrow_mut().display(ui, |ui| {
