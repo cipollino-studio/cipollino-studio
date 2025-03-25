@@ -56,6 +56,15 @@ impl Editor {
 
     pub fn tick(&mut self, ui: &mut pierro::UI, systems: &mut AppSystems) {
 
+        // Load the currently open clip if it's not open
+        if let Some(clip) = self.state.project.client.get(self.state.editor.open_clip) {
+            if let Some(clip_inner) = self.state.project.client.get(clip.inner) {
+                self.state.editor.tick_playback(ui, clip_inner);
+            } else {
+                deep_load_clip(self.state.editor.open_clip, &self.state.project.client);
+            }
+        }
+
         self.menu_bar(ui);
         self.use_shortcuts(ui, systems);
 
@@ -86,15 +95,6 @@ impl Editor {
         self.windows.render(ui, &mut self.state);
 
         self.state.editor.selection.end_frame(ui.input().l_mouse.clicked() || ui.input().l_mouse.drag_started());
-
-        // Load the currently open clip if it's not open
-        if let Some(clip) = self.state.project.client.get(self.state.editor.open_clip) {
-            if let Some(clip_inner) = self.state.project.client.get(clip.inner) {
-                self.state.editor.tick_playback(ui, clip_inner);
-            } else {
-                deep_load_clip(self.state.editor.open_clip, &self.state.project.client);
-            }
-        }
 
         self.tick_undo_redo(); 
 
