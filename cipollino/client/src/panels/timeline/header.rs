@@ -25,37 +25,50 @@ impl TimelinePanel {
 
     pub(super) fn header(&mut self, ui: &mut pierro::UI, project: &ProjectState, editor: &mut EditorState, clip_ptr: Ptr<Clip>, clip_inner_ptr: Ptr<ClipInner>, clip: &ClipInner) {
         
-        // Add keyframe
-        if pierro::icon_button(ui, pierro::icons::PLUS).mouse_clicked() {
-            if let Some(ptr) = project.client.next_ptr() {
-                editor.playing = false;
-                project.client.queue_action(Action::single(editor.action_context("New Frame"), CreateFrame {
-                    ptr,
-                    layer: editor.active_layer,
-                    data: FrameTreeData {
-                        time: clip.frame_idx(editor.time),
-                        ..Default::default()
-                    },
-                }));
-            }
-        }
+        let widget_rounding = ui.style::<pierro::theme::WidgetRounding>();
+        let widget_stroke = ui.style::<pierro::theme::WidgetStroke>();
+        let divider_color = ui.style::<pierro::theme::BgButton>().darken(0.25);
 
-        // Add layer
-        if pierro::icon_button(ui, pierro::icons::FILE_PLUS).mouse_clicked() {
-            if let Some(ptr) = project.client.next_ptr() {
-                project.client.queue_action(Action::single(editor.action_context("New Layer"), CreateLayer {
-                    ptr,
-                    parent: LayerParent::Clip(clip_ptr),
-                    idx: clip.layers.n_children(),
-                    data: LayerTreeData {
-                        name: "Layer".to_owned(),
-                        ..Default::default()
-                    },
-                }));
-                editor.active_layer = ptr;
-            }
-        }
+        pierro::h_spacing(ui, 3.0);
+        ui.with_style::<pierro::theme::WidgetStroke, _, _>(pierro::Stroke::new(divider_color, widget_stroke.width), |ui| {
 
+            // Add keyframe
+            ui.with_style::<pierro::theme::WidgetRounding, _, _>(widget_rounding.left_side(), |ui| {
+                if pierro::icon_button(ui, pierro::icons::PLUS_CIRCLE).mouse_clicked() {
+                    if let Some(ptr) = project.client.next_ptr() {
+                        editor.playing = false;
+                        project.client.queue_action(Action::single(editor.action_context("New Frame"), CreateFrame {
+                            ptr,
+                            layer: editor.active_layer,
+                            data: FrameTreeData {
+                                time: clip.frame_idx(editor.time),
+                                ..Default::default()
+                            },
+                        }));
+                    }
+                }
+            });
+            pierro::v_line(ui);
+
+            // Add layer
+            ui.with_style::<pierro::theme::WidgetRounding, _, _>(widget_rounding.right_side(), |ui| {
+                if pierro::icon_button(ui, pierro::icons::FILE_PLUS).mouse_clicked() {
+                    if let Some(ptr) = project.client.next_ptr() {
+                        project.client.queue_action(Action::single(editor.action_context("New Layer"), CreateLayer {
+                            ptr,
+                            parent: LayerParent::Clip(clip_ptr),
+                            idx: clip.layers.n_children(),
+                            data: LayerTreeData {
+                                name: "Layer".to_owned(),
+                                ..Default::default()
+                            },
+                        }));
+                        editor.active_layer = ptr;
+                    }
+                }
+            });
+        });
+        
         // Onion skin
         pierro::h_spacing(ui, 5.0);
         let onion_skin = editor.show_onion_skin;
@@ -72,22 +85,25 @@ impl TimelinePanel {
 
         // Play buttons
         pierro::centered_horizontal(ui, |ui| {
-            let widget_rounding = ui.style::<pierro::theme::WidgetRounding>();
-            let widget_stroke = ui.style::<pierro::theme::WidgetStroke>();
-            let divider_color = ui.style::<pierro::theme::BgButton>().darken(0.25);
             ui.with_style::<pierro::theme::WidgetStroke, _, _>(pierro::Stroke::new(divider_color, widget_stroke.width), |ui| {
+
+                // Jump to start
                 ui.with_style::<pierro::theme::WidgetRounding, _, _>(widget_rounding.left_side(), |ui| {
                     if pierro::icon_button(ui, pierro::icons::CARET_DOUBLE_LEFT).mouse_clicked() {
                         editor.jump_to(0.0);
                     }
                 });
                 pierro::v_line(ui);
+
                 ui.with_style::<pierro::theme::WidgetRounding, _, _>(pierro::Rounding::ZERO, |ui| {
+
+                    // Jump to previous frame
                     if pierro::icon_button(ui, pierro::icons::CARET_LINE_LEFT).mouse_clicked() {
                         jump_to_prev_frame(&project.client, editor, clip);
                     }
                     pierro::v_line(ui);
 
+                    // Play/pause
                     let play_icon = if editor.playing {
                         pierro::icons::PAUSE
                     } else {
@@ -98,11 +114,15 @@ impl TimelinePanel {
                     }
                     pierro::v_line(ui);
 
+                    // Jump to next frame
                     if pierro::icon_button(ui, pierro::icons::CARET_LINE_RIGHT).mouse_clicked() {
                         jump_to_next_frame(&project.client, editor, clip);
                     }
+
                 });
                 pierro::v_line(ui);
+
+                // Jump to end
                 ui.with_style::<pierro::theme::WidgetRounding, _, _>(widget_rounding.right_side(), |ui| {
                     if pierro::icon_button(ui, pierro::icons::CARET_DOUBLE_RIGHT).mouse_clicked() {
                         editor.jump_to(((clip.length - 1) as f32) * clip.frame_len());
@@ -123,6 +143,7 @@ impl TimelinePanel {
         if !clip_length_resp.drag_value.is_focused(ui) {
             self.clip_length_preview = clip.length;
         }
+        pierro::h_spacing(ui, 5.0);
     }
 
 }
