@@ -50,8 +50,8 @@ impl<P: Project> ClientKind<P> {
 enum OperationToPerform<P: Project> {
     Operation(Box<dyn OperationDyn<Project = P>>),
     Action(Action<P>),
-    Undo,
-    Redo
+    Undo(Action<P>),
+    Redo(Action<P>)
 }
 
 pub struct Client<P: Project> {
@@ -60,8 +60,8 @@ pub struct Client<P: Project> {
     pub(crate) objects: P::Objects,
     operations_to_perform: RefCell<Vec<OperationToPerform<P>>>,
     project_modified: bool,
-    undo_stack: Vec<Action<P>>,
-    redo_stack: Vec<Action<P>>
+    undo_stack: RefCell<Vec<Action<P>>>,
+    redo_stack: RefCell<Vec<Action<P>>>
 }
 
 impl<P: Project> Client<P> {
@@ -123,12 +123,18 @@ impl<P: Project> Client<P> {
         self.operations_to_perform.borrow_mut().push(OperationToPerform::Action(action)); 
     }
 
-    pub fn undo(&self) {
-        self.operations_to_perform.borrow_mut().push(OperationToPerform::Undo);
+    pub fn undo(&self) -> Option<P::ActionContext> {
+        let undo_action = self.undo_stack.borrow_mut().pop()?;
+        let context = undo_action.context.clone();
+        self.operations_to_perform.borrow_mut().push(OperationToPerform::Undo(undo_action));
+        Some(context)
     }
 
-    pub fn redo(&self) {
-        self.operations_to_perform.borrow_mut().push(OperationToPerform::Redo);
+    pub fn redo(&self) -> Option<P::ActionContext> {
+        let redo_action = self.redo_stack.borrow_mut().pop()?;
+        let context = redo_action.context.clone(); 
+        self.operations_to_perform.borrow_mut().push(OperationToPerform::Redo(redo_action));
+        Some(context)
     }
 
     fn perform_act(&mut self, operation: Box<dyn OperationDyn<Project = P>>, context: &mut P::Context) {
@@ -189,24 +195,20 @@ impl<P: Project> Client<P> {
                 OperationToPerform::Action(action) => {
                     let inv_action = self.perform_action(action, context);
                     if !inv_action.is_empty() {
-                        self.undo_stack.push(inv_action);
+                        self.undo_stack.borrow_mut().push(inv_action);
                     }
-                    self.redo_stack.clear();
+                    self.redo_stack.borrow_mut().clear();
                 },
-                OperationToPerform::Undo => {
-                    if let Some(undo_action) = self.undo_stack.pop() {
-                        let redo_action = self.perform_action(undo_action, context);
-                        if !redo_action.is_empty() {
-                            self.redo_stack.push(redo_action);
-                        }
+                OperationToPerform::Undo(undo_action) => {
+                    let redo_action = self.perform_action(undo_action, context);
+                    if !redo_action.is_empty() {
+                        self.redo_stack.borrow_mut().push(redo_action);
                     }
                 },
-                OperationToPerform::Redo => {
-                    if let Some(redo_action) = self.redo_stack.pop() {
-                        let undo_action = self.perform_action(redo_action, context);
-                        if !undo_action.is_empty() {
-                            self.undo_stack.push(undo_action);
-                        }
+                OperationToPerform::Redo(redo_action) => {
+                    let undo_action = self.perform_action(redo_action, context);
+                    if !undo_action.is_empty() {
+                        self.undo_stack.borrow_mut().push(undo_action);
                     }
                 },
             }
@@ -275,11 +277,11 @@ impl<P: Project> Client<P> {
         tried_loading && !to_load
     }
 
-    pub fn undo_stack(&self) -> &Vec<Action<P>> {
+    pub fn undo_stack(&self) -> &RefCell<Vec<Action<P>>> {
         &self.undo_stack
     }
 
-    pub fn redo_stack(&self) -> &Vec<Action<P>> {
+    pub fn redo_stack(&self) -> &RefCell<Vec<Action<P>>> {
         &self.redo_stack
     }
 
