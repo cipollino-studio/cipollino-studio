@@ -56,13 +56,22 @@ impl ClipProperties {
             pierro::text_edit(ui, &mut self.name)
         });
         let (width_response, height_response) = labeled(ui, "Size:", |ui| {
-            let width_changed = pierro::drag_value(ui, &mut self.width);
+            let width_changed = pierro::DragValue::new(&mut self.width)
+                .with_min(10)
+                .with_max(10000)
+                .render(ui);
             pierro::h_spacing(ui, 3.0);
-            let height_changed = pierro::drag_value(ui, &mut self.height);
+            let height_changed = pierro::DragValue::new(&mut self.height)
+                .with_min(10)
+                .with_max(10000)
+                .render(ui);
             (width_changed, height_changed)
         });
         let length_response = labeled(ui, "Length:", |ui| {
-            pierro::drag_value(ui, &mut self.length)
+            pierro::DragValue::new(&mut self.length)
+                .with_min(1)
+                .with_max(50000)
+                .render(ui)
         });
         let framerate_changed = labeled(ui, "FPS:", |ui| {
             let mut framerate_changed = false;
