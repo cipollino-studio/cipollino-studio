@@ -12,23 +12,27 @@ impl Framebar {
         let curr_frame = clip.frame_idx(editor.time);
 
         // Figure out what we're hovering over 
-        let prev_onion_skin_frame = (curr_frame - (editor.onion_skin_prev_frames as i32)).max(0);
-        let onion_skin_prev_x_range = pierro::Range::center_size(
-            (prev_onion_skin_frame as f32) * TimelinePanel::FRAME_WIDTH,
-            TimelinePanel::FRAME_WIDTH * 1.5
-        );
-        let next_onion_skin_frame = (curr_frame + (editor.onion_skin_next_frames as i32)).max(0);
-        let onion_skin_next_x_range = pierro::Range::center_size(
-            (next_onion_skin_frame as f32) * TimelinePanel::FRAME_WIDTH + TimelinePanel::FRAME_WIDTH,
-            TimelinePanel::FRAME_WIDTH * 1.5
-        );
-        let hovered_drag_target = match framebar_response.mouse_pos(ui) {
-            Some(pos) => match pos.x {
-                x if onion_skin_prev_x_range.contains(x) => DragTarget::OnionSkinPrev,
-                x if onion_skin_next_x_range.contains(x) => DragTarget::OnionSkinNext,
-                _ => DragTarget::PlayHead
-            },
-            None => DragTarget::PlayHead
+        let hovered_drag_target = if editor.show_onion_skin { 
+            let prev_onion_skin_frame = (curr_frame - (editor.onion_skin_prev_frames as i32)).max(0);
+            let onion_skin_prev_x_range = pierro::Range::center_size(
+                (prev_onion_skin_frame as f32) * TimelinePanel::FRAME_WIDTH,
+                TimelinePanel::FRAME_WIDTH * 1.5
+            );
+            let next_onion_skin_frame = (curr_frame + (editor.onion_skin_next_frames as i32)).max(0);
+            let onion_skin_next_x_range = pierro::Range::center_size(
+                (next_onion_skin_frame as f32) * TimelinePanel::FRAME_WIDTH + TimelinePanel::FRAME_WIDTH,
+                TimelinePanel::FRAME_WIDTH * 1.5
+            );
+            match framebar_response.mouse_pos(ui) {
+                Some(pos) => match pos.x {
+                    x if onion_skin_prev_x_range.contains(x) => DragTarget::OnionSkinPrev,
+                    x if onion_skin_next_x_range.contains(x) => DragTarget::OnionSkinNext,
+                    _ => DragTarget::PlayHead
+                },
+                None => DragTarget::PlayHead
+            }
+        } else {
+            DragTarget::PlayHead
         };
 
         // Set the mouse cursor according to what we're hovering
