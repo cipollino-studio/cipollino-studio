@@ -7,7 +7,7 @@ fn render_stroke(rndr: &mut malvina::LayerRenderer, editor: &EditorState, stroke
     if let Some(mesh) = stroke_mesh_cache.get(&stroke_ptr) {
         rndr.render_stroke(mesh, stroke.color.into());
     } else {
-        let mesh = malvina::StrokeMesh::new(rndr.device(), &stroke.stroke.0);
+        let mesh = malvina::StrokeMesh::new(rndr.device(), &stroke.stroke.0, stroke.width);
         rndr.render_stroke(&mesh, stroke.color.into());
         stroke_mesh_cache.insert(stroke_ptr, mesh);
     }

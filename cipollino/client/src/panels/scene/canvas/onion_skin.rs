@@ -15,7 +15,7 @@ impl ScenePanel {
                         if let Some(stroke) = stroke_mesh_cache.get(&stroke_ptr.ptr()) {
                             rndr.render_stroke(stroke, color);
                         } else {
-                            let mesh = malvina::StrokeMesh::new(rndr.device(), &stroke.stroke.0);
+                            let mesh = malvina::StrokeMesh::new(rndr.device(), &stroke.stroke.0, stroke.width);
                             rndr.render_stroke(&mesh, color);
                             stroke_mesh_cache.insert(stroke_ptr.ptr(), mesh);
                         }

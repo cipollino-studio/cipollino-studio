@@ -70,7 +70,8 @@ impl<P: alisa::Project> alisa::Serializable<P> for StrokeData {
 pub struct Stroke {
     pub frame: alisa::Ptr<Frame>,
     pub stroke: StrokeData,
-    pub color: [f32; 4]
+    pub color: [f32; 4],
+    pub width: f32
 } 
 
 impl Default for Stroke {
@@ -79,7 +80,8 @@ impl Default for Stroke {
         Self {
             frame: alisa::Ptr::null(),
             stroke: StrokeData(malvina::Stroke::empty()),
-            color: [0.0, 0.0, 0.0, 1.0]
+            color: [0.0, 0.0, 0.0, 1.0],
+            width: 5.0,
         }
     }
 
@@ -101,7 +103,8 @@ impl alisa::Object for Stroke {
 #[derive(alisa::Serializable)]
 pub struct StrokeTreeData {
     pub stroke: StrokeData,
-    pub color: [f32; 4]
+    pub color: [f32; 4],
+    pub width: f32
 }
 
 impl Default for StrokeTreeData {
@@ -109,7 +112,8 @@ impl Default for StrokeTreeData {
     fn default() -> Self {
         Self {
             stroke: StrokeData(malvina::Stroke::empty()),
-            color: [0.0, 0.0, 0.0, 1.0]
+            color: [0.0, 0.0, 0.0, 1.0],
+            width: 5.0
         }
     }
 
@@ -140,7 +144,8 @@ impl alisa::TreeObj for Stroke {
         let stroke = Stroke {
             frame,
             stroke: data.stroke.clone(),
-            color: data.color
+            color: data.color,
+            width: data.width
         };
         recorder.add_obj(ptr, stroke);
     }
@@ -152,7 +157,8 @@ impl alisa::TreeObj for Stroke {
     fn collect_data(&self, _objects: &Objects) -> StrokeTreeData {
         StrokeTreeData {
             stroke: self.stroke.clone(),
-            color: self.color
+            color: self.color,
+            width: self.width
         }
     }
 

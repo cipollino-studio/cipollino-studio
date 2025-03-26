@@ -70,6 +70,8 @@ pub trait Tool: Default {
 
     fn render_overlay(&self, _rndr: &mut malvina::LayerRenderer, _accent_color: elic::Color) {}
 
+    fn settings(&mut self, _ui: &mut pierro::UI) {}
+
     fn cursor_icon(&self) -> pierro::CursorIcon {
         pierro::CursorIcon::Default
     }
@@ -91,6 +93,8 @@ pub trait ToolDyn {
     fn mouse_dragged(&mut self, _ctx: &mut ToolContext, _pos: malvina::Vec2);
 
     fn render_overlay(&self, rndr: &mut malvina::LayerRenderer, accent_color: elic::Color);
+
+    fn settings(&mut self, _ui: &mut pierro::UI);
 
     fn cursor_icon(&self) -> pierro::CursorIcon;
 
@@ -132,6 +136,10 @@ impl<T: Tool> ToolDyn for T {
 
     fn render_overlay(&self, rndr: &mut malvina::LayerRenderer, accent_color: elic::Color) {
         self.render_overlay(rndr, accent_color);
+    }
+
+    fn settings(&mut self, ui: &mut pierro::UI) {
+        self.settings(ui);
     }
 
     fn cursor_icon(&self) -> pierro::CursorIcon {
