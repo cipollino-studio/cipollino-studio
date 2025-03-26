@@ -15,8 +15,21 @@ mod onion_skin;
 impl ScenePanel {
 
     fn calc_camera(&self, scale_factor: f32) -> malvina::Camera {
-        malvina::Camera::new(self.cam_pos.x, self.cam_pos.y, scale_factor / self.cam_size)
+        malvina::Camera::new(self.cam_pos, scale_factor / self.cam_size).mirror(self.mirror)
     }
+
+    fn canvas_space_to_world_space(
+        mouse_pos: pierro::Vec2,
+        camera: &malvina::Camera,
+        scale_factor: f32,
+        resolution: pierro::Vec2,
+        offset: pierro::Vec2
+    ) -> elic::Vec2 {
+        let pos = (mouse_pos + offset) * scale_factor;
+        let pos = pierro::vec2(pos.x, resolution.y - pos.y);
+        let pos = camera.screen_to_world(pos, resolution); 
+        pos
+    } 
 
     fn canvas_contents(&mut self,
         ui: &mut pierro::UI,
@@ -50,18 +63,22 @@ impl ScenePanel {
         let canvas = ui.get_node_id(ui.curr_parent());
         let canvas_size = ui.memory().get::<pierro::LayoutInfo>(canvas).screen_rect.size();
         let offset = ((resolution / ui.scale_factor()) - canvas_size) / 2.0;
-        let mouse_pos = response.mouse_pos(ui)
-            .map(|pos| (pos + offset) * ui.scale_factor())
-            .map(|pos| pierro::vec2(pos.x, resolution.y - pos.y))
-            .map(|pos| camera.screen_to_world(malvina::vec2(pos.x, pos.y), malvina::vec2(resolution.x, resolution.y))); 
+        let canvas_mouse_pos = response.mouse_pos(ui); 
+        let mouse_pos = canvas_mouse_pos.map(|mouse_pos| Self::canvas_space_to_world_space(mouse_pos, &camera, ui.scale_factor(), resolution, offset));
 
         // Zoom
         if let Some(mouse_pos) = mouse_pos {
             let zoom_fac = (1.05 as f32).powf(-response.scroll.y.clamp(-4.0, 4.0) * 0.7); 
             let next_cam_size = (self.cam_size * zoom_fac).clamp(0.05, 20.0);
-            let zoom_fac = next_cam_size / self.cam_size;
-            self.cam_pos -= (mouse_pos - self.cam_pos) * (zoom_fac - 1.0); 
             self.cam_size = next_cam_size;
+
+            let next_cam = self.calc_camera(ui.scale_factor());
+            if let Some(canvas_mouse_pos) = canvas_mouse_pos {
+                let mapped_mouse_pos = Self::canvas_space_to_world_space(canvas_mouse_pos, &next_cam, ui.scale_factor(), resolution, offset);
+                let offset = mapped_mouse_pos - mouse_pos;
+                self.cam_pos -= offset;
+            }
+
         }
 
         // Panning

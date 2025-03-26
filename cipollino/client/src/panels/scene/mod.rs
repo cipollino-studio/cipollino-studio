@@ -16,6 +16,7 @@ pub const ONION_SKIN_NEXT_COLOR: pierro::Color = pierro::Color::rgb(0.4666, 0.85
 pub struct ScenePanel {
     cam_pos: malvina::Vec2,
     cam_size: f32,
+    mirror: bool,
 
     picking_buffer: Rc<RefCell<malvina::PickingBuffer>>,
 }
@@ -26,6 +27,7 @@ impl Default for ScenePanel {
         Self {
             cam_pos: malvina::Vec2::ZERO,
             cam_size: 2.0,
+            mirror: false,
             picking_buffer: Rc::new(RefCell::new(malvina::PickingBuffer::new())),
         }
     }

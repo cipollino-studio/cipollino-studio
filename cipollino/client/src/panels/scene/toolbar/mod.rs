@@ -29,6 +29,23 @@ impl ScenePanel {
         }
     }
 
+    fn mirror_button(&mut self, ui: &mut pierro::UI) {
+        let mirror = self.mirror;
+
+        if mirror {
+            let bg = pierro::theme::pressed_color(ui.style::<pierro::theme::BgButton>());
+            ui.push_style::<pierro::theme::BgButton>(bg);
+        }
+        if pierro::icon_button(ui, pierro::icons::FLIP_HORIZONTAL).mouse_clicked() {
+            self.mirror = !self.mirror;
+            self.cam_pos *= elic::vec2(-1.0, 1.0);
+        }
+        if mirror {
+            ui.pop_style();
+        }
+
+    }
+
     pub(super) fn toolbar(&mut self, ui: &mut pierro::UI, editor: &mut EditorState) {
         let bg = ui.style::<pierro::theme::BgLight>();
         let margin = pierro::Margin::same(Self::GAP);
@@ -44,6 +61,11 @@ impl ScenePanel {
                             self.tool_button::<SelectTool>(ui, editor);
                             self.tool_button::<PencilTool>(ui, editor);
                             self.color_picker(ui, editor);
+
+                            // Spacer
+                            ui.node(pierro::UINodeParams::new(pierro::Size::px(0.0), pierro::Size::px(0.0).with_grow(1.0)));
+
+                            self.mirror_button(ui);
                         }
                     );
                 });
