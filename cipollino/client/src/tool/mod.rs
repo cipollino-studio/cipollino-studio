@@ -27,8 +27,6 @@ pub struct ToolContext<'ctx> {
     pub picking_buffer: &'ctx mut malvina::PickingBuffer,
     pub picking_mouse_pos: Option<(u32, u32)>, 
 
-    // Misc
-    pub clear_stroke_preview: bool,
     pub pressure: f32,
 }
 

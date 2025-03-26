@@ -33,7 +33,7 @@ fn render_layer(rndr: &mut malvina::LayerRenderer, client: &Client, editor: &Edi
     } 
 
     if layer_ptr == editor.active_layer {
-        if let Some(stroke_preview) = &editor.stroke_preview {
+        if let Some(stroke_preview) = &editor.preview.stroke_preview {
             rndr.render_stroke(stroke_preview, editor.color);
         }
     } 

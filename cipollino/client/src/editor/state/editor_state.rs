@@ -7,7 +7,7 @@ use crate::{SelectTool, ToolDyn};
 
 use crate::{Selection, SelectionKind};
 
-use super::{ProjectState, State};
+use super::{ProjectState, ScenePreview, State};
 
 pub struct EditorState {
     pub time: f32,
@@ -28,7 +28,8 @@ pub struct EditorState {
     pub onion_skin_next_frames: u32,
 
     pub stroke_mesh_cache: RefCell<HashMap<Ptr<Stroke>, malvina::StrokeMesh>>,
-    pub stroke_preview: Option<malvina::StrokeMesh>,
+
+    pub preview: ScenePreview,
 
     pub color: pierro::Color,
 
@@ -59,7 +60,8 @@ impl EditorState {
             onion_skin_next_frames: 2,
 
             stroke_mesh_cache: RefCell::new(HashMap::new()),
-            stroke_preview: None,
+
+            preview: ScenePreview::new(),
 
             color: pierro::Color::BLACK,
 

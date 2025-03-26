@@ -96,7 +96,6 @@ impl ScenePanel {
 
             editor,
 
-            clear_stroke_preview: false,
             pressure: ui.input().pressure
         };
         tool.tick(&mut tool_context);
@@ -128,7 +127,6 @@ impl ScenePanel {
             }
         }
         let tool_cursor_icon = tool.cursor_icon();
-        let clear_stroke_preview = tool_context.clear_stroke_preview;
 
         if pause {
             editor.playing = false;
@@ -167,9 +165,6 @@ impl ScenePanel {
             ui.set_cursor(cursor);
         }
 
-        if clear_stroke_preview {
-            editor.stroke_preview = None;
-        }
     }
 
     pub(super) fn canvas(&mut self, ui: &mut pierro::UI, project: &ProjectState, editor: &mut EditorState, renderer: &mut malvina::Renderer, clip: &ClipInner) {

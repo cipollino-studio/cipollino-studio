@@ -80,7 +80,10 @@ impl Tool for PencilTool {
             ctx.editor.will_undo = false;
             self.pts.clear();
             self.drawing_stroke = false;
-            ctx.editor.stroke_preview.take();
+        }
+
+        if self.drawing_stroke {
+            ctx.editor.preview.keep_preview = true;
         }
     }
 
@@ -109,11 +112,10 @@ impl Tool for PencilTool {
         });
 
         let stroke = self.calc_stroke();
-        ctx.editor.stroke_preview = Some(malvina::StrokeMesh::new(ctx.device, &stroke));
+        ctx.editor.preview.stroke_preview = Some(malvina::StrokeMesh::new(ctx.device, &stroke));
     }
 
     fn mouse_released(&mut self, ctx: &mut ToolContext, pos: malvina::Vec2) {
-        ctx.clear_stroke_preview = true;
         if self.pts.is_empty() || !self.drawing_stroke {
             return;
         }

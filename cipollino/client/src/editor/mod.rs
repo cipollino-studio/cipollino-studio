@@ -98,6 +98,8 @@ impl Editor {
 
         self.tick_undo_redo(); 
 
+        self.state.editor.preview.end_frame();
+
         // Update the project client
         self.state.project.tick(&self.state.editor);
         self.state.project.client.tick(&mut ());
