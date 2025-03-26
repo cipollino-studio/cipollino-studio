@@ -1,7 +1,7 @@
 
 use project::{alisa::Action, Clip, Folder, Ptr};
 
-use crate::{EditorState, ProjectState, State};
+use crate::{EditorState, ProjectState};
 
 use super::{CreateClipDialog, AssetUI, AssetsPanel};
 
@@ -16,25 +16,21 @@ impl AssetsPanel {
             }
         }
     }
-
-    fn create_clip(state: &mut State) {
-        state.editor.open_window(CreateClipDialog::new());
-    }
     
-    fn clip_menu_bar_icon(&self, ui: &mut pierro::UI, state: &mut State) {
+    fn clip_menu_bar_icon(&self, ui: &mut pierro::UI, editor: &mut EditorState) {
         if pierro::icon_button(ui, Clip::ICON).mouse_clicked() {
-            Self::create_clip(state);
+            editor.open_window(CreateClipDialog::new());
         }
     } 
 
-    pub(crate) fn menu_bar(&self, ui: &mut pierro::UI, state: &mut State) {
+    pub(crate) fn menu_bar(&self, ui: &mut pierro::UI, editor: &mut EditorState, project: &ProjectState) {
         let button_color = ui.style::<pierro::theme::BgDark>();
         ui.with_style::<pierro::theme::BgButton, _, _>(button_color, |ui| {
             ui.with_style::<pierro::theme::WidgetMargin, _, _>(pierro::Margin::same(3.5), |ui| {
                 ui.with_style::<pierro::theme::LabelFontSize, _, _>(15.0, |ui| {
                     pierro::menu_bar(ui, |ui| {
-                        self.asset_menu_bar_icon::<Folder>(ui, &state.project, &state.editor); 
-                        self.clip_menu_bar_icon(ui, state);
+                        self.asset_menu_bar_icon::<Folder>(ui, project, editor); 
+                        self.clip_menu_bar_icon(ui, editor);
                     });
                 });
             });

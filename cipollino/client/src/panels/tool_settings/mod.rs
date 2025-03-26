@@ -1,7 +1,5 @@
 
-use crate::State;
-
-use super::Panel;
+use super::{Panel, PanelContext};
 
 #[derive(Default)]
 pub struct ToolSettings {
@@ -15,7 +13,7 @@ impl Panel for ToolSettings {
         "Tool Settings".into()
     }
 
-    fn render(&mut self, ui: &mut pierro::UI, state: &mut State) {
-        state.editor.curr_tool.borrow_mut().settings(ui);
+    fn render(&mut self, ui: &mut pierro::UI, context: &mut PanelContext) {
+        context.editor.curr_tool.borrow_mut().settings(ui, context.systems);
     }
 }

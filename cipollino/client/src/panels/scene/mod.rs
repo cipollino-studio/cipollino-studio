@@ -4,8 +4,8 @@ mod canvas;
 
 use project::{Action, DeleteStroke};
 
-use crate::{EditorState, ProjectState, State};
-use super::Panel;
+use crate::{EditorState, ProjectState};
+use super::{Panel, PanelContext};
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -56,19 +56,19 @@ impl Panel for ScenePanel {
         "Scene".to_owned()
     }
 
-    fn render(&mut self, ui: &mut pierro::UI, state: &mut State) {
+    fn render(&mut self, ui: &mut pierro::UI, context: &mut PanelContext) {
 
-        let project = &state.project;
-        let editor = &mut state.editor;
+        let project = &context.project;
+        let editor = &mut context.editor;
         
-        if state.renderer.is_none() {
-            state.renderer = Some(malvina::Renderer::new(ui.wgpu_device(), ui.wgpu_queue()));
+        if context.renderer.is_none() {
+            *context.renderer = Some(malvina::Renderer::new(ui.wgpu_device(), ui.wgpu_queue()));
         }
-        let Some(renderer) = state.renderer.as_mut() else {
+        let Some(renderer) = context.renderer.as_mut() else {
             return;
         };
 
-        let Some(clip) = state.project.client.get(editor.open_clip) else {
+        let Some(clip) = context.project.client.get(editor.open_clip) else {
             pierro::centered(ui, |ui| {
                 pierro::label(ui, "No clip open.");
             });
@@ -84,7 +84,7 @@ impl Panel for ScenePanel {
         pierro::horizontal_fill(ui, |ui| {
             self.toolbar(ui, editor);
             pierro::v_line(ui);
-            self.canvas(ui, project, editor, renderer, clip_inner); 
+            self.canvas(ui, project, editor, context.systems, renderer, clip_inner); 
         });
 
         // Delete scene selection

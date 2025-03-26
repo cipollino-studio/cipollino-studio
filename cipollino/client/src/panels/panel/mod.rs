@@ -1,21 +1,28 @@
-use crate::State;
+use crate::{AppSystems, EditorState, ProjectState};
 
 use super::PANEL_KINDS;
 
 mod serialization;
+
+pub struct PanelContext<'ctx> {
+    pub editor: &'ctx mut EditorState,
+    pub project: &'ctx ProjectState,
+    pub systems: &'ctx mut AppSystems,
+    pub renderer: &'ctx mut Option<malvina::Renderer>
+}
 
 pub trait Panel {
 
     const NAME: &'static str;
 
     fn title(&self) -> String;
-    fn render(&mut self, ui: &mut pierro::UI, state: &mut State);
+    fn render<'ctx>(&mut self, ui: &mut pierro::UI, context: &mut PanelContext<'ctx>);
 
 }
 
 trait PanelDyn {
     fn title(&self) -> String;
-    fn render(&mut self, ui: &mut pierro::UI, state: &mut State);
+    fn render<'ctx>(&mut self, ui: &mut pierro::UI, context: &mut PanelContext<'ctx>);
     fn name(&self) -> &'static str;
 }
 
@@ -25,8 +32,8 @@ impl<P: Panel> PanelDyn for P {
         self.title()
     }
 
-    fn render(&mut self, ui: &mut pierro::UI, state: &mut State) {
-        self.render(ui, state);
+    fn render<'ctx>(&mut self, ui: &mut pierro::UI, context: &mut PanelContext<'ctx>) {
+        self.render(ui, context);
     }
 
     fn name(&self) -> &'static str {
@@ -66,18 +73,19 @@ impl EditorPanel {
 
 }
 
+
 impl pierro::DockingTab for EditorPanel {
-    type Context = State;
+    type Context<'ctx> = PanelContext<'ctx>;
 
     fn title(&self) -> String {
         self.panel.title() 
     }
 
-    fn render(&mut self, ui: &mut pierro::UI, state: &mut State) {
-        self.panel.render(ui, state); 
+    fn render<'ctx>(&mut self, ui: &mut pierro::UI, context: &mut PanelContext<'ctx>) {
+        self.panel.render(ui, context); 
     }
 
-    fn add_tab_dropdown<F: FnMut(Self)>(ui: &mut pierro::UI, mut add_tab: F, _context: &mut State) {
+    fn add_tab_dropdown<'ctx, F: FnMut(Self)>(ui: &mut pierro::UI, mut add_tab: F, _context: &mut PanelContext<'ctx>) {
         for panel_kind in PANEL_KINDS {
             if pierro::menu_button(ui, panel_kind.name).mouse_clicked() {
                 add_tab((panel_kind.make_panel)());

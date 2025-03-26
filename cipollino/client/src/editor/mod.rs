@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use project::alisa::rmpv;
 use project::{deep_load_clip, Client};
 
-use crate::{AppSystems, DockingLayoutPref, EditorPanel};
+use crate::{AppSystems, DockingLayoutPref, EditorPanel, PanelContext};
 
 mod socket;
 pub use socket::*;
@@ -85,7 +85,13 @@ impl Editor {
         self.state.editor.selection.begin_frame(ui.input().key_modifiers.contains(pierro::KeyModifiers::SHIFT));
 
         // Render the docking panels 
-        if self.docking.render(ui, &mut self.state) {
+        let mut panel_context = PanelContext {
+            editor: &mut self.state.editor,
+            project: &self.state.project,
+            systems,
+            renderer: &mut self.state.renderer
+        };
+        if self.docking.render(ui, &mut panel_context) {
             // Save the layout if it was modified
             systems.prefs.set::<DockingLayoutPref>(&self.docking);
         }

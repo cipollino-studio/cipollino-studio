@@ -9,7 +9,7 @@ pub use pencil::*;
 
 use project::{Action, ClipInner, CreateFrame, Frame, FrameTreeData, Layer, Ptr, Stroke};
 
-use crate::{EditorState, ProjectState};
+use crate::{AppSystems, EditorState, ProjectState};
 
 pub struct ToolContext<'ctx> {
     pub device: &'ctx pierro::wgpu::Device,
@@ -17,6 +17,7 @@ pub struct ToolContext<'ctx> {
 
     pub project: &'ctx ProjectState,
     pub editor: &'ctx mut EditorState,
+    pub systems: &'ctx mut AppSystems,
     pub clip: &'ctx ClipInner,
     pub active_layer: Ptr<Layer>,
     pub frame_time: i32,
@@ -70,7 +71,7 @@ pub trait Tool: Default {
 
     fn render_overlay(&self, _rndr: &mut malvina::LayerRenderer, _accent_color: elic::Color) {}
 
-    fn settings(&mut self, _ui: &mut pierro::UI) {}
+    fn settings(&mut self, _ui: &mut pierro::UI, _systems: &mut AppSystems) {}
 
     fn cursor_icon(&self) -> pierro::CursorIcon {
         pierro::CursorIcon::Default
@@ -94,7 +95,7 @@ pub trait ToolDyn {
 
     fn render_overlay(&self, rndr: &mut malvina::LayerRenderer, accent_color: elic::Color);
 
-    fn settings(&mut self, _ui: &mut pierro::UI);
+    fn settings(&mut self, _ui: &mut pierro::UI, _systems: &mut AppSystems);
 
     fn cursor_icon(&self) -> pierro::CursorIcon;
 
@@ -138,8 +139,8 @@ impl<T: Tool> ToolDyn for T {
         self.render_overlay(rndr, accent_color);
     }
 
-    fn settings(&mut self, ui: &mut pierro::UI) {
-        self.settings(ui);
+    fn settings(&mut self, ui: &mut pierro::UI, systems: &mut AppSystems) {
+        self.settings(ui, systems);
     }
 
     fn cursor_icon(&self) -> pierro::CursorIcon {

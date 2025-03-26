@@ -3,7 +3,7 @@ use std::collections::HashSet;
 
 use project::{ClipInner, Ptr, SceneChildPtr, Stroke};
 
-use crate::{render_scene, EditorState, ProjectState, ToolContext};
+use crate::{render_scene, AppSystems, EditorState, ProjectState, ToolContext};
 
 use super::ScenePanel;
 
@@ -37,6 +37,7 @@ impl ScenePanel {
         response: &pierro::Response,
         project: &ProjectState,
         editor: &mut EditorState,
+        systems: &mut AppSystems,
         renderer: &mut malvina::Renderer,
         clip: &ClipInner,
         render_list: &Vec<SceneChildPtr>,
@@ -112,6 +113,7 @@ impl ScenePanel {
             queue: ui.wgpu_queue(),
 
             editor,
+            systems,
 
             pressure: ui.input().pressure
         };
@@ -184,7 +186,7 @@ impl ScenePanel {
 
     }
 
-    pub(super) fn canvas(&mut self, ui: &mut pierro::UI, project: &ProjectState, editor: &mut EditorState, renderer: &mut malvina::Renderer, clip: &ClipInner) {
+    pub(super) fn canvas(&mut self, ui: &mut pierro::UI, project: &ProjectState, editor: &mut EditorState, systems: &mut AppSystems, renderer: &mut malvina::Renderer, clip: &ClipInner) {
 
         // Get the list of things to render in the scene
         let render_list = Self::render_list(&project.client, clip, clip.frame_idx(editor.time));
@@ -205,7 +207,7 @@ impl ScenePanel {
         // Render the scene
         ui.with_parent(canvas_container.node_ref, |ui| {
             pierro::canvas(ui, (resize_margin as f32 * ui.scale_factor()) as u32, |ui, texture, response| {
-                self.canvas_contents(ui, texture, response, project, editor, renderer, clip, &render_list, &rendered_strokes, canvas_width, canvas_height, resize_margin); 
+                self.canvas_contents(ui, texture, response, project, editor, systems, renderer, clip, &render_list, &rendered_strokes, canvas_width, canvas_height, resize_margin); 
             });
         });
         

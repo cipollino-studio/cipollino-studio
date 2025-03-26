@@ -1,16 +1,20 @@
 
 use project::{Action, CreateStroke, StrokeData, StrokeTreeData};
 
+use crate::AppSystems;
+
 use super::{Tool, ToolContext};
 
 mod curve_fit;
 
+mod prefs;
+use prefs::*;
+
+mod settings;
+
 pub struct PencilTool {
     pts: Vec<malvina::StrokePoint>,
     drawing_stroke: bool,
-
-    stroke_width: f32,
-    use_pen_pressure: bool
 }
 
 impl Default for PencilTool {
@@ -19,8 +23,6 @@ impl Default for PencilTool {
         Self {
             pts: Vec::new(),
             drawing_stroke: false,
-            stroke_width: 5.0,
-            use_pen_pressure: true
         }
     }
 
@@ -53,10 +55,11 @@ impl PencilTool {
         }
     }
 
-    fn create_stroke(ctx: &ToolContext, stroke: malvina::Stroke, stroke_width: f32) {
+    fn create_stroke(ctx: &mut ToolContext, stroke: malvina::Stroke) {
         let mut action = Action::new(ctx.editor.action_context("New Stroke"));
         let Some(ptr) = ctx.project.client.next_ptr() else { return; };
         let Some(frame) = ctx.active_frame(&mut action) else { return; };
+        let stroke_width = ctx.systems.prefs.get::<PencilStrokeWidthPref>();
         action.push(CreateStroke {
             ptr,
             parent: frame,
@@ -70,8 +73,8 @@ impl PencilTool {
         ctx.project.client.queue_action(action);
     }
 
-    fn add_point(&mut self, mut pt: malvina::StrokePoint) {
-        if !self.use_pen_pressure {
+    fn add_point(&mut self, mut pt: malvina::StrokePoint, systems: &mut AppSystems) {
+        if !systems.prefs.get::<PencilUsePressure>() {
             pt.pressure = 1.0;
         }
 
@@ -109,7 +112,7 @@ impl Tool for PencilTool {
 
     fn mouse_clicked(&mut self, ctx: &mut ToolContext, pos: malvina::Vec2) {
         let stroke = malvina::Stroke::point(pos, 1.0);
-        Self::create_stroke(ctx, stroke, self.stroke_width); 
+        Self::create_stroke(ctx, stroke); 
     }
 
     fn mouse_drag_started(&mut self, ctx: &mut ToolContext, pos: malvina::Vec2) {
@@ -117,7 +120,7 @@ impl Tool for PencilTool {
         self.add_point(malvina::StrokePoint {
             pt: pos,
             pressure: ctx.pressure,
-        });
+        }, ctx.systems);
         self.drawing_stroke = true;
     }
 
@@ -129,10 +132,11 @@ impl Tool for PencilTool {
         self.add_point(malvina::StrokePoint {
             pt: pos,
             pressure: ctx.pressure,
-        });
+        }, ctx.systems);
 
         let stroke = self.calc_stroke();
-        ctx.editor.preview.stroke_preview = Some(malvina::StrokeMesh::new(ctx.device, &stroke, self.stroke_width));
+        let stroke_width = ctx.systems.prefs.get::<PencilStrokeWidthPref>();
+        ctx.editor.preview.stroke_preview = Some(malvina::StrokeMesh::new(ctx.device, &stroke, stroke_width));
     }
 
     fn mouse_released(&mut self, ctx: &mut ToolContext, pos: malvina::Vec2) {
@@ -143,27 +147,19 @@ impl Tool for PencilTool {
         self.add_point(malvina::StrokePoint {
             pt: pos,
             pressure: ctx.pressure,
-        });
+        }, ctx.systems);
 
         let stroke = self.calc_stroke();
         self.pts.clear();
         self.drawing_stroke = false;
-        Self::create_stroke(ctx, stroke, self.stroke_width); 
+        Self::create_stroke(ctx, stroke); 
     }
 
-    fn settings(&mut self, ui: &mut pierro::UI) {
+    fn settings(&mut self, ui: &mut pierro::UI, systems: &mut AppSystems) {
         pierro::scroll_area(ui, |ui| {
             pierro::margin(ui, pierro::Margin::same(3.0), |ui| {
                 pierro::key_value_layout(ui, |builder| {
-                    builder.labeled("Stroke Width:", |ui| {
-                        pierro::DragValue::new(&mut self.stroke_width) 
-                            .with_min(0.75)
-                            .with_max(100.0)
-                            .render(ui);
-                    });
-                    builder.labeled("Use Pen Pressure:", |ui| {
-                        pierro::checkbox(ui, &mut self.use_pen_pressure);
-                    })
+                    self.settings_contents(builder, systems);
                 });
             });
         });

@@ -3,9 +3,9 @@ use std::{cell::RefCell, collections::HashSet};
 
 use project::{alisa::AnyPtr, Action, Asset, Clip, ClipTreeData, CreateClip, CreateFolder, Folder, FolderTreeData, Ptr};
 
-use crate::{EditorState, ProjectState, State};
+use crate::{EditorState, ProjectState};
 
-use super::Panel;
+use super::{Panel, PanelContext};
 
 mod tree_ui;
 mod menu_bar;
@@ -119,18 +119,18 @@ impl Panel for AssetsPanel {
         "Assets".to_owned()
     }
 
-    fn render(&mut self, ui: &mut pierro::UI, state: &mut State) {
-        self.menu_bar(ui, state);
+    fn render(&mut self, ui: &mut pierro::UI, context: &mut PanelContext) {
+        self.menu_bar(ui, context.editor, context.project);
 
         let (_, moved_assets) = pierro::dnd_drop_zone_with_size::<AssetList, _>(ui, pierro::Size::fr(1.0), pierro::Size::fr(1.0), |ui| {
             pierro::scroll_area(ui, |ui| {
                 pierro::margin(ui, pierro::Margin::same(3.0), |ui| {
-                    self.render_folder_contents(ui, &state.project.client.folders, &state.project.client.clips, &state.project, &mut state.editor); 
+                    self.render_folder_contents(ui, &context.project.client.folders, &context.project.client.clips, &context.project, &mut context.editor); 
                 });
             });
         });
         if let Some(moved_assets) = moved_assets {
-            moved_assets.transfer(Ptr::null(), &state.project, &state.editor);
+            moved_assets.transfer(Ptr::null(), &context.project, &context.editor);
         }
 
         self.asset_dnd_source.borrow_mut().display(ui, |ui| {
@@ -139,7 +139,7 @@ impl Panel for AssetsPanel {
                 return;
             };
             let assets = assets.clone();
-            assets.render_contents(ui, &state.project.client); 
+            assets.render_contents(ui, &context.project.client); 
         });
     }
 

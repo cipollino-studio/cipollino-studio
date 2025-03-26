@@ -1,9 +1,7 @@
 
 use project::Action;
 
-use crate::State;
-
-use super::Panel;
+use super::{Panel, PanelContext};
  
 #[derive(Default)]
 pub struct DebugPanel {
@@ -33,15 +31,15 @@ impl Panel for DebugPanel {
         "Debug".to_owned()
     }
 
-    fn render(&mut self, ui: &mut pierro::UI, state: &mut State) {
-        let undo = state.project.client.undo_stack().borrow();
+    fn render(&mut self, ui: &mut pierro::UI, context: &mut PanelContext) {
+        let undo = context.project.client.undo_stack().borrow();
         pierro::collapsing_label(ui, format!("Undo: {}", undo.len()), |ui| {
             for action in undo.iter().rev() {
                 self.action_info(ui, action);
             }
         });
 
-        let redo = state.project.client.redo_stack().borrow();
+        let redo = context.project.client.redo_stack().borrow();
         pierro::collapsing_label(ui, format!("Redo: {}", redo.len()), |ui| {
             for action in redo.iter().rev() {
                 self.action_info(ui, action);

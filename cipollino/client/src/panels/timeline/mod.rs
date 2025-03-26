@@ -5,9 +5,7 @@ use layers::{LayerDropLocation, LayerList};
 use project::{alisa::AnyPtr, Ptr};
 use render_list::RenderList;
 
-use crate::State;
-
-use super::Panel;
+use super::{Panel, PanelContext};
 
 mod render_list;
 mod header;
@@ -65,10 +63,10 @@ impl Panel for TimelinePanel {
         "Timeline".to_owned()
     }
 
-    fn render(&mut self, ui: &mut pierro::UI, state: &mut State) {
+    fn render(&mut self, ui: &mut pierro::UI, context: &mut PanelContext) {
         
-        let project = &state.project;
-        let editor = &mut state.editor;
+        let project = &context.project;
+        let editor = &mut context.editor;
 
         let Some(clip) = project.client.get(editor.open_clip) else {
             pierro::centered(ui, |ui| {
