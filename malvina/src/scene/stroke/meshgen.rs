@@ -5,7 +5,8 @@ use super::Stroke;
 
 impl Stroke {
 
-    pub(crate) fn meshgen(&self) -> Vec<StrokeStampInstance> {
+    pub(crate) fn meshgen(&self, width: f32) -> Vec<StrokeStampInstance> {
+        let radius = width / 2.0;
 
         if self.path.pts.is_empty() {
             return Vec::new();
@@ -35,7 +36,7 @@ impl Stroke {
                 let pressure = bezier_pt.pressure;
                 let derivative = segment.sample_derivative(t).pt;
                 let tangent = derivative.normalize();
-                let right = tangent * 3.0 * pressure;
+                let right = tangent * radius * pressure;
                 stamps.push(StrokeStampInstance {
                     pos: pos.into(),
                     right: right.into()

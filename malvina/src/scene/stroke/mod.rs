@@ -66,14 +66,14 @@ impl elic::Linear for StrokePoint {
 
 #[derive(Clone)]
 pub struct Stroke {
-    pub path: elic::BezierPath<StrokePoint>
+    pub path: elic::BezierPath<StrokePoint>,
 }
 
 impl Stroke {
 
     pub fn empty() -> Self {
         Self {
-            path: elic::BezierPath::empty()
+            path: elic::BezierPath::empty(),
         }
     }  
 
