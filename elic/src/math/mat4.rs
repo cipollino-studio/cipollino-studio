@@ -2,7 +2,7 @@
 use std::ops::{Add, Mul, Sub};
 use crate::math::vec4;
 
-use super::Vec4;
+use super::{Vec2, Vec4};
 
 #[derive(Clone, Copy)]
 pub struct Mat4 {
@@ -13,6 +13,15 @@ pub struct Mat4 {
 }
 
 impl Mat4 {
+
+    pub fn scale(scale: Vec2) -> Self {
+        Self {
+            x: Vec4::X * scale.x,
+            y: Vec4::Y * scale.y,
+            z: Vec4::Z,
+            w: Vec4::W,
+        }
+    }
 
     // Copied from glam's source code
     pub fn inverse(&self) -> Self {
