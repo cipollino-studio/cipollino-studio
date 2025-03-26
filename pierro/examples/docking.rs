@@ -7,7 +7,7 @@ struct DockingTab {
 
 impl pierro::DockingTab for DockingTab {
 
-    type Context = ();
+    type Context<'ctx> = ();
 
     fn title(&self) -> String {
         self.text.to_owned()

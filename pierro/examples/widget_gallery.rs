@@ -155,7 +155,7 @@ enum GalleryTab {
 
 impl pierro::DockingTab for GalleryTab {
 
-    type Context = ();
+    type Context<'ctx> = ();
 
     fn title(&self) -> String {
         match self {

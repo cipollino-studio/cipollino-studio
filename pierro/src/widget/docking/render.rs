@@ -22,7 +22,7 @@ impl<Tab: DockingTab> Tabs<Tab> {
         button_fill_animation(ui, tab_response.node_ref, &dnd_response, base_color); 
     }
 
-    fn render(&mut self, ui: &mut UI, node_id: DockingNodeId, commands: &mut Vec<DockingCommand<Tab>>, context: &mut Tab::Context) {
+    fn render<'ctx>(&mut self, ui: &mut UI, node_id: DockingNodeId, commands: &mut Vec<DockingCommand<Tab>>, context: &mut Tab::Context<'ctx>) {
 
         let window_bg = ui.style::<theme::BgLight>();
         let margin = ui.style::<theme::WidgetMargin>();
@@ -140,7 +140,7 @@ impl<Tab: DockingTab> Tabs<Tab> {
 
 impl<Tab: DockingTab> DockingTree<Tab> {
 
-    fn render_node(&mut self, ui: &mut UI, node_id: DockingNodeId, commands: &mut Vec<DockingCommand<Tab>>, context: &mut Tab::Context) -> Option<()> {
+    fn render_node<'ctx>(&mut self, ui: &mut UI, node_id: DockingNodeId, commands: &mut Vec<DockingCommand<Tab>>, context: &mut Tab::Context<'ctx>) -> Option<()> {
         let node = self.nodes.get_mut(&node_id)?;
         match &mut node.kind {
             DockingNodeKind::Tabs(tabs) => {
@@ -183,7 +183,7 @@ impl<Tab: DockingTab> DockingTree<Tab> {
     }
 
     /// Renders the docking tree. Returns if the layout was modified by the user.
-    fn render(&mut self, ui: &mut UI, context: &mut Tab::Context) -> bool {
+    fn render<'ctx>(&mut self, ui: &mut UI, context: &mut Tab::Context<'ctx>) -> bool {
         let mut commands = Vec::new();
 
         self.render_node(ui, self.root, &mut commands, context);
@@ -201,7 +201,7 @@ impl<Tab: DockingTab> DockingTree<Tab> {
 impl<Tab: DockingTab> DockingState<Tab> {
 
     /// Renders the docking tree. Returns true if the layout was modified by the user
-    pub fn render(&mut self, ui: &mut UI, context: &mut Tab::Context) -> bool {
+    pub fn render<'ctx>(&mut self, ui: &mut UI, context: &mut Tab::Context<'ctx>) -> bool {
         let (_, modified) = ui.with_node(UINodeParams::new(Size::fr(1.0), Size::fr(1.0)), |ui| {
             self.tree.render(ui, context)
         });
