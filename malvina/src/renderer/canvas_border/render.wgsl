@@ -10,6 +10,12 @@ struct VertexOutput {
     @builtin(position) clip_position: vec4<f32>,
 };
 
+fn extend(p: vec4<f32>) -> vec4<f32> {
+    let center = uniforms.view_proj * vec4(0.0, 0.0, 0.0, 1.0);
+    let v = step(center, p) * 2.0 - 1.0;
+    return vec4(v.x, v.y, 0.0, 1.0); 
+}
+
 @vertex
 fn vs_main(
     @builtin(vertex_index) in_vertex_index: u32,
@@ -25,35 +31,35 @@ fn vs_main(
 
     // Too lazy to use vertex buffers :P
     var verts = array(
-        vec4(-1.0,  1.0, 0.0, 1.0),
+        extend(inner_tl),
         inner_tl,
-        vec4( 1.0,  1.0, 0.0, 1.0),
+        extend(inner_tr),
 
-        vec4( 1.0,  1.0, 0.0, 1.0),
+        extend(inner_tr),
         inner_tl,
         inner_tr,
 
-        vec4( 1.0,  1.0, 0.0, 1.0),
+        extend(inner_tr),
         inner_tr,
-        vec4( 1.0, -1.0, 0.0, 1.0),
+        extend(inner_br),
 
         inner_tr,
         inner_br,
-        vec4( 1.0, -1.0, 0.0, 1.0),
+        extend(inner_br),
 
         inner_br,
-        vec4(-1.0, -1.0, 0.0, 1.0),
-        vec4( 1.0, -1.0, 0.0, 1.0),
+        extend(inner_bl),
+        extend(inner_br),
 
         inner_bl,
-        vec4(-1.0, -1.0, 0.0, 1.0),
+        extend(inner_bl),
         inner_br,
 
-        vec4(-1.0,  1.0, 0.0, 1.0),
-        vec4(-1.0, -1.0, 0.0, 1.0),
+        extend(inner_tl),
+        extend(inner_bl),
         inner_bl,
 
-        vec4(-1.0,  1.0, 0.0, 1.0),
+        extend(inner_tl),
         inner_bl,
         inner_tl 
     );
