@@ -22,7 +22,7 @@ impl Stroke {
 
         let mut stamps = Vec::new();
 
-        let spacing = 1.0;
+        let spacing = 0.6;
 
         for i in 0..(self.path.pts.len() - 1) {
             let mut t = 0.0;
@@ -36,13 +36,14 @@ impl Stroke {
                 let pressure = bezier_pt.pressure;
                 let derivative = segment.sample_derivative(t).pt;
                 let tangent = derivative.normalize();
-                let right = tangent * radius * pressure;
+                let size = radius * pressure;
+                let right = tangent * size; 
                 stamps.push(StrokeStampInstance {
                     pos: pos.into(),
                     right: right.into()
                 });
 
-                t += spacing / derivative.length(); 
+                t += (spacing / derivative.length() * size).max(0.005); 
             }
         }
 
