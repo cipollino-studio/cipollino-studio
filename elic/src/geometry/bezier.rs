@@ -1,4 +1,4 @@
-use crate::Vec2;
+use crate::{Range, Rect, Vec2};
 
 use super::Linear;
 
@@ -75,6 +75,40 @@ impl<T: Linear> BezierSegment<T> {
 
 }
 
+impl BezierSegment<f32> {
+
+    pub fn bounds(&self) -> Range {
+        let mut min = self.p0.min(self.p1);
+        let mut max = self.p0.max(self.p1);
+        
+        let x = self.b0 - self.p0;
+        let y = self.a1 - self.b0;
+        let z = self.p1 - self.a1;
+        let a = 3.0 * x - 6.0 * y + 3.0 * z;
+        let b = -6.0 * x + 6.0 * y;
+        let c = 3.0 * x;
+        let det = b * b - 4.0 * a * c;
+
+        if det > 0.0 {
+            let t1 = (-b + det.sqrt()) / (2.0 * a);
+            if 0.0 <= t1 && t1 <= 1.0 {
+                let val = self.sample(t1);
+                min = min.min(val);
+                max = max.max(val);
+            } 
+            let t2 = (-b - det.sqrt()) / (2.0 * a);
+            if 0.0 <= t2 && t2 <= 1.0 {
+                let val = self.sample(t2);
+                min = min.min(val);
+                max = max.max(val);
+            } 
+        }
+
+        Range::new(min, max) 
+    }
+
+}
+
 impl BezierSegment<Vec2> {
 
     pub fn sample_tangent(&self, t: f32) -> Vec2 {
@@ -84,12 +118,26 @@ impl BezierSegment<Vec2> {
     pub fn sample_bezier_normal(&self, t: f32) -> Vec2 {
         self.sample_tangent(t).turn_cw()
     }
+    
+    pub fn bounds(&self) -> Rect {
+        let x_bounds = self.map(|pt| pt.x).bounds();
+        let y_bounds = self.map(|pt| pt.y).bounds();
+        Rect::from_ranges(x_bounds, y_bounds)
+    }
 
 }
 
 #[derive(Clone)]
 pub struct BezierPath<T: Linear> {
     pub pts: Vec<BezierPoint<T>>
+}
+
+impl<T: Linear> Default for BezierPath<T> {
+
+    fn default() -> Self {
+        Self { pts: Vec::new() }
+    }
+
 }
 
 impl<T: Linear> BezierPath<T> {
@@ -124,6 +172,12 @@ impl<T: Linear> BezierPath<T> {
 
     pub fn iter_segments(&self) -> impl Iterator<Item = BezierSegment<T>> + '_ {
         self.pts.windows(2).map(|pts| BezierSegment::from_points(pts[0].clone(), pts[1].clone()))
+    }
+
+    pub fn map<R: Linear, F: Fn(&T) -> R>(&self, map: F) -> BezierPath<R> {
+        BezierPath {
+            pts: self.pts.iter().map(|pt| pt.map(&map)).collect(),
+        }
     }
 
 }

@@ -187,6 +187,10 @@ impl Rect {
         self.bottom_frac(0.5)
     }
 
+    pub fn merge(&self, other: Rect) -> Rect {
+        Self::min_max(self.min.min(other.min), self.max.max(other.max))
+    }
+
 }
 
 impl Display for Rect {
@@ -198,4 +202,3 @@ impl Display for Rect {
     }
 
 }
-

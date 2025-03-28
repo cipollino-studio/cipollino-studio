@@ -2,7 +2,7 @@
 use std::ops::{Add, Mul, Sub};
 use crate::math::vec4;
 
-use super::{Vec2, Vec4};
+use super::{vec2, Vec2, Vec4};
 
 #[derive(Clone, Copy)]
 pub struct Mat4 {
@@ -13,6 +13,22 @@ pub struct Mat4 {
 }
 
 impl Mat4 {
+
+    pub const IDENTITY: Self = Self {
+        x: Vec4::X,
+        y: Vec4::Y,
+        z: Vec4::Z,
+        w: Vec4::W,
+    };
+
+    pub fn translate(pos: Vec2) -> Self {
+        Self {
+            x: Vec4::X,
+            y: Vec4::Y,
+            z: Vec4::Z,
+            w: vec4(pos.x, pos.y, 0.0, 1.0),
+        }
+    }
 
     pub fn scale(scale: Vec2) -> Self {
         Self {
@@ -109,6 +125,11 @@ impl Mat4 {
             z: vec4(0.0, 0.0, -1.0, 0.0),
             w: vec4(tx, ty, 0.0, 1.0),
         }
+    }
+
+    pub fn transform(&self, pt: Vec2) -> Vec2 { 
+        let transformed = *self * vec4(pt.x, pt.y, 0.0, 1.0);
+        vec2(transformed.x, transformed.y)
     }
 
 }
