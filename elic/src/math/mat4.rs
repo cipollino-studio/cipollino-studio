@@ -132,6 +132,12 @@ impl Mat4 {
         vec2(transformed.x, transformed.y)
     }
 
+    pub fn with_fixed_point(&self, pt: Vec2) -> Mat4 {
+        let transformed = self.transform(pt);
+        let offset = pt - transformed;
+        Self::translate(offset) * *self
+    }
+
 }
 
 impl Mul<f32> for Mat4 {
