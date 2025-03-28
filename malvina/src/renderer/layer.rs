@@ -1,5 +1,5 @@
 
-use super::{BrushTexture, CanvasBorderRenderer, OverlayLineRenderer, StrokeMesh, StrokeRenderer};
+use super::{BrushTexture, CanvasBorderRenderer, OverlayCircleRenderer, OverlayLineRenderer, StrokeMesh, StrokeRenderer};
 
 pub struct LayerRenderer<'rndr> {
     pub(super) device: &'rndr wgpu::Device,
@@ -14,6 +14,7 @@ pub struct LayerRenderer<'rndr> {
     pub(super) stroke_renderer: &'rndr mut StrokeRenderer,
     pub(super) canvas_border_renderer: &'rndr mut CanvasBorderRenderer,
     pub(super) overlay_line_renderer: &'rndr mut OverlayLineRenderer, 
+    pub(super) overlay_circle_renderer: &'rndr mut OverlayCircleRenderer, 
 
     pub(super) circle_brush: &'rndr BrushTexture
 }
@@ -46,6 +47,10 @@ impl LayerRenderer<'_> {
 
     pub fn overlay_line(&mut self, a: elic::Vec2, b: elic::Vec2, color: elic::Color) {
         self.overlay_line_renderer.render_line(self.render_pass, a, b, 0.5 * self.dpi_factor / self.zoom, color, self.view_proj);
+    }
+
+    pub fn overlay_circle(&mut self, pos: elic::Vec2, r: f32, color: elic::Color) {
+        self.overlay_circle_renderer.render_circle(self.render_pass, pos, r * self.dpi_factor / self.zoom, color, self.view_proj);
     }
 
 }

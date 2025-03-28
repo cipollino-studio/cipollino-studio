@@ -24,6 +24,7 @@ pub struct Renderer {
     stroke: StrokeRenderer,
     canvas_border: CanvasBorderRenderer,
     line_renderer: OverlayLineRenderer,
+    circle_renderer: OverlayCircleRenderer,
     circle_brush: BrushTexture
 }
 
@@ -34,11 +35,13 @@ impl Renderer {
         let stroke = StrokeRenderer::new(device, &brush_texture_resources);
         let canvas_border = CanvasBorderRenderer::new(device);
         let line_renderer = OverlayLineRenderer::new(device);
+        let circle_renderer = OverlayCircleRenderer::new(device);
         let circle_brush = BrushTexture::circle(device, queue, &brush_texture_resources, 100);
         Self {
             stroke,
             canvas_border,
             line_renderer,
+            circle_renderer,
             circle_brush
         }
     }
@@ -94,6 +97,8 @@ impl Renderer {
                 stroke_renderer: &mut self.stroke,
                 canvas_border_renderer: &mut self.canvas_border,
                 overlay_line_renderer: &mut self.line_renderer,
+                overlay_circle_renderer: &mut self.circle_renderer,
+                
                 circle_brush: &self.circle_brush
             };
 
