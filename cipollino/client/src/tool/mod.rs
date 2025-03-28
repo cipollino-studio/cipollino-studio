@@ -29,6 +29,8 @@ pub struct ToolContext<'ctx> {
     pub picking_mouse_pos: Option<(u32, u32)>, 
 
     pub pressure: f32,
+
+    pub cam_zoom: f32,
 }
 
 impl ToolContext<'_> {

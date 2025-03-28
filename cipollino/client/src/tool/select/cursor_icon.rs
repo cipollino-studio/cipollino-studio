@@ -31,7 +31,7 @@ impl SelectTool {
         }
         
         if let Some(gizmos) = self.calc_gizmos() {
-            if let Some(pivot) = gizmos.get_resizing_pivot(pos) {
+            if let Some(pivot) = gizmos.get_resizing_pivot(pos, ctx.cam_zoom) {
                 return Self::diagonal_scale_cursor_icon(pivot, pos);
             } 
         }

@@ -115,7 +115,9 @@ impl ScenePanel {
             editor,
             systems,
 
-            pressure: ui.input().pressure
+            pressure: ui.input().pressure,
+
+            cam_zoom: 1.0 / self.cam_size
         };
         let mut pause = false;
         let tool_cursor_icon = if let Some(mouse_pos) = mouse_pos {

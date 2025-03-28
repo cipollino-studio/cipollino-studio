@@ -109,7 +109,7 @@ impl Tool for SelectTool {
         self.prev_drag_mouse_pos = pos;
 
         if let Some(gizmos) = self.calc_gizmos() {
-            if let Some(pivot) = gizmos.get_resizing_pivot(pos) {
+            if let Some(pivot) = gizmos.get_resizing_pivot(pos, ctx.cam_zoom) {
                 ctx.editor.selection.keep_selection();
                 self.drag_state = DragState::Scale { pivot, origin: pos, curr_pos: pos };
                 return;

@@ -49,20 +49,18 @@ impl FreeTransformGizmos {
         Self::render_circle(rndr, accent_color, self.br);
     }
 
-    pub fn get_resizing_pivot(&self, mouse_pos: elic::Vec2) -> Option<elic::Vec2> {
-        if mouse_pos.distance(self.tl) < FreeTransformGizmos::INTERACTION_RADIUS {
-            return Some(self.br);
+    pub fn get_resizing_pivot(&self, mouse_pos: elic::Vec2, zoom: f32) -> Option<elic::Vec2> {
+        let potential_pivots = [
+            (self.br, mouse_pos.distance(self.tl)),
+            (self.bl, mouse_pos.distance(self.tr)),
+            (self.tr, mouse_pos.distance(self.bl)),
+            (self.tl, mouse_pos.distance(self.br)),
+        ];
+        let (pivot, dist) = potential_pivots.iter().min_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))?;
+        if *dist > Self::INTERACTION_RADIUS / zoom {
+            return None;
         }
-        if mouse_pos.distance(self.tr) < FreeTransformGizmos::INTERACTION_RADIUS {
-            return Some(self.bl);
-        }
-        if mouse_pos.distance(self.bl) < FreeTransformGizmos::INTERACTION_RADIUS {
-            return Some(self.tr);
-        }
-        if mouse_pos.distance(self.br) < FreeTransformGizmos::INTERACTION_RADIUS {
-            return Some(self.tl);
-        }
-        None
+        Some(*pivot)
     }
 
 }
