@@ -73,7 +73,7 @@ pub trait Tool: Default {
 
     fn settings(&mut self, _ui: &mut pierro::UI, _systems: &mut AppSystems) {}
 
-    fn cursor_icon(&self) -> pierro::CursorIcon {
+    fn cursor_icon(&self, _ctx: &mut ToolContext, _pos: malvina::Vec2) -> pierro::CursorIcon {
         pierro::CursorIcon::Default
     }
     
@@ -83,21 +83,21 @@ pub trait ToolDyn {
 
     fn icon(&self) -> &'static str;
 
-    fn tick(&mut self, _ctx: &mut ToolContext);
+    fn tick(&mut self, ctx: &mut ToolContext);
 
-    fn mouse_pressed(&mut self, _ctx: &mut ToolContext, _pos: malvina::Vec2);
-    fn mouse_released(&mut self, _ctx: &mut ToolContext, _pos: malvina::Vec2);
-    fn mouse_clicked(&mut self, _ctx: &mut ToolContext, _pos: malvina::Vec2);
+    fn mouse_pressed(&mut self, ctx: &mut ToolContext, pos: malvina::Vec2);
+    fn mouse_released(&mut self, ctx: &mut ToolContext, pos: malvina::Vec2);
+    fn mouse_clicked(&mut self, ctx: &mut ToolContext, pos: malvina::Vec2);
 
-    fn mouse_drag_started(&mut self, _ctx: &mut ToolContext, _pos: malvina::Vec2);
-    fn mouse_drag_stopped(&mut self, _ctx: &mut ToolContext, _pos: malvina::Vec2);
-    fn mouse_dragged(&mut self, _ctx: &mut ToolContext, _pos: malvina::Vec2);
+    fn mouse_drag_started(&mut self, ctx: &mut ToolContext, _pos: malvina::Vec2);
+    fn mouse_drag_stopped(&mut self, ctx: &mut ToolContext, _pos: malvina::Vec2);
+    fn mouse_dragged(&mut self, ctx: &mut ToolContext, _pos: malvina::Vec2);
 
     fn render_overlay(&self, rndr: &mut malvina::LayerRenderer, accent_color: elic::Color);
 
-    fn settings(&mut self, _ui: &mut pierro::UI, _systems: &mut AppSystems);
+    fn settings(&mut self, ui: &mut pierro::UI, systems: &mut AppSystems);
 
-    fn cursor_icon(&self) -> pierro::CursorIcon;
+    fn cursor_icon(&self, ctx: &mut ToolContext, pos: malvina::Vec2) -> pierro::CursorIcon;
 
 }
 
@@ -143,8 +143,8 @@ impl<T: Tool> ToolDyn for T {
         self.settings(ui, systems);
     }
 
-    fn cursor_icon(&self) -> pierro::CursorIcon {
-        self.cursor_icon()
+    fn cursor_icon(&self, ctx: &mut ToolContext, pos: malvina::Vec2) -> pierro::CursorIcon {
+        self.cursor_icon(ctx, pos)
     }
 
 }

@@ -131,4 +131,12 @@ impl EditorState {
         self.on_load_callbacks.append(&mut callbacks);
     }
 
+    pub fn stroke_transform(&self, stroke: Ptr<Stroke>) -> elic::Mat4 {
+        if self.selection.selected(stroke) {
+            self.preview.selection_transform
+        } else {
+            elic::Mat4::IDENTITY
+        }
+    }
+
 }

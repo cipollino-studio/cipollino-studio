@@ -117,9 +117,8 @@ impl ScenePanel {
 
             pressure: ui.input().pressure
         };
-        tool.tick(&mut tool_context);
         let mut pause = false;
-        if let Some(mouse_pos) = mouse_pos {
+        let tool_cursor_icon = if let Some(mouse_pos) = mouse_pos {
             if response.mouse_clicked() && !panning {
                 pause = true;
                 tool.mouse_clicked(&mut tool_context, mouse_pos);
@@ -144,8 +143,12 @@ impl ScenePanel {
                 pause = true;
                 tool.mouse_drag_stopped(&mut tool_context, mouse_pos);
             }
-        }
-        let tool_cursor_icon = tool.cursor_icon();
+
+            tool.cursor_icon(&mut tool_context, mouse_pos)
+        } else {
+            pierro::CursorIcon::default()
+        };
+        tool.tick(&mut tool_context);
 
         if pause {
             editor.playing = false;

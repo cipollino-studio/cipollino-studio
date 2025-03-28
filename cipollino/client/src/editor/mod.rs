@@ -109,6 +109,11 @@ impl Editor {
         // Update the project client
         self.state.project.tick(&self.state.editor);
         self.state.project.client.tick(&mut ());
+
+        // Invalidate cached meshes for updated strokes
+        for updated_stroke in self.state.project.client.modified() {
+            self.state.editor.stroke_mesh_cache.borrow_mut().remove(&updated_stroke);
+        }
         
         // On load callbacks
         self.state.editor.process_on_load_callbacks(&self.state.project);

@@ -165,7 +165,7 @@ impl Tool for PencilTool {
         });
     }
 
-    fn cursor_icon(&self) -> pierro::CursorIcon {
+    fn cursor_icon(&self, _ctx: &mut ToolContext, _pos: elic::Vec2) -> pierro::CursorIcon {
         pierro::CursorIcon::Crosshair
     }
 

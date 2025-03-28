@@ -32,6 +32,10 @@ pub struct Selection {
 
     shift_down: bool,
     keep_selection: bool,
+
+    /// A counter that gets incremented every time the selection is modified.
+    /// Used for efficiently checking if some selection-based cache is invalid(e.g. the select tool's free transform bounding box)
+    version: u64
 }
 
 impl Selection {
@@ -45,7 +49,8 @@ impl Selection {
             frames: HashSet::new(),
             strokes: HashSet::new(),
             shift_down: false,
-            keep_selection: false
+            keep_selection: false,
+            version: 0,
         }
     }
 
@@ -67,6 +72,7 @@ impl Selection {
         self.layers.clear();
         self.frames.clear();
         self.strokes.clear();
+        self.version += 1;
     }
 
     pub fn selected<S: Selectable>(&self, ptr: Ptr<S>) -> bool {
@@ -83,11 +89,14 @@ impl Selection {
         S::selection_list_mut(self).insert(ptr);
         self.kind = S::KIND;
         self.keep_selection = true;
+        self.version += 1;
     }
 
     pub fn invert_select<S: Selectable>(&mut self, ptr: Ptr<S>) {
         if !S::selection_list_mut(self).remove(&ptr) {
             self.select(ptr);
+        } else {
+            self.version += 1;
         }
         self.keep_selection = true;
     }
@@ -109,6 +118,14 @@ impl Selection {
 
     pub fn kind(&self) -> SelectionKind {
         self.kind
+    }
+
+    pub fn version(&self) -> u64 {
+        self.version
+    }
+
+    pub fn shift_down(&self) -> bool {
+        self.shift_down
     }
 
 }

@@ -44,6 +44,7 @@ impl ScenePanel {
             });
         }
         project.client.queue_action(action);
+        editor.selection.clear();
     }
 
 }

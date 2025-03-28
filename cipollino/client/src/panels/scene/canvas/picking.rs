@@ -11,7 +11,7 @@ impl ScenePanel {
                 SceneChildPtr::Stroke(stroke_ptr) => {
                     let stroke_mesh_cache = editor.stroke_mesh_cache.borrow();
                     if let Some(stroke) = stroke_mesh_cache.get(&stroke_ptr.ptr()) {
-                        rndr.render_stroke(stroke, stroke_ptr.ptr().key() as u32);
+                        rndr.render_stroke(stroke, stroke_ptr.ptr().key() as u32, editor.stroke_transform(stroke_ptr.ptr()));
                     }
                 },
             }

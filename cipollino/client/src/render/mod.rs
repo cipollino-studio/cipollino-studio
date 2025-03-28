@@ -5,10 +5,10 @@ use crate::EditorState;
 fn render_stroke(rndr: &mut malvina::LayerRenderer, editor: &EditorState, stroke: &Stroke, stroke_ptr: Ptr<Stroke>) {
     let mut stroke_mesh_cache = editor.stroke_mesh_cache.borrow_mut();
     if let Some(mesh) = stroke_mesh_cache.get(&stroke_ptr) {
-        rndr.render_stroke(mesh, stroke.color.into());
+        rndr.render_stroke(mesh, stroke.color.into(), editor.stroke_transform(stroke_ptr));
     } else {
         let mesh = malvina::StrokeMesh::new(rndr.device(), &stroke.stroke.0, stroke.width);
-        rndr.render_stroke(&mesh, stroke.color.into());
+        rndr.render_stroke(&mesh, stroke.color.into(), editor.stroke_transform(stroke_ptr));
         stroke_mesh_cache.insert(stroke_ptr, mesh);
     }
 }
@@ -34,7 +34,7 @@ fn render_layer(rndr: &mut malvina::LayerRenderer, client: &Client, editor: &Edi
 
     if layer_ptr == editor.active_layer {
         if let Some(stroke_preview) = &editor.preview.stroke_preview {
-            rndr.render_stroke(stroke_preview, editor.color);
+            rndr.render_stroke(stroke_preview, editor.color, elic::Mat4::IDENTITY);
         }
     } 
 }

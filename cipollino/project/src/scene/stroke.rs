@@ -3,7 +3,7 @@ use crate::{Frame, Objects, Project};
 
 use super::SceneChildPtr;
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct StrokeData(pub malvina::Stroke);
 
 fn encode_stroke_point(buffer: &mut Vec<u8>, pt: &malvina::StrokePoint) {
@@ -165,3 +165,4 @@ impl alisa::TreeObj for Stroke {
 }
 
 alisa::tree_object_operations!(Stroke);
+alisa::object_set_property_operation!(Stroke, stroke, StrokeData);
