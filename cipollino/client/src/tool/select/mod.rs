@@ -209,8 +209,13 @@ impl Tool for SelectTool {
 
         match &self.drag_state {
             DragState::Move(_) => {
-                ctx.editor.preview.selection_transform = self.curr_transform();
-                ctx.editor.preview.keep_preview = true;
+                if ctx.editor.will_undo || ctx.editor.will_redo {
+                    ctx.editor.will_undo = false;
+                    self.drag_state = DragState::None;
+                } else {
+                    ctx.editor.preview.selection_transform = self.curr_transform();
+                    ctx.editor.preview.keep_preview = true;
+                }
             },
             _ => {}
         }
