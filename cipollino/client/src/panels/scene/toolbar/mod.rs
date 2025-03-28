@@ -1,5 +1,5 @@
 
-use crate::{EditorState, PencilTool, SelectTool, Tool};
+use crate::{ColorPicker, EditorState, PencilTool, SelectTool, Tool};
 
 use super::ScenePanel;
 
@@ -60,6 +60,7 @@ impl ScenePanel {
                         |ui| {
                             self.tool_button::<SelectTool>(ui, editor);
                             self.tool_button::<PencilTool>(ui, editor);
+                            self.tool_button::<ColorPicker>(ui, editor);
                             self.color_picker(ui, editor);
 
                             // Spacer

@@ -1,14 +1,15 @@
 
 mod select;
-use std::collections::HashSet;
-
 pub use select::*;
 
 mod pencil;
 pub use pencil::*;
 
-use project::{Action, ClipInner, CreateFrame, Frame, FrameTreeData, Layer, Ptr, Stroke};
+mod color_picker;
+pub use color_picker::*;
 
+use project::{Action, ClipInner, CreateFrame, Frame, FrameTreeData, Layer, Ptr, Stroke};
+use std::collections::HashSet;
 use crate::{AppSystems, EditorState, ProjectState};
 
 pub struct ToolContext<'ctx> {
