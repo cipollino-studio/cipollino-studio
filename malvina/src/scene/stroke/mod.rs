@@ -64,7 +64,7 @@ impl elic::Linear for StrokePoint {
 
 }
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct Stroke {
     pub path: elic::BezierPath<StrokePoint>,
 }

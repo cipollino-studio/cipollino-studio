@@ -22,8 +22,8 @@ impl PickingRenderer<'_, '_> {
         elic::Color::rgba(r, g, b, 1.0)
     }
 
-    pub fn render_stroke(&mut self, stroke: &StrokeMesh, id: u32) {
-        self.renderer.render_stroke_picking(stroke, Self::id_to_color(id));
+    pub fn render_stroke(&mut self, stroke: &StrokeMesh, id: u32, trans: elic::Mat4) {
+        self.renderer.render_stroke_picking(stroke, Self::id_to_color(id), trans);
     }
 
 }

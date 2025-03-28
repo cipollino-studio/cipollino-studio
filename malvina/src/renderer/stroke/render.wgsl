@@ -5,6 +5,7 @@ struct StampInput {
 }
 
 struct StrokeUniforms {
+    trans: mat4x4<f32>,
     view_proj: mat4x4<f32>,
     color: vec4<f32>,
     resolution: vec2<f32>,
@@ -43,7 +44,8 @@ fn vs_main(
         r + d,
         r + u,
     );
-    out.clip_position = uniforms.view_proj * vec4(stamp.pos + rect_vertex_offset[in_vertex_index], 0.0, 1.0);
+    let stamp_pos = (uniforms.trans * vec4(stamp.pos, 0.0, 1.0)).xy;
+    out.clip_position = uniforms.view_proj * vec4(stamp_pos + rect_vertex_offset[in_vertex_index], 0.0, 1.0);
 
     var uv = array(
         vec2(0.0, 0.0),

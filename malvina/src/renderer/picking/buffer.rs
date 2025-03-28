@@ -38,6 +38,10 @@ impl PickingBuffer {
     pub fn read_pixel(&mut self, device: &wgpu::Device, queue: &wgpu::Queue, x: u32, y: u32) -> u32 {
         let Some(texture) = self.texture.as_ref() else { return 0; };
 
+        if x >= texture.width() || y >= texture.height() {
+            return 0;
+        }
+
         if self.pixel_copy_buffer.is_none() {
             self.pixel_copy_buffer = Some(device.create_buffer(&wgpu::BufferDescriptor {
                 label: Some("malvina_picking_buffer_copy_pixels_buffer"),
