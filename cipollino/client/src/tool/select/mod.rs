@@ -1,15 +1,22 @@
 
-use std::collections::HashSet;
-
 use project::{Action, Client, Ptr, SetStrokeStroke, Stroke, StrokeData};
 use crate::{EditorState, Selection};
 
 use super::{Tool, ToolContext};
 
+mod gizmos;
+mod lasso;
+mod cursor_icon;
+
 enum DragState {
     None,
     Lasso(Vec<elic::Vec2>),
-    Move(elic::Vec2)
+    Move(elic::Vec2),
+    Scale {
+        pivot: elic::Vec2,
+        origin: elic::Vec2,
+        curr_pos: elic::Vec2
+    }
 }
 
 pub struct SelectTool {
@@ -49,59 +56,11 @@ impl SelectTool {
         self.select_bounding_box_transform = elic::Mat4::IDENTITY;
     }
 
-    fn lasso_selection(&mut self, client: &Client, rendered_strokes: &HashSet<Ptr<Stroke>>, selection: &mut Selection, pts: Vec<elic::Vec2>) {
-        
-        let segments = pts.windows(2).map(|pts| {
-            elic::Segment::new(pts[0], pts[1])
-        });
-        let segments_2 = segments.clone();
-        let inside_lasso = |pt: elic::Vec2| {
-            let mut cnt = 0;
-            let line = elic::Line::horizontal(pt.y);
-            for segment in segments.clone() {
-                if let Some(intersection) = segment.intersect_line(line) {
-                    if intersection.x > pt.x {
-                        cnt += 1;
-                    }
-                }
-            }
-            cnt % 2 == 1 
-        };
-        let segments = segments_2;
-
-        'stroke_loop: for stroke_ptr in rendered_strokes.iter() {
-            let stroke = client.get(*stroke_ptr);
-            if stroke.is_none() {
-                continue;
-            } 
-            let stroke = stroke.unwrap();
-
-            macro_rules! select {
-                () => {
-                    selection.select(*stroke_ptr); 
-                    continue 'stroke_loop;
-                };
-            }
-
-            let stroke_path = &stroke.stroke.0.path;
-
-            for pt in &stroke_path.pts {
-                if inside_lasso(pt.pt.pt) {
-                    select!();
-                } 
-            }
-            
-            for stroke_segment in stroke_path.iter_segments() {
-                let stroke_segment = stroke_segment.map(|pt| pt.pt);
-                for lasso_segment in segments.clone() {
-                    let ts = lasso_segment.intersect_bezier_ts(&stroke_segment);
-                    if !ts.is_empty() {
-                        select!();
-                    }
-                }
-            } 
-        }
-
+    fn calc_scale_transform(pivot: elic::Vec2, origin: elic::Vec2, curr_pos: elic::Vec2) -> elic::Mat4 {
+        let initial_size = origin - pivot;
+        let current_size = curr_pos - pivot;
+        let scale_factor = current_size / initial_size;
+        elic::Mat4::scale(scale_factor).with_fixed_point(pivot)
     }
 
     fn apply_transform(&mut self, client: &Client, editor: &mut EditorState, transform: elic::Mat4) {
@@ -125,10 +84,15 @@ impl SelectTool {
     }
 
     fn curr_transform(&self) -> elic::Mat4 {
-        self.select_bounding_box_transform * match self.drag_state {
+        match self.drag_state {
             DragState::Move(drag) => elic::Mat4::translate(drag),
+            DragState::Scale { pivot, origin, curr_pos } => Self::calc_scale_transform(pivot, origin, curr_pos),
             _ => elic::Mat4::IDENTITY
         }
+    }
+
+    fn bounding_box_transform(&self) -> elic::Mat4 {
+        self.curr_transform() * self.select_bounding_box_transform
     }
 
 }
@@ -144,6 +108,14 @@ impl Tool for SelectTool {
     fn mouse_drag_started(&mut self, ctx: &mut ToolContext, pos: malvina::Vec2) {
         self.prev_drag_mouse_pos = pos;
 
+        if let Some(gizmos) = self.calc_gizmos() {
+            if let Some(pivot) = gizmos.get_resizing_pivot(pos) {
+                ctx.editor.selection.keep_selection();
+                self.drag_state = DragState::Scale { pivot, origin: pos, curr_pos: pos };
+                return;
+            } 
+        }
+
         if let Some((x, y)) = ctx.picking_mouse_pos {
             let id = ctx.picking_buffer.read_pixel(ctx.device, ctx.queue, x, y);
             let ptr = Ptr::<Stroke>::from_key(id as u64);
@@ -155,7 +127,8 @@ impl Tool for SelectTool {
                 self.drag_state = DragState::Move(elic::Vec2::ZERO);
                 return;
             }
-        } 
+        }
+
         self.drag_state = DragState::Lasso(vec![pos]);
     }
 
@@ -173,6 +146,9 @@ impl Tool for SelectTool {
             DragState::Move(drag) => {
                 *drag += pos - self.prev_drag_mouse_pos;
             },
+            DragState::Scale { curr_pos, .. } => {
+                *curr_pos = pos; 
+            }
         }
         self.prev_drag_mouse_pos = pos;
     }
@@ -191,6 +167,9 @@ impl Tool for SelectTool {
             DragState::Move(drag) => {
                 self.apply_transform(&ctx.project.client, ctx.editor, elic::Mat4::translate(drag));
             },
+            DragState::Scale { pivot, origin, curr_pos } => {
+                self.apply_transform(&ctx.project.client, ctx.editor, Self::calc_scale_transform(pivot, origin, curr_pos));
+            }
         }
     }
 
@@ -208,7 +187,7 @@ impl Tool for SelectTool {
         } 
 
         match &self.drag_state {
-            DragState::Move(_) => {
+            DragState::Move(_) | DragState::Scale { .. } => {
                 if ctx.editor.will_undo || ctx.editor.will_redo {
                     ctx.editor.will_undo = false;
                     self.drag_state = DragState::None;
@@ -235,37 +214,13 @@ impl Tool for SelectTool {
             _ => {}
         }
 
-        if let Some(bounding_box) = self.select_bounding_box {
-            let transform = self.curr_transform();
-            let tl = transform.transform(bounding_box.tl());
-            let tr = transform.transform(bounding_box.tr());
-            let bl = transform.transform(bounding_box.bl());
-            let br = transform.transform(bounding_box.br());
-            rndr.overlay_line(tl, tr, accent_color);
-            rndr.overlay_line(tr, br, accent_color);
-            rndr.overlay_line(br, bl, accent_color);
-            rndr.overlay_line(bl, tl, accent_color);
-        }
+        if let Some(gizmos) = self.calc_gizmos() {
+            gizmos.render(rndr, accent_color);
+        } 
     }
 
-    fn cursor_icon(&self, ctx: &mut ToolContext, _pos: elic::Vec2) -> pierro::CursorIcon {
-        match self.drag_state {
-            DragState::Lasso(_) => {
-                return pierro::CursorIcon::Default;
-            },
-            DragState::Move(_) => {
-                return pierro::CursorIcon::Move;
-            },
-            _ => {}
-        }
-        if let Some((x, y)) = ctx.picking_mouse_pos {
-            let id = ctx.picking_buffer.read_pixel(ctx.device, ctx.queue, x, y);
-            let ptr = Ptr::<Stroke>::from_key(id as u64);
-            if !ptr.is_null() {
-                return pierro::CursorIcon::Move;
-            }
-        }
-        pierro::CursorIcon::default()
+    fn cursor_icon(&self, ctx: &mut ToolContext, pos: malvina::Vec2) -> pierro::CursorIcon {
+        self.cursor_icon(ctx, pos)
     }
-
+    
 }
