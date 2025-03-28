@@ -8,6 +8,7 @@ use super::{Object, Ptr};
 
 pub struct ObjectKind<P: Project> {
     pub(crate) name: &'static str,
+    pub(crate) clear_modifications: fn(&mut P::Objects),
     pub(crate) save_modifications: fn(&mut File, objects: &mut P::Objects),
     pub(crate) load_objects: fn(&mut File, &mut P::Objects),
     pub(crate) load_object: fn(&mut File, &mut P::Objects, u64),
@@ -33,16 +34,20 @@ impl<P: Project> ObjectKind<P> {
     pub const fn from<O: Object<Project = P>>() -> Self {
         Self {
             name: O::NAME,
+            clear_modifications: |objects| {
+                O::list_mut(objects).modified.clear();
+                O::list_mut(objects).to_delete.clear();
+            },
             save_modifications: |file, objects| {
-                for modified in std::mem::replace(&mut O::list_mut(objects).modified, HashSet::new()) {
-                    if let Some(object) = O::list(objects).get(modified) {
+                for modified in &mut O::list(objects).modified.iter() {
+                    if let Some(object) = O::list(objects).get(*modified) {
                         let object_data = object.serialize(&SerializationContext::shallow());
                         if let Some(ptr) = file.get_ptr(modified.key) {
                             file.write(ptr, &object_data);
                         }
                     }
                 }
-                for deleted in std::mem::replace(&mut O::list_mut(objects).to_delete, HashSet::new()) {
+                for deleted in O::list(objects).to_delete.iter() {
                     file.delete(deleted.key);
                 }
             },

@@ -183,6 +183,12 @@ impl<P: Project> Client<P> {
 
     /// Update the client. Performs all the queued operations. Returns the messages that should be sent to the server.
     pub fn tick(&mut self, context: &mut P::Context) {
+
+        // Clear modifications from the previous tick
+        for object_kind in P::OBJECTS {
+            (object_kind.clear_modifications)(&mut self.objects);
+        }
+
         let mut operations_ref = self.operations_to_perform.borrow_mut();
         let operations = &mut *operations_ref;
         let operations = std::mem::replace(operations, Vec::new());
@@ -283,6 +289,10 @@ impl<P: Project> Client<P> {
 
     pub fn redo_stack(&self) -> &RefCell<Vec<Action<P>>> {
         &self.redo_stack
+    }
+
+    pub fn modified<O: Object<Project = P>>(&self) -> impl Iterator<Item = Ptr<O>> + '_ {
+        O::list(&self.objects).modified.iter().copied()
     }
 
 }
