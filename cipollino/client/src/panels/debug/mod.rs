@@ -5,7 +5,7 @@ use super::{Panel, PanelContext};
  
 #[derive(Default)]
 pub struct DebugPanel {
-
+    request_redraw: bool
 }
 
 impl DebugPanel {
@@ -32,6 +32,14 @@ impl Panel for DebugPanel {
     }
 
     fn render(&mut self, ui: &mut pierro::UI, context: &mut PanelContext) {
+        pierro::checkbox_labeled(ui, "Request redraw", &mut self.request_redraw);
+        if self.request_redraw {
+            ui.request_redraw();
+        }
+        pierro::label(ui, format!("DT: {}", ui.input().delta_time));
+        pierro::label(ui, format!("FPS: {}", 1.0 / ui.input().delta_time));
+        pierro::v_spacing(ui, 10.0);
+
         let undo = context.project.client.undo_stack().borrow();
         pierro::collapsing_label(ui, format!("Undo: {}", undo.len()), |ui| {
             for action in undo.iter().rev() {
