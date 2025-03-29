@@ -2,15 +2,14 @@
 use project::{Action, Client, Ptr, SetStrokeStroke, Stroke, StrokeData};
 use crate::{EditorState, Selection};
 
-use super::{Tool, ToolContext};
+use super::{LassoState, Tool, ToolContext};
 
 mod gizmos;
-mod lasso;
 mod cursor_icon;
 
 enum DragState {
     None,
-    Lasso(Vec<elic::Vec2>),
+    Lasso(LassoState),
     Move(elic::Vec2),
     Scale {
         pivot: elic::Vec2,
@@ -129,19 +128,14 @@ impl Tool for SelectTool {
             }
         }
 
-        self.drag_state = DragState::Lasso(vec![pos]);
+        self.drag_state = DragState::Lasso(LassoState::from_point(pos));
     }
 
     fn mouse_dragged(&mut self, _ctx: &mut ToolContext, pos: malvina::Vec2) {
         match &mut self.drag_state {
             DragState::None => {},
-            DragState::Lasso(pts) => {
-                if let Some(last) = pts.last() {
-                    if last.distance(pos) < 0.5 {
-                        return;
-                    }
-                }
-                pts.push(pos);
+            DragState::Lasso(lasso) => {
+                lasso.add_point(pos);
             },
             DragState::Move(drag) => {
                 *drag += pos - self.prev_drag_mouse_pos;
@@ -156,12 +150,11 @@ impl Tool for SelectTool {
     fn mouse_drag_stopped(&mut self, ctx: &mut ToolContext, pos: malvina::Vec2) {
         match std::mem::replace(&mut self.drag_state, DragState::None) {
             DragState::None => {},
-            DragState::Lasso(mut pts) => {
-                pts.push(pos);
+            DragState::Lasso(mut lasso) => {
+                lasso.add_point(pos);
 
-                if let Some(first) = pts.first() {
-                    pts.push(*first);
-                    self.lasso_selection(&ctx.project.client, ctx.rendered_strokes, &mut ctx.editor.selection, pts);
+                for stroke in lasso.find_inside(&ctx.project.client, ctx.rendered_strokes) {
+                    ctx.editor.selection.select(stroke);
                 }
             },
             DragState::Move(drag) => {
@@ -202,14 +195,8 @@ impl Tool for SelectTool {
 
     fn render_overlay(&self, rndr: &mut malvina::LayerRenderer, accent_color: elic::Color) {
         match &self.drag_state {
-            DragState::Lasso(pts) => {
-                if pts.len() >= 2 {
-                    for i in 0..(pts.len() - 1) {
-                        let a = pts[i];
-                        let b = pts[i + 1];
-                        rndr.overlay_line(a, b, accent_color);
-                    }
-                }
+            DragState::Lasso(lasso) => {
+                lasso.render_overlay(rndr, accent_color);
             },
             _ => {}
         }

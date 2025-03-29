@@ -166,3 +166,4 @@ impl alisa::TreeObj for Stroke {
 
 alisa::tree_object_operations!(Stroke);
 alisa::object_set_property_operation!(Stroke, stroke, StrokeData);
+alisa::object_set_property_operation!(Stroke, color, [f32; 4]);

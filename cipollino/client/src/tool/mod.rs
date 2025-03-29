@@ -1,4 +1,7 @@
 
+mod util;
+pub use util::*;
+
 mod select;
 pub use select::*;
 
@@ -7,6 +10,9 @@ pub use pencil::*;
 
 mod color_picker;
 pub use color_picker::*;
+
+mod bucket;
+pub use bucket::*;
 
 use project::{Action, ClipInner, CreateFrame, Frame, FrameTreeData, Layer, Ptr, Stroke};
 use std::collections::HashSet;
