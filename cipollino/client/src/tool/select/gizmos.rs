@@ -10,9 +10,9 @@ pub(super) struct FreeTransformGizmos {
 
 impl SelectTool {
 
-    pub(super) fn calc_gizmos(&self) -> Option<FreeTransformGizmos> {
+    pub(super) fn calc_gizmos(&self, shift_down: bool) -> Option<FreeTransformGizmos> {
         let bounding_box = self.select_bounding_box?;
-        let transform = self.bounding_box_transform();
+        let transform = self.bounding_box_transform(shift_down);
         let tl = transform.transform(bounding_box.tl());
         let tr = transform.transform(bounding_box.tr());
         let bl = transform.transform(bounding_box.bl());

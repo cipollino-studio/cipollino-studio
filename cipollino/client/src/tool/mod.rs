@@ -23,7 +23,6 @@ pub struct ToolContext<'ctx> {
     pub queue: &'ctx pierro::wgpu::Queue,
 
     pub project: &'ctx ProjectState,
-    pub editor: &'ctx mut EditorState,
     pub systems: &'ctx mut AppSystems,
     pub clip: &'ctx ClipInner,
     pub active_layer: Ptr<Layer>,
@@ -36,8 +35,8 @@ pub struct ToolContext<'ctx> {
     pub picking_mouse_pos: Option<(u32, u32)>, 
 
     pub pressure: f32,
-
     pub cam_zoom: f32,
+    pub key_modifiers: pierro::KeyModifiers
 }
 
 impl ToolContext<'_> {
@@ -68,21 +67,21 @@ pub trait Tool: Default {
     const ICON: &'static str;
     const SHORTCUT: pierro::KeyboardShortcut;
 
-    fn tick(&mut self, _ctx: &mut ToolContext) {}
+    fn tick(&mut self, _editor: &mut EditorState, _ctx: &mut ToolContext) {}
 
-    fn mouse_pressed(&mut self, _ctx: &mut ToolContext, _pos: malvina::Vec2) {}
-    fn mouse_released(&mut self, _ctx: &mut ToolContext, _pos: malvina::Vec2) {}
-    fn mouse_clicked(&mut self, _ctx: &mut ToolContext, _pos: malvina::Vec2) {}
+    fn mouse_pressed(&mut self, _editor: &mut EditorState, _ctx: &mut ToolContext, _pos: elic::Vec2) {}
+    fn mouse_released(&mut self, _editor: &mut EditorState, _ctx: &mut ToolContext, _pos: elic::Vec2) {}
+    fn mouse_clicked(&mut self, _editor: &mut EditorState, _ctx: &mut ToolContext, _pos: elic::Vec2) {}
 
-    fn mouse_drag_started(&mut self, _ctx: &mut ToolContext, _pos: malvina::Vec2) {}
-    fn mouse_drag_stopped(&mut self, _ctx: &mut ToolContext, _pos: malvina::Vec2) {}
-    fn mouse_dragged(&mut self, _ctx: &mut ToolContext, _pos: malvina::Vec2) {}
+    fn mouse_drag_started(&mut self, _editor: &mut EditorState, _ctx: &mut ToolContext, _pos: elic::Vec2) {}
+    fn mouse_drag_stopped(&mut self, _editor: &mut EditorState, _ctx: &mut ToolContext, _pos: elic::Vec2) {}
+    fn mouse_dragged(&mut self, _editor: &mut EditorState, _ctx: &mut ToolContext, _pos: elic::Vec2) {}
 
-    fn render_overlay(&self, _rndr: &mut malvina::LayerRenderer, _accent_color: elic::Color) {}
+    fn render_overlay(&self, _ctx: &mut ToolContext, _rndr: &mut malvina::LayerRenderer, _accent_color: elic::Color) {}
 
     fn settings(&mut self, _ui: &mut pierro::UI, _systems: &mut AppSystems) {}
 
-    fn cursor_icon(&self, _ctx: &mut ToolContext, _pos: malvina::Vec2) -> pierro::CursorIcon {
+    fn cursor_icon(&self, _editor: &mut EditorState, _ctx: &mut ToolContext, _pos: elic::Vec2) -> pierro::CursorIcon {
         pierro::CursorIcon::Default
     }
     
@@ -92,21 +91,21 @@ pub trait ToolDyn {
 
     fn icon(&self) -> &'static str;
 
-    fn tick(&mut self, ctx: &mut ToolContext);
+    fn tick(&mut self, editor: &mut EditorState, ctx: &mut ToolContext);
 
-    fn mouse_pressed(&mut self, ctx: &mut ToolContext, pos: malvina::Vec2);
-    fn mouse_released(&mut self, ctx: &mut ToolContext, pos: malvina::Vec2);
-    fn mouse_clicked(&mut self, ctx: &mut ToolContext, pos: malvina::Vec2);
+    fn mouse_pressed(&mut self, editor: &mut EditorState, ctx: &mut ToolContext, pos: malvina::Vec2);
+    fn mouse_released(&mut self, editor: &mut EditorState, ctx: &mut ToolContext, pos: malvina::Vec2);
+    fn mouse_clicked(&mut self, editor: &mut EditorState, ctx: &mut ToolContext, pos: malvina::Vec2);
 
-    fn mouse_drag_started(&mut self, ctx: &mut ToolContext, _pos: malvina::Vec2);
-    fn mouse_drag_stopped(&mut self, ctx: &mut ToolContext, _pos: malvina::Vec2);
-    fn mouse_dragged(&mut self, ctx: &mut ToolContext, _pos: malvina::Vec2);
+    fn mouse_drag_started(&mut self, editor: &mut EditorState, ctx: &mut ToolContext, _pos: malvina::Vec2);
+    fn mouse_drag_stopped(&mut self, editor: &mut EditorState, ctx: &mut ToolContext, _pos: malvina::Vec2);
+    fn mouse_dragged(&mut self, editor: &mut EditorState, ctx: &mut ToolContext, _pos: malvina::Vec2);
 
-    fn render_overlay(&self, rndr: &mut malvina::LayerRenderer, accent_color: elic::Color);
+    fn render_overlay(&self, ctx: &mut ToolContext, rndr: &mut malvina::LayerRenderer, accent_color: elic::Color);
 
     fn settings(&mut self, ui: &mut pierro::UI, systems: &mut AppSystems);
 
-    fn cursor_icon(&self, ctx: &mut ToolContext, pos: malvina::Vec2) -> pierro::CursorIcon;
+    fn cursor_icon(&self, editor: &mut EditorState, ctx: &mut ToolContext, pos: malvina::Vec2) -> pierro::CursorIcon;
 
 }
 
@@ -116,44 +115,44 @@ impl<T: Tool> ToolDyn for T {
         Self::ICON
     }
 
-    fn tick(&mut self, ctx: &mut ToolContext) {
-        self.tick(ctx); 
+    fn tick(&mut self, editor: &mut EditorState, ctx: &mut ToolContext) {
+        self.tick(editor, ctx); 
     }
 
-    fn mouse_pressed(&mut self, ctx: &mut ToolContext, pos: malvina::Vec2) {
-        self.mouse_pressed(ctx, pos);
+    fn mouse_pressed(&mut self, editor: &mut EditorState, ctx: &mut ToolContext, pos: malvina::Vec2) {
+        self.mouse_pressed(editor, ctx, pos);
     }
 
-    fn mouse_released(&mut self, ctx: &mut ToolContext, pos: malvina::Vec2) {
-        self.mouse_released(ctx, pos);
+    fn mouse_released(&mut self, editor: &mut EditorState, ctx: &mut ToolContext, pos: malvina::Vec2) {
+        self.mouse_released(editor, ctx, pos);
     }
 
-    fn mouse_clicked(&mut self, ctx: &mut ToolContext, pos: malvina::Vec2) {
-        self.mouse_clicked(ctx, pos);
+    fn mouse_clicked(&mut self, editor: &mut EditorState, ctx: &mut ToolContext, pos: malvina::Vec2) {
+        self.mouse_clicked(editor, ctx, pos);
     }
 
-    fn mouse_drag_started(&mut self, ctx: &mut ToolContext, pos: malvina::Vec2) {
-        self.mouse_drag_started(ctx, pos);
+    fn mouse_drag_started(&mut self, editor: &mut EditorState, ctx: &mut ToolContext, pos: malvina::Vec2) {
+        self.mouse_drag_started(editor, ctx, pos);
     }
 
-    fn mouse_drag_stopped(&mut self, ctx: &mut ToolContext, pos: malvina::Vec2) {
-        self.mouse_drag_stopped(ctx, pos);
+    fn mouse_drag_stopped(&mut self, editor: &mut EditorState, ctx: &mut ToolContext, pos: malvina::Vec2) {
+        self.mouse_drag_stopped(editor, ctx, pos);
     }
 
-    fn mouse_dragged(&mut self, ctx: &mut ToolContext, pos: malvina::Vec2) {
-        self.mouse_dragged(ctx, pos);
+    fn mouse_dragged(&mut self, editor: &mut EditorState, ctx: &mut ToolContext, pos: malvina::Vec2) {
+        self.mouse_dragged(editor, ctx, pos);
     }
 
-    fn render_overlay(&self, rndr: &mut malvina::LayerRenderer, accent_color: elic::Color) {
-        self.render_overlay(rndr, accent_color);
+    fn render_overlay(&self, ctx: &mut ToolContext, rndr: &mut malvina::LayerRenderer, accent_color: elic::Color) {
+        self.render_overlay(ctx, rndr, accent_color);
     }
 
     fn settings(&mut self, ui: &mut pierro::UI, systems: &mut AppSystems) {
         self.settings(ui, systems);
     }
 
-    fn cursor_icon(&self, ctx: &mut ToolContext, pos: malvina::Vec2) -> pierro::CursorIcon {
-        self.cursor_icon(ctx, pos)
+    fn cursor_icon(&self, editor: &mut EditorState, ctx: &mut ToolContext, pos: malvina::Vec2) -> pierro::CursorIcon {
+        self.cursor_icon(editor, ctx, pos)
     }
 
 }

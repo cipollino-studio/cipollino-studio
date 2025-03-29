@@ -4,7 +4,7 @@ use crate::{EditorState, ScenePanel};
 
 impl ScenePanel {
     
-    pub(super) fn render_selection(&mut self, rndr: &mut malvina::LayerRenderer, editor: &EditorState, client: &Client, render_list: &Vec<SceneChildPtr>) {
+    pub(super) fn render_selection(rndr: &mut malvina::LayerRenderer, editor: &EditorState, client: &Client, render_list: &Vec<SceneChildPtr>) {
         for scene_obj in render_list {
             match scene_obj {
                 SceneChildPtr::Stroke(stroke_ptr) => {

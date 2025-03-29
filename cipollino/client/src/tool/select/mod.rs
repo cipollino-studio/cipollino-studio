@@ -55,10 +55,13 @@ impl SelectTool {
         self.select_bounding_box_transform = elic::Mat4::IDENTITY;
     }
 
-    fn calc_scale_transform(pivot: elic::Vec2, origin: elic::Vec2, curr_pos: elic::Vec2) -> elic::Mat4 {
+    fn calc_scale_transform(pivot: elic::Vec2, origin: elic::Vec2, curr_pos: elic::Vec2, shift_down: bool) -> elic::Mat4 {
         let initial_size = origin - pivot;
         let current_size = curr_pos - pivot;
-        let scale_factor = current_size / initial_size;
+        let mut scale_factor = current_size / initial_size;
+        if shift_down {
+            scale_factor = elic::Vec2::splat(scale_factor.max_component());
+        }
         elic::Mat4::scale(scale_factor).with_fixed_point(pivot)
     }
 
@@ -82,16 +85,16 @@ impl SelectTool {
         self.select_bounding_box_transform = transform * self.select_bounding_box_transform;
     }
 
-    fn curr_transform(&self) -> elic::Mat4 {
+    fn curr_transform(&self, shift_down: bool) -> elic::Mat4 {
         match self.drag_state {
             DragState::Move(drag) => elic::Mat4::translate(drag),
-            DragState::Scale { pivot, origin, curr_pos } => Self::calc_scale_transform(pivot, origin, curr_pos),
+            DragState::Scale { pivot, origin, curr_pos } => Self::calc_scale_transform(pivot, origin, curr_pos, shift_down),
             _ => elic::Mat4::IDENTITY
         }
     }
 
-    fn bounding_box_transform(&self) -> elic::Mat4 {
-        self.curr_transform() * self.select_bounding_box_transform
+    fn bounding_box_transform(&self, shift_down: bool) -> elic::Mat4 {
+        self.curr_transform(shift_down) * self.select_bounding_box_transform
     }
 
 }
@@ -104,12 +107,12 @@ impl Tool for SelectTool {
         pierro::Key::V
     );
 
-    fn mouse_drag_started(&mut self, ctx: &mut ToolContext, pos: malvina::Vec2) {
+    fn mouse_drag_started(&mut self, editor: &mut EditorState, ctx: &mut ToolContext, pos: malvina::Vec2) {
         self.prev_drag_mouse_pos = pos;
 
-        if let Some(gizmos) = self.calc_gizmos() {
+        if let Some(gizmos) = self.calc_gizmos(ctx.key_modifiers.contains(pierro::KeyModifiers::SHIFT)) {
             if let Some(pivot) = gizmos.get_resizing_pivot(pos, ctx.cam_zoom) {
-                ctx.editor.selection.keep_selection();
+                editor.selection.keep_selection();
                 self.drag_state = DragState::Scale { pivot, origin: pos, curr_pos: pos };
                 return;
             } 
@@ -119,10 +122,10 @@ impl Tool for SelectTool {
             let id = ctx.picking_buffer.read_pixel(ctx.device, ctx.queue, x, y);
             let ptr = Ptr::<Stroke>::from_key(id as u64);
             if !ptr.is_null() {
-                if !ctx.editor.selection.selected(ptr) && !ctx.editor.selection.shift_down() {
-                    ctx.editor.selection.clear();
+                if !editor.selection.selected(ptr) && !editor.selection.shift_down() {
+                    editor.selection.clear();
                 }
-                ctx.editor.selection.select(ptr);
+                editor.selection.select(ptr);
                 self.drag_state = DragState::Move(elic::Vec2::ZERO);
                 return;
             }
@@ -131,7 +134,7 @@ impl Tool for SelectTool {
         self.drag_state = DragState::Lasso(LassoState::from_point(pos));
     }
 
-    fn mouse_dragged(&mut self, _ctx: &mut ToolContext, pos: malvina::Vec2) {
+    fn mouse_dragged(&mut self, _editor: &mut EditorState, _ctx: &mut ToolContext, pos: malvina::Vec2) {
         match &mut self.drag_state {
             DragState::None => {},
             DragState::Lasso(lasso) => {
@@ -147,53 +150,53 @@ impl Tool for SelectTool {
         self.prev_drag_mouse_pos = pos;
     }
 
-    fn mouse_drag_stopped(&mut self, ctx: &mut ToolContext, pos: malvina::Vec2) {
+    fn mouse_drag_stopped(&mut self, editor: &mut EditorState, ctx: &mut ToolContext, pos: malvina::Vec2) {
         match std::mem::replace(&mut self.drag_state, DragState::None) {
             DragState::None => {},
             DragState::Lasso(mut lasso) => {
                 lasso.add_point(pos);
 
                 for stroke in lasso.find_inside(&ctx.project.client, ctx.rendered_strokes) {
-                    ctx.editor.selection.select(stroke);
+                    editor.selection.select(stroke);
                 }
             },
             DragState::Move(drag) => {
-                self.apply_transform(&ctx.project.client, ctx.editor, elic::Mat4::translate(drag));
+                self.apply_transform(&ctx.project.client, editor, elic::Mat4::translate(drag));
             },
             DragState::Scale { pivot, origin, curr_pos } => {
-                self.apply_transform(&ctx.project.client, ctx.editor, Self::calc_scale_transform(pivot, origin, curr_pos));
+                self.apply_transform(&ctx.project.client, editor, Self::calc_scale_transform(pivot, origin, curr_pos, ctx.key_modifiers.contains(pierro::KeyModifiers::SHIFT)));
             }
         }
     }
 
-    fn mouse_clicked(&mut self, ctx: &mut ToolContext, _pos: malvina::Vec2) {
+    fn mouse_clicked(&mut self, editor: &mut EditorState, ctx: &mut ToolContext, _pos: malvina::Vec2) {
         if let Some((x, y)) = ctx.picking_mouse_pos {
             let id = ctx.picking_buffer.read_pixel(ctx.device, ctx.queue, x, y);
             let ptr = Ptr::<Stroke>::from_key(id as u64);
-            ctx.editor.selection.extend_select(ptr);
+            editor.selection.extend_select(ptr);
         }
     }
 
-    fn tick(&mut self, ctx: &mut ToolContext) {
-        if ctx.editor.selection.version() != self.select_bounding_box_version {
-            self.recalculate_bounding_box(&ctx.project.client, &ctx.editor.selection);
+    fn tick(&mut self, editor: &mut EditorState, ctx: &mut ToolContext) {
+        if editor.selection.version() != self.select_bounding_box_version {
+            self.recalculate_bounding_box(&ctx.project.client, &editor.selection);
         } 
 
         match &self.drag_state {
             DragState::Move(_) | DragState::Scale { .. } => {
-                if ctx.editor.will_undo || ctx.editor.will_redo {
-                    ctx.editor.will_undo = false;
+                if editor.will_undo || editor.will_redo {
+                    editor.will_undo = false;
                     self.drag_state = DragState::None;
                 } else {
-                    ctx.editor.preview.selection_transform = self.curr_transform();
-                    ctx.editor.preview.keep_preview = true;
+                    editor.preview.selection_transform = self.curr_transform(ctx.key_modifiers.contains(pierro::KeyModifiers::SHIFT));
+                    editor.preview.keep_preview = true;
                 }
             },
             _ => {}
         }
     }
 
-    fn render_overlay(&self, rndr: &mut malvina::LayerRenderer, accent_color: elic::Color) {
+    fn render_overlay(&self, ctx: &mut ToolContext, rndr: &mut malvina::LayerRenderer, accent_color: elic::Color) {
         match &self.drag_state {
             DragState::Lasso(lasso) => {
                 lasso.render_overlay(rndr, accent_color);
@@ -201,12 +204,12 @@ impl Tool for SelectTool {
             _ => {}
         }
 
-        if let Some(gizmos) = self.calc_gizmos() {
+        if let Some(gizmos) = self.calc_gizmos(ctx.key_modifiers.contains(pierro::KeyModifiers::SHIFT)) {
             gizmos.render(rndr, accent_color);
         } 
     }
 
-    fn cursor_icon(&self, ctx: &mut ToolContext, pos: malvina::Vec2) -> pierro::CursorIcon {
+    fn cursor_icon(&self, _editor: &mut EditorState, ctx: &mut ToolContext, pos: malvina::Vec2) -> pierro::CursorIcon {
         self.cursor_icon(ctx, pos)
     }
     

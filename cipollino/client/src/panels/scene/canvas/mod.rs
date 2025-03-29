@@ -95,6 +95,7 @@ impl ScenePanel {
         let tool = editor.curr_tool.clone();
         let mut tool = tool.borrow_mut();
         let mut picking_buffer = self.picking_buffer.borrow_mut();
+        let accent_color = ui.style::<pierro::theme::AccentColor>();
         let mut tool_context = ToolContext {
             project,
             clip,
@@ -112,66 +113,58 @@ impl ScenePanel {
             device: ui.wgpu_device(),
             queue: ui.wgpu_queue(),
 
-            editor,
             systems,
 
             pressure: ui.input().pressure,
-
-            cam_zoom: 1.0 / self.cam_size
+            cam_zoom: 1.0 / self.cam_size,
+            key_modifiers: ui.input().key_modifiers
         };
         let mut pause = false;
         let tool_cursor_icon = if let Some(mouse_pos) = mouse_pos {
             if response.mouse_clicked() && !panning {
                 pause = true;
-                tool.mouse_clicked(&mut tool_context, mouse_pos);
+                tool.mouse_clicked(editor, &mut tool_context, mouse_pos);
             }
             if response.mouse_pressed() && !panning {
                 pause = true;
-                tool.mouse_pressed(&mut tool_context, mouse_pos);
+                tool.mouse_pressed(editor, &mut tool_context, mouse_pos);
             }
             if response.mouse_released() && !panning {
                 pause = true;
-                tool.mouse_released(&mut tool_context, mouse_pos);
+                tool.mouse_released(editor, &mut tool_context, mouse_pos);
             }
             if response.drag_started() && !panning {
                 pause = true;
-                tool.mouse_drag_started(&mut tool_context, mouse_pos);
+                tool.mouse_drag_started(editor, &mut tool_context, mouse_pos);
             }
             if response.dragging() && !panning {
                 pause = true;
-                tool.mouse_dragged(&mut tool_context, mouse_pos);
+                tool.mouse_dragged(editor, &mut tool_context, mouse_pos);
             }
             if response.drag_stopped() && !panning {
                 pause = true;
-                tool.mouse_drag_stopped(&mut tool_context, mouse_pos);
+                tool.mouse_drag_stopped(editor, &mut tool_context, mouse_pos);
             }
 
-            tool.cursor_icon(&mut tool_context, mouse_pos)
+            tool.cursor_icon(editor, &mut tool_context, mouse_pos)
         } else {
             pierro::CursorIcon::default()
         };
-        tool.tick(&mut tool_context);
-
-        if pause {
-            editor.playing = false;
-        }
-        
-        drop(picking_buffer); // We mutably borrow self later on, so we need to drop this here
+        tool.tick(editor, &mut tool_context);
 
         // Recalculate the camera
         // We need to recalculate it because the user might have panned/zoomed this frame
         let camera = self.calc_camera(ui.scale_factor());
 
         // Render the scene
-        let accent_color = ui.style::<pierro::theme::AccentColor>();
         renderer.render(ui.wgpu_device(), ui.wgpu_queue(), texture.texture(), camera, elic::Color::WHITE, ui.scale_factor(), |rndr| {
             if editor.show_onion_skin {
-                self.render_onion_skin(rndr, &project.client, &editor, clip);
+                Self::render_onion_skin(rndr, &project.client, &editor, clip);
             }
             render_scene(rndr, &project.client, editor, clip, clip.frame_idx(editor.time));
-            self.render_selection(rndr, &editor, &project.client, render_list);
+            Self::render_selection(rndr, &editor, &project.client, render_list);
 
-            tool.render_overlay(rndr, accent_color);
+            tool.render_overlay(&mut tool_context, rndr, accent_color);
 
             rndr.render_canvas_border(malvina::vec2(clip.width as f32, clip.height as f32));
         });
@@ -187,6 +180,10 @@ impl ScenePanel {
                 tool_cursor_icon
             };
             ui.set_cursor(cursor);
+        }
+
+        if pause {
+            editor.playing = false;
         }
 
     }

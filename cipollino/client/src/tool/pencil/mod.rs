@@ -1,7 +1,7 @@
 
 use project::{Action, CreateStroke, StrokeData, StrokeTreeData};
 
-use crate::AppSystems;
+use crate::{AppSystems, EditorState};
 
 use super::{Tool, ToolContext};
 
@@ -55,8 +55,8 @@ impl PencilTool {
         }
     }
 
-    fn create_stroke(ctx: &mut ToolContext, stroke: malvina::Stroke) {
-        let mut action = Action::new(ctx.editor.action_context("New Stroke"));
+    fn create_stroke(editor: &mut EditorState, ctx: &mut ToolContext, stroke: malvina::Stroke) {
+        let mut action = Action::new(editor.action_context("New Stroke"));
         let Some(ptr) = ctx.project.client.next_ptr() else { return; };
         let Some(frame) = ctx.active_frame(&mut action) else { return; };
         let stroke_width = ctx.systems.prefs.get::<PencilStrokeWidthPref>();
@@ -66,7 +66,7 @@ impl PencilTool {
             idx: 0,
             data: StrokeTreeData {
                 stroke: StrokeData(stroke),
-                color: ctx.editor.color.into(),
+                color: editor.color.into(),
                 width: stroke_width 
             },
         });
@@ -97,25 +97,25 @@ impl Tool for PencilTool {
         pierro::Key::D
     );
 
-    fn tick(&mut self, ctx: &mut ToolContext) {
+    fn tick(&mut self, editor: &mut EditorState, _ctx: &mut ToolContext) {
         // If the user undo/redoes while drawing as stroke, reset the pencil tool
-        if (ctx.editor.will_undo || ctx.editor.will_redo) && !self.pts.is_empty() {
-            ctx.editor.will_undo = false;
+        if (editor.will_undo || editor.will_redo) && !self.pts.is_empty() {
+            editor.will_undo = false;
             self.pts.clear();
             self.drawing_stroke = false;
         }
 
         if self.drawing_stroke {
-            ctx.editor.preview.keep_preview = true;
+            editor.preview.keep_preview = true;
         }
     }
 
-    fn mouse_clicked(&mut self, ctx: &mut ToolContext, pos: malvina::Vec2) {
+    fn mouse_clicked(&mut self, editor: &mut EditorState, ctx: &mut ToolContext, pos: malvina::Vec2) {
         let stroke = malvina::Stroke::point(pos, 1.0);
-        Self::create_stroke(ctx, stroke); 
+        Self::create_stroke(editor, ctx, stroke); 
     }
 
-    fn mouse_drag_started(&mut self, ctx: &mut ToolContext, pos: malvina::Vec2) {
+    fn mouse_drag_started(&mut self, _editor: &mut EditorState, ctx: &mut ToolContext, pos: malvina::Vec2) {
         self.pts.clear();
         self.add_point(malvina::StrokePoint {
             pt: pos,
@@ -124,7 +124,7 @@ impl Tool for PencilTool {
         self.drawing_stroke = true;
     }
 
-    fn mouse_dragged(&mut self, ctx: &mut ToolContext, pos: malvina::Vec2) {
+    fn mouse_dragged(&mut self, editor: &mut EditorState, ctx: &mut ToolContext, pos: malvina::Vec2) {
         if !self.drawing_stroke {
             return;
         }
@@ -136,10 +136,10 @@ impl Tool for PencilTool {
 
         let stroke = self.calc_stroke();
         let stroke_width = ctx.systems.prefs.get::<PencilStrokeWidthPref>();
-        ctx.editor.preview.stroke_preview = Some(malvina::StrokeMesh::new(ctx.device, &stroke, stroke_width));
+        editor.preview.stroke_preview = Some(malvina::StrokeMesh::new(ctx.device, &stroke, stroke_width));
     }
 
-    fn mouse_released(&mut self, ctx: &mut ToolContext, pos: malvina::Vec2) {
+    fn mouse_released(&mut self, editor: &mut EditorState, ctx: &mut ToolContext, pos: malvina::Vec2) {
         if self.pts.is_empty() || !self.drawing_stroke {
             return;
         }
@@ -152,7 +152,7 @@ impl Tool for PencilTool {
         let stroke = self.calc_stroke();
         self.pts.clear();
         self.drawing_stroke = false;
-        Self::create_stroke(ctx, stroke); 
+        Self::create_stroke(editor, ctx, stroke); 
     }
 
     fn settings(&mut self, ui: &mut pierro::UI, systems: &mut AppSystems) {
@@ -165,7 +165,7 @@ impl Tool for PencilTool {
         });
     }
 
-    fn cursor_icon(&self, _ctx: &mut ToolContext, _pos: elic::Vec2) -> pierro::CursorIcon {
+    fn cursor_icon(&self, _editor: &mut EditorState, _ctx: &mut ToolContext, _pos: elic::Vec2) -> pierro::CursorIcon {
         pierro::CursorIcon::Crosshair
     }
 
