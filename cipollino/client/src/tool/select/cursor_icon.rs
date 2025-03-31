@@ -3,7 +3,7 @@ use project::{Ptr, Stroke};
 
 use crate::ToolContext;
 
-use super::{DragState, SelectTool};
+use super::{gizmos::PotentialDragState, DragState, SelectTool};
 
 impl SelectTool {
 
@@ -26,14 +26,31 @@ impl SelectTool {
             },
             DragState::Scale { pivot, .. } => {
                 return Self::diagonal_scale_cursor_icon(pivot, pos);
-            } 
+            },
+            DragState::Rotate { .. } => {
+                return pierro::CursorIcon::Alias;
+            },
             _ => {}
         }
         
-        if let Some(gizmos) = self.calc_gizmos(ctx.key_modifiers.contains(pierro::KeyModifiers::SHIFT)) {
-            if let Some(pivot) = gizmos.get_resizing_pivot(pos, ctx.cam_zoom) {
-                return Self::diagonal_scale_cursor_icon(pivot, pos);
-            } 
+        let gizmos = self.calc_gizmos(
+            ctx.key_modifiers.contains(pierro::KeyModifiers::SHIFT),
+            ctx.key_modifiers.contains(pierro::KeyModifiers::OPTION),
+            ctx.cam_zoom
+        );
+        if let Some(gizmos) = gizmos {
+            match gizmos.get_pivot(pos, ctx.cam_zoom) {
+                PotentialDragState::None => {},
+                PotentialDragState::Scale(pivot) => {
+                    return Self::diagonal_scale_cursor_icon(pivot, pos);
+                },
+                PotentialDragState::Rotate(_) => {
+                    return pierro::CursorIcon::Alias;
+                },
+                PotentialDragState::Pivot => {
+                    return pierro::CursorIcon::Default;
+                }
+            }
         }
 
         if let Some((x, y)) = ctx.picking_mouse_pos {

@@ -1,4 +1,5 @@
 
+use gizmos::PotentialDragState;
 use project::{Action, Client, Ptr, SetStrokeStroke, Stroke, StrokeData};
 use crate::{EditorState, Selection};
 
@@ -15,13 +16,20 @@ enum DragState {
         pivot: elic::Vec2,
         origin: elic::Vec2,
         curr_pos: elic::Vec2
-    }
+    },
+    Rotate {
+        pivot: elic::Vec2,
+        origin: elic::Vec2,
+        curr_pos: elic::Vec2
+    },
+    Pivot
 }
 
 pub struct SelectTool {
     select_bounding_box: Option<elic::Rect>,
     select_bounding_box_version: u64,
     select_bounding_box_transform: elic::Mat4,
+    pivot: elic::Vec2,
     drag_state: DragState,
     prev_drag_mouse_pos: elic::Vec2
 }
@@ -32,6 +40,7 @@ impl Default for SelectTool {
             select_bounding_box: None,
             select_bounding_box_version: 0,
             select_bounding_box_transform: elic::Mat4::IDENTITY,
+            pivot: elic::Vec2::ZERO,
             drag_state: DragState::None,
             prev_drag_mouse_pos: elic::Vec2::ZERO
         }
@@ -49,20 +58,41 @@ impl SelectTool {
                 let segment_bounds = segment.bounds(); 
                 bounds = Some(bounds.map(|bounds: elic::Rect| bounds.merge(segment_bounds)).unwrap_or(segment_bounds));
             }
+            for pt in &stroke.stroke.0.path.pts {
+                let pt_rect = elic::Rect::min_max(pt.pt.pt, pt.pt.pt);
+                bounds = Some(bounds.map(|bounds: elic::Rect| bounds.merge(pt_rect)).unwrap_or(pt_rect));
+            }
         }
         self.select_bounding_box = bounds;
         self.select_bounding_box_version = selection.version();
         self.select_bounding_box_transform = elic::Mat4::IDENTITY;
+        self.pivot = bounds.map(|bounds| bounds.center()).unwrap_or(elic::Vec2::ZERO); 
     }
 
-    fn calc_scale_transform(pivot: elic::Vec2, origin: elic::Vec2, curr_pos: elic::Vec2, shift_down: bool) -> elic::Mat4 {
-        let initial_size = origin - pivot;
-        let current_size = curr_pos - pivot;
+    fn calc_scale_transform(pivot: elic::Vec2, origin: elic::Vec2, curr_pos: elic::Vec2, shift_down: bool, prev_transform: elic::Mat4) -> elic::Mat4 {
+        let right_transformed = prev_transform.transform(elic::Vec2::X) - prev_transform.transform(elic::Vec2::ZERO);
+        let angle = -right_transformed.angle_between(elic::Vec2::X);
+        let unrotate = elic::Mat4::rotate(-angle);
+        let rerotate = elic::Mat4::rotate( angle);
+
+        let initial_size = unrotate.transform(origin - pivot);
+        let current_size = unrotate.transform(curr_pos - pivot);
         let mut scale_factor = current_size / initial_size;
         if shift_down {
             scale_factor = elic::Vec2::splat(scale_factor.max_component());
         }
-        elic::Mat4::scale(scale_factor).with_fixed_point(pivot)
+        (rerotate * elic::Mat4::scale(scale_factor) * unrotate).with_fixed_point(pivot)
+    }
+
+    fn calc_rotate_transform(pivot: elic::Vec2, origin: elic::Vec2, curr_pos: elic::Vec2, shift_down: bool) -> elic::Mat4 {
+        let initial_dir = origin - pivot;
+        let current_dir = curr_pos - pivot;
+        let mut angle = initial_dir.angle_between(current_dir); 
+        if shift_down {
+            let step_size = std::f32::consts::TAU / 12.0;
+            angle = step_size * (angle / step_size).round();
+        }
+        elic::Mat4::rotate(angle).with_fixed_point(pivot)
     }
 
     fn apply_transform(&mut self, client: &Client, editor: &mut EditorState, transform: elic::Mat4) {
@@ -83,18 +113,34 @@ impl SelectTool {
         client.queue_action(action);
 
         self.select_bounding_box_transform = transform * self.select_bounding_box_transform;
+        self.pivot = transform.transform(self.pivot);
     }
 
-    fn curr_transform(&self, shift_down: bool) -> elic::Mat4 {
+    fn curr_transform(&self, shift_down: bool, option_down: bool) -> elic::Mat4 {
         match self.drag_state {
             DragState::Move(drag) => elic::Mat4::translate(drag),
-            DragState::Scale { pivot, origin, curr_pos } => Self::calc_scale_transform(pivot, origin, curr_pos, shift_down),
+            DragState::Scale { pivot, origin, curr_pos } => {
+                let scaling_pivot = if option_down {
+                    self.pivot
+                } else {
+                    pivot
+                };
+                Self::calc_scale_transform(scaling_pivot, origin, curr_pos, shift_down, self.select_bounding_box_transform)
+            },
+            DragState::Rotate { pivot, origin, curr_pos } => {
+                let rotation_pivot = if option_down {
+                    pivot
+                } else {
+                    self.pivot
+                };
+                Self::calc_rotate_transform(rotation_pivot, origin, curr_pos, shift_down)
+            },
             _ => elic::Mat4::IDENTITY
         }
     }
 
-    fn bounding_box_transform(&self, shift_down: bool) -> elic::Mat4 {
-        self.curr_transform(shift_down) * self.select_bounding_box_transform
+    fn bounding_box_transform(&self, shift_down: bool, option_down: bool) -> elic::Mat4 {
+        self.curr_transform(shift_down, option_down) * self.select_bounding_box_transform
     }
 
 }
@@ -110,22 +156,43 @@ impl Tool for SelectTool {
     fn mouse_drag_started(&mut self, editor: &mut EditorState, ctx: &mut ToolContext, pos: malvina::Vec2) {
         self.prev_drag_mouse_pos = pos;
 
-        if let Some(gizmos) = self.calc_gizmos(ctx.key_modifiers.contains(pierro::KeyModifiers::SHIFT)) {
-            if let Some(pivot) = gizmos.get_resizing_pivot(pos, ctx.cam_zoom) {
-                editor.selection.keep_selection();
-                self.drag_state = DragState::Scale { pivot, origin: pos, curr_pos: pos };
-                return;
-            } 
+        let gizmos = self.calc_gizmos(
+            ctx.key_modifiers.contains(pierro::KeyModifiers::SHIFT),
+            ctx.key_modifiers.contains(pierro::KeyModifiers::OPTION),
+            ctx.cam_zoom
+        );
+        if let Some(gizmos) = gizmos {
+            match gizmos.get_pivot(pos, ctx.cam_zoom) {
+                PotentialDragState::None => {},
+                PotentialDragState::Scale(pivot) => {
+                    editor.selection.keep_selection();
+                    self.drag_state = DragState::Scale { pivot, origin: pos, curr_pos: pos };
+                    return;
+                },
+                PotentialDragState::Rotate(pivot) => {
+                    editor.selection.keep_selection();
+                    self.drag_state = DragState::Rotate { pivot, origin: pos, curr_pos: pos };
+                    return;
+                },
+                PotentialDragState::Pivot => {
+                    self.drag_state = DragState::Pivot;
+                    editor.selection.keep_selection();
+                    return;
+                }
+            }
         }
 
         if let Some((x, y)) = ctx.picking_mouse_pos {
             let id = ctx.picking_buffer.read_pixel(ctx.device, ctx.queue, x, y);
             let ptr = Ptr::<Stroke>::from_key(id as u64);
             if !ptr.is_null() {
-                if !editor.selection.selected(ptr) && !editor.selection.shift_down() {
-                    editor.selection.clear();
+                if !editor.selection.selected(ptr) {
+                    if !editor.selection.shift_down() {
+                        editor.selection.clear();
+                    }
+                    editor.selection.select(ptr);
                 }
-                editor.selection.select(ptr);
+                editor.selection.keep_selection();
                 self.drag_state = DragState::Move(elic::Vec2::ZERO);
                 return;
             }
@@ -145,6 +212,12 @@ impl Tool for SelectTool {
             },
             DragState::Scale { curr_pos, .. } => {
                 *curr_pos = pos; 
+            },
+            DragState::Rotate { curr_pos, .. } => {
+                *curr_pos = pos;
+            },
+            DragState::Pivot => {
+                self.pivot = pos;
             }
         }
         self.prev_drag_mouse_pos = pos;
@@ -164,8 +237,22 @@ impl Tool for SelectTool {
                 self.apply_transform(&ctx.project.client, editor, elic::Mat4::translate(drag));
             },
             DragState::Scale { pivot, origin, curr_pos } => {
-                self.apply_transform(&ctx.project.client, editor, Self::calc_scale_transform(pivot, origin, curr_pos, ctx.key_modifiers.contains(pierro::KeyModifiers::SHIFT)));
-            }
+                let scaling_pivot = if ctx.key_modifiers.contains(pierro::KeyModifiers::OPTION) {
+                    self.pivot
+                } else {
+                    pivot
+                };
+                self.apply_transform(&ctx.project.client, editor, Self::calc_scale_transform(scaling_pivot, origin, curr_pos, ctx.key_modifiers.contains(pierro::KeyModifiers::SHIFT), self.select_bounding_box_transform));
+            },
+            DragState::Rotate { pivot, origin, curr_pos } => {
+                let rotation_pivot = if ctx.key_modifiers.contains(pierro::KeyModifiers::OPTION) {
+                    pivot
+                } else {
+                    self.pivot
+                };
+                self.apply_transform(&ctx.project.client, editor, Self::calc_rotate_transform(rotation_pivot, origin, curr_pos, ctx.key_modifiers.contains(pierro::KeyModifiers::SHIFT)));
+            },
+            DragState::Pivot => {}
         }
     }
 
@@ -183,12 +270,15 @@ impl Tool for SelectTool {
         } 
 
         match &self.drag_state {
-            DragState::Move(_) | DragState::Scale { .. } => {
+            DragState::Move(_) | DragState::Scale { .. } | DragState::Rotate { .. } => {
                 if editor.will_undo || editor.will_redo {
                     editor.will_undo = false;
                     self.drag_state = DragState::None;
                 } else {
-                    editor.preview.selection_transform = self.curr_transform(ctx.key_modifiers.contains(pierro::KeyModifiers::SHIFT));
+                    editor.preview.selection_transform = self.curr_transform(
+                        ctx.key_modifiers.contains(pierro::KeyModifiers::SHIFT),
+                        ctx.key_modifiers.contains(pierro::KeyModifiers::OPTION)
+                    );
                     editor.preview.keep_preview = true;
                 }
             },
@@ -204,7 +294,12 @@ impl Tool for SelectTool {
             _ => {}
         }
 
-        if let Some(gizmos) = self.calc_gizmos(ctx.key_modifiers.contains(pierro::KeyModifiers::SHIFT)) {
+        let gizmos = self.calc_gizmos(
+            ctx.key_modifiers.contains(pierro::KeyModifiers::SHIFT),
+            ctx.key_modifiers.contains(pierro::KeyModifiers::OPTION),
+            ctx.cam_zoom
+        );
+        if let Some(gizmos) = gizmos {
             gizmos.render(rndr, accent_color);
         } 
     }
