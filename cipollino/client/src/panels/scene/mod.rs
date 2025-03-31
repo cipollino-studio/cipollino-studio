@@ -4,7 +4,7 @@ mod canvas;
 
 use project::{Action, DeleteStroke};
 
-use crate::{EditorState, ProjectState};
+use crate::{EditorState, ProjectState, SelectionKind};
 use super::{Panel, PanelContext};
 
 use std::cell::RefCell;
@@ -90,7 +90,7 @@ impl Panel for ScenePanel {
 
         // Delete scene selection
         let delete_shortcut = pierro::KeyboardShortcut::new(pierro::KeyModifiers::empty(), pierro::Key::Backspace);
-        if delete_shortcut.used_globally(ui) {
+        if delete_shortcut.used_globally(ui) && editor.selection.kind() == SelectionKind::Scene {
             Self::delete_scene_selection(project, editor);
         }
         
