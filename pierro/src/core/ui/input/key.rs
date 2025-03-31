@@ -117,6 +117,7 @@ bitflags::bitflags! {
     pub struct KeyModifiers: u8 {
         const CONTROL = 1 << 0;
         const SHIFT = 1 << 1;
+        const OPTION = 1 << 2;
     } 
 
 }

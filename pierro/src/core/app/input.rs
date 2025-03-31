@@ -239,6 +239,9 @@ impl<T: App> AppHandler<'_, T> {
                 if modifiers.state().shift_key() {
                     self.raw_input.key_modifiers |= KeyModifiers::SHIFT;
                 }
+                if modifiers.state().alt_key() {
+                    self.raw_input.key_modifiers |= KeyModifiers::OPTION;
+                }
                 #[cfg(target_os = "macos")]
                 if modifiers.state().super_key() {
                     self.raw_input.key_modifiers |= KeyModifiers::CONTROL;
