@@ -39,6 +39,15 @@ impl Mat4 {
         }
     }
 
+    pub fn rotate(angle: f32) -> Self {
+        Self {
+            x: vec4(angle.cos(), angle.sin(), 0.0, 0.0),
+            y: vec4(-angle.sin(), angle.cos(), 0.0, 0.0),
+            z: Vec4::Z,
+            w: Vec4::W
+        }
+    }
+
     // Copied from glam's source code
     pub fn inverse(&self) -> Self {
         let [m00, m01, m02, m03] = self.x.into();

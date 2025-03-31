@@ -121,6 +121,12 @@ impl Vec2 {
         vec2(-self.y, self.x)
     }
 
+    pub fn angle_between(&self, other: Vec2) -> f32 {
+        let a = self.y.atan2(self.x).rem_euclid(std::f32::consts::TAU);
+        let b = other.y.atan2(other.x).rem_euclid(std::f32::consts::TAU);
+        b - a
+    }
+
 }
 
 impl Add<Vec2> for Vec2 {
