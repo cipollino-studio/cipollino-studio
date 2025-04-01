@@ -1,23 +1,17 @@
 
-use std::any::{Any, TypeId};
-
 use crate::{clickable_icon, h_line, h_spacing, icon_gap, icons, margin, modal, theme, vertical_centered, widget::label, window, Layout, LayoutInfo, Margin, Response, Size, TSTransform, UINodeParams, Vec2, UI};
-use super::{Window, WindowDyn};
+use super::Window;
 
-pub(super) struct WindowInstance<C> {
-    window: Box<dyn WindowDyn<Context = C>>,
+pub(super) struct WindowInstance<W: Window> {
+    pub(super) window: W,
     pos: Vec2,
     just_opened: bool
 }
 
-impl<C: 'static> WindowInstance<C> {
+impl<W: Window> WindowInstance<W> {
 
-    pub fn new<W: Window<Context = C>>(window: W) -> Self {
-        Self::new_dyn(Box::new(window))
-    }
-
-    pub fn new_dyn(window: Box<dyn WindowDyn<Context = C>>) -> Self {
-        WindowInstance {
+    pub fn new(window: W) -> Self {
+        Self {
             window,
             // Hack to get around the fact we don't know the window's size on the frame it first opens
             // Once we know the size, this will be set to position the window at the center of the screen
@@ -51,11 +45,11 @@ impl<C: 'static> WindowInstance<C> {
         (window_bar, close_window)
     }
 
-    fn render_window_contents(&mut self, ui: &mut UI, context: &mut C) -> (bool, bool) {
+    fn render_window_contents<'ctx>(&mut self, ui: &mut UI, context: &mut W::Context<'ctx>) -> (bool, bool) {
         let window = ui.curr_parent();
         let window_id = ui.get_node_id(window);
         let window_size = ui.memory().get::<LayoutInfo>(window_id).rect.size();
-        let window_margin = ui.style::<theme::WindowMargin>();
+        let window_margin = if self.window.use_margin() { ui.style::<theme::WindowMargin>() } else { Margin::ZERO };
         
         let (window_bar, close_window) = self.render_window_header(ui);
 
@@ -87,7 +81,7 @@ impl<C: 'static> WindowInstance<C> {
         (close_window || window_wants_close, window_bar.mouse_pressed())
     }
 
-    fn render_window(&mut self, ui: &mut UI, context: &mut C) -> (bool, bool) {
+    fn render_window<'ctx>(&mut self, ui: &mut UI, context: &mut W::Context<'ctx>) -> (bool, bool) {
         let (layer, (close, bring_forward)) = ui.layer(|ui| {
             let (window_response, (close, bring_forward)) = window(ui, |ui| {
                 let (close, bring_forward) = self.render_window_contents(ui, context);
@@ -101,8 +95,8 @@ impl<C: 'static> WindowInstance<C> {
         (close, bring_forward)
     }
 
-    fn render_modal(&mut self, ui: &mut UI, context: &mut C) -> (bool, bool) {
-        let window_margin = ui.style::<theme::WindowMargin>();
+    fn render_modal<'ctx>(&mut self, ui: &mut UI, context: &mut W::Context<'ctx>) -> (bool, bool) {
+        let window_margin = if self.window.use_margin() { ui.style::<theme::WindowMargin>() } else { Margin::ZERO };
 
         let (_, result) = modal(ui, |ui| {
             let (window_bar, close_window) = self.render_window_header(ui);
@@ -116,20 +110,12 @@ impl<C: 'static> WindowInstance<C> {
         result
     }
 
-    pub fn render(&mut self, ui: &mut UI, context: &mut C) -> (bool, bool) {
+    pub fn render<'ctx>(&mut self, ui: &mut UI, context: &mut W::Context<'ctx>) -> (bool, bool) {
         if self.window.modal() {
             self.render_modal(ui, context)
         } else {
             self.render_window(ui, context)
         }
-    }
-
-    pub fn type_id(&self) -> TypeId {
-        self.window.type_id()
-    }
-
-    pub fn unique(&self) -> bool {
-        self.window.unique()
     }
 
 }

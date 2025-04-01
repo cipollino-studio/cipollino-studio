@@ -1,62 +1,25 @@
 
-use std::any::{Any, TypeId};
-
 use crate::UI;
 
 mod instance;
 use instance::*;
 
-pub trait Window: Any {
+pub trait Window {
 
-    type Context;
-
-    /// True if there can be at most one of this kind of window open at once.
-    const UNIQUE: bool = false;
-    /// Should the window be a modal?
-    const MODAL: bool = false;
+    type Context<'ctx>;
 
     fn title(&self) -> impl Into<String>;
-    fn render(&mut self, ui: &mut UI, close: &mut bool, context: &mut Self::Context);
+    fn render<'ctx>(&mut self, ui: &mut UI, close: &mut bool, context: &mut Self::Context<'ctx>);
+    fn modal(&self) -> bool { false }
+    fn use_margin(&self) -> bool { true }
 
 }
 
-pub trait WindowDyn {
-
-    type Context;    
-
-    fn title(&self) -> String;
-    fn render(&mut self, ui: &mut UI, close: &mut bool, context: &mut Self::Context);
-    fn unique(&self) -> bool;
-    fn modal(&self) -> bool;
-
+pub struct WindowManager<W: Window> {
+    windows: Vec<WindowInstance<W>>
 }
 
-impl<W: Window> WindowDyn for W {
-    type Context = <Self as Window>::Context;
-
-    fn title(&self) -> String {
-        self.title().into()
-    }
-
-    fn render(&mut self, ui: &mut UI, close: &mut bool, context: &mut Self::Context) {
-        self.render(ui, close, context);
-    }
-
-    fn unique(&self) -> bool {
-        Self::UNIQUE
-    }
-
-    fn modal(&self) -> bool {
-        Self::MODAL
-    }
-
-}
-
-pub struct WindowManager<C> {
-    windows: Vec<WindowInstance<C>>
-}
-
-impl<C: 'static> WindowManager<C> {
+impl<W: Window> WindowManager<W> {
 
     pub fn new() -> Self {
         Self {
@@ -64,7 +27,7 @@ impl<C: 'static> WindowManager<C> {
         }
     }
 
-    pub fn render(&mut self, ui: &mut UI, context: &mut C) {
+    pub fn render<'ctx>(&mut self, ui: &mut UI, context: &mut W::Context<'ctx>) {
         let mut to_close = None;
         let mut to_bring_forward = None;
         for (idx, window_instance) in self.windows.iter_mut().enumerate() {
@@ -86,27 +49,12 @@ impl<C: 'static> WindowManager<C> {
         }
     }
 
-    pub fn open_window<W: Window<Context = C>>(&mut self, window: W) {
-        if W::UNIQUE {
-            for open_window in &self.windows {
-                if open_window.type_id() == TypeId::of::<W>() {
-                    return;
-                }
-            }
-        }
+    pub fn open_window(&mut self, window: W) {
         self.windows.push(WindowInstance::new(window));
     }
 
-    pub fn open_window_dyn(&mut self, window_dyn: Box<dyn WindowDyn<Context = C>>) {
-        let instance = WindowInstance::new_dyn(window_dyn); 
-        if instance.unique() {
-            for open_window in &self.windows {
-                if open_window.type_id() == instance.type_id() {
-                    return;
-                }
-            }
-        }
-        self.windows.push(instance);
+    pub fn iter(&self) -> impl Iterator<Item = &W> {
+        self.windows.iter().map(|instance| &instance.window)
     }
 
 }
