@@ -62,3 +62,27 @@ pub fn clickable_icon<S: Into<String>>(ui: &mut UI, icon_text: S) -> Response {
     button_text_color_animation(ui, response.node_ref, &response, base_color);
     response
 }
+
+pub fn empty_button(ui: &mut UI) -> Response {
+    let bg = ui.style::<theme::BgButton>();
+    let margin = ui.style::<theme::WidgetMargin>();
+    let rounding = ui.style::<theme::WidgetRounding>();
+
+    let response = ui.node(
+        UINodeParams::new(Size::fit(), Size::fit())
+            .with_fill(bg)
+            .with_margin(margin)
+            .with_rounding(rounding)
+            .sense_mouse()
+    );
+
+    button_fill_animation(ui, response.node_ref, &response, bg); 
+
+    response
+}
+
+pub fn button_with_contents<F: FnOnce(&mut UI)>(ui: &mut UI, contents: F) -> Response {
+    let response = empty_button(ui);
+    ui.with_parent(response.node_ref, contents);
+    response
+}

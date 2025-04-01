@@ -67,8 +67,8 @@ pub use resizable_panel::*;
 mod canvas;
 pub use canvas::*;
 
-mod shortcut;
-pub use shortcut::*;
+pub mod shortcut;
+pub use shortcut::KeyboardShortcut;
 
 mod color_picker;
 pub use color_picker::*;
