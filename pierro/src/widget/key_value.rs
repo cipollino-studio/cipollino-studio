@@ -1,7 +1,7 @@
 
 use crate::{Layout, Size, UINodeParams, UIRef, UI};
 
-use super::{h_spacing, horizontal_fit, label};
+use super::{h_spacing, horizontal_fit, label, v_spacing};
 
 pub struct KeyValueBuilder<'ui, 'a, 'b> {
     ui: &'ui mut UI<'a, 'b>,
@@ -34,6 +34,15 @@ impl KeyValueBuilder<'_, '_, '_> {
 
     pub fn labeled<R, F: FnOnce(&mut UI) -> R>(&mut self, label_text: impl Into<String>, value: F) -> R {
         self.labeled_with_size(label_text, 25.0, value)
+    }
+
+    pub fn spacing(&mut self, spacing: f32) {
+        self.ui.with_parent(self.key_column, |ui| {
+            v_spacing(ui, spacing);
+        });
+        self.ui.with_parent(self.value_column, |ui| {
+            v_spacing(ui, spacing);
+        });
     }
 
 }

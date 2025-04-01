@@ -1,9 +1,14 @@
 
-use crate::{empty_button, label, UI};
+use crate::{empty_button, label, Response, UI};
 
 use super::{shortcut_label, KeyboardShortcut};
 
-pub fn rebindable_shortcut(ui: &mut UI, shortcut: &mut KeyboardShortcut) -> bool {
+pub struct RebindableShortcutResponse {
+    pub response: Response,
+    pub changed: bool
+}
+
+pub fn rebindable_shortcut(ui: &mut UI, shortcut: &mut KeyboardShortcut) -> RebindableShortcutResponse {
     let button = empty_button(ui);
 
     let focused = button.is_focused(ui);
@@ -19,12 +24,14 @@ pub fn rebindable_shortcut(ui: &mut UI, shortcut: &mut KeyboardShortcut) -> bool
         button.request_focus(ui);
     }
 
+    let mut changed = false;
     if focused {
         if let Some(key) = ui.input().keys_pressed.first() {
             *shortcut = KeyboardShortcut::new(ui.input().key_modifiers, *key);
             button.release_focus(ui);
-            return true;
+            changed = true;
         }
     }
-    false
+
+    RebindableShortcutResponse { response: button, changed }
 }

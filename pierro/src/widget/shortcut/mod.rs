@@ -7,7 +7,7 @@ pub use label::*;
 mod rebind;
 pub use rebind::*;
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct KeyboardShortcut {
     modifiers: KeyModifiers,

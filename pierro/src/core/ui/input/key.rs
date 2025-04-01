@@ -223,7 +223,7 @@ impl Key {
 
 bitflags::bitflags! {
 
-    #[derive(Clone, Copy, PartialEq, Eq, Debug)]
+    #[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
     #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
     #[cfg_attr(feature = "serde", serde(transparent))]
     pub struct KeyModifiers: u8 {
