@@ -24,7 +24,6 @@ pub trait UserPref {
 
     fn default() -> Self::Type;
     fn name() -> &'static str;
-
 }
 
 pub struct UserPrefs {

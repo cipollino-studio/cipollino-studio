@@ -1,7 +1,7 @@
 
 use gizmos::PotentialDragState;
 use project::{Action, Client, Ptr, SetStrokeStroke, Stroke, StrokeData};
-use crate::{EditorState, Selection};
+use crate::{keyboard_shortcut, EditorState, Selection};
 
 use super::{LassoState, Tool, ToolContext};
 
@@ -145,13 +145,13 @@ impl SelectTool {
 
 }
 
+keyboard_shortcut!(SelectToolShortcut, V, pierro::KeyModifiers::empty());
+
 impl Tool for SelectTool {
 
     const ICON: &'static str = pierro::icons::CURSOR;
-    const SHORTCUT: pierro::KeyboardShortcut = pierro::KeyboardShortcut::new(
-        pierro::KeyModifiers::empty(),
-        pierro::Key::V
-    );
+
+    type Shortcut = SelectToolShortcut;
 
     fn mouse_drag_started(&mut self, editor: &mut EditorState, ctx: &mut ToolContext, pos: malvina::Vec2) {
         self.prev_drag_mouse_pos = pos;

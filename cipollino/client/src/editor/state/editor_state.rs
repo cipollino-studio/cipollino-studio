@@ -1,7 +1,7 @@
 
 use std::{cell::RefCell, collections::HashMap};
 use std::rc::Rc;
-use project::{Clip, ClipInner, Layer, Project, Ptr, Stroke};
+use project::{Client, Clip, ClipInner, Layer, Project, Ptr, Stroke};
 
 use crate::{SelectTool, ToolDyn};
 
@@ -90,6 +90,22 @@ impl EditorState {
             self.time = 0.0;
         }
         self.time = self.time.max(0.0);
+    }
+
+    pub fn jump_to_prev_frame(&mut self, client: &Client, clip: &ClipInner) {
+        let Some(layer) = client.get(self.active_layer) else { return; };
+        let time = clip.frame_idx(self.time); 
+        let Some(frame_ptr) = layer.frame_before(client, time) else { return; };
+        let Some(frame) = client.get(frame_ptr) else { return; };
+        self.jump_to(clip.frame_len() * (frame.time as f32));
+    }
+
+    pub fn jump_to_next_frame(&mut self, client: &Client, clip: &ClipInner) {
+        let Some(layer) = client.get(self.active_layer) else { return; };
+        let time = clip.frame_idx(self.time); 
+        let Some(frame_ptr) = layer.frame_after(client, time) else { return; };
+        let Some(frame) = client.get(frame_ptr) else { return; };
+        self.jump_to(clip.frame_len() * (frame.time as f32));
     }
 
     pub fn open_clip(&mut self, clip_ptr: Ptr<Clip>) {

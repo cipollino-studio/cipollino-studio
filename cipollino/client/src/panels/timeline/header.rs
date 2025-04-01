@@ -1,25 +1,10 @@
 
-use project::{Action, Client, Clip, ClipInner, CreateFrame, CreateLayer, FrameTreeData, LayerParent, LayerTreeData, Ptr, SetClipInnerLength};
+use project::{Action, Clip, ClipInner, CreateFrame, CreateLayer, FrameTreeData, LayerParent, LayerTreeData, Ptr, SetClipInnerLength};
 
 use crate::{EditorState, ProjectState};
 
 use super::TimelinePanel;
 
-fn jump_to_prev_frame(client: &Client, editor: &mut EditorState, clip: &ClipInner) {
-    let Some(layer) = client.get(editor.active_layer) else { return; };
-    let time = clip.frame_idx(editor.time); 
-    let Some(frame_ptr) = layer.frame_before(client, time) else { return; };
-    let Some(frame) = client.get(frame_ptr) else { return; };
-    editor.jump_to(clip.frame_len() * (frame.time as f32));
-}
-
-fn jump_to_next_frame(client: &Client, editor: &mut EditorState, clip: &ClipInner) {
-    let Some(layer) = client.get(editor.active_layer) else { return; };
-    let time = clip.frame_idx(editor.time); 
-    let Some(frame_ptr) = layer.frame_after(client, time) else { return; };
-    let Some(frame) = client.get(frame_ptr) else { return; };
-    editor.jump_to(clip.frame_len() * (frame.time as f32));
-}
 
 impl TimelinePanel {
 
@@ -99,7 +84,7 @@ impl TimelinePanel {
 
                     // Jump to previous frame
                     if pierro::icon_button(ui, pierro::icons::CARET_LINE_LEFT).mouse_clicked() {
-                        jump_to_prev_frame(&project.client, editor, clip);
+                        editor.jump_to_prev_frame(&project.client, clip);
                     }
                     pierro::v_line(ui);
 
@@ -116,7 +101,7 @@ impl TimelinePanel {
 
                     // Jump to next frame
                     if pierro::icon_button(ui, pierro::icons::CARET_LINE_RIGHT).mouse_clicked() {
-                        jump_to_next_frame(&project.client, editor, clip);
+                        editor.jump_to_next_frame(&project.client, clip);
                     }
 
                 });

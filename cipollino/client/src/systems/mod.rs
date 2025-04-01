@@ -1,8 +1,11 @@
 
 mod prefs;
-use std::path::PathBuf;
-
 pub use prefs::*;
+
+mod shortcut;
+pub use shortcut::*;
+
+use std::path::PathBuf;
 
 pub struct AppSystems {
     pub home_path: PathBuf,

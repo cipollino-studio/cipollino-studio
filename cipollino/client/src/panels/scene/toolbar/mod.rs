@@ -1,7 +1,8 @@
 
-use crate::{BucketTool, ColorPicker, EditorState, PencilTool, SelectTool, Tool};
+use crate::{AppSystems, BucketTool, ColorPicker, EditorState, PencilTool, SelectTool, Tool};
 
 use super::ScenePanel;
+use crate::Shortcut;
 
 mod color_picker;
 
@@ -9,7 +10,7 @@ impl ScenePanel {
 
     const GAP: f32 = 3.0;
 
-    fn tool_button<T: Tool + 'static>(&mut self, ui: &mut pierro::UI, editor: &mut EditorState) {
+    fn tool_button<T: Tool + 'static>(&mut self, ui: &mut pierro::UI, editor: &mut EditorState, systems: &mut AppSystems) {
         let response = pierro::icon_button(ui, T::ICON);
         pierro::v_spacing(ui, Self::GAP);
 
@@ -24,7 +25,7 @@ impl ScenePanel {
             }
         }
 
-        if T::SHORTCUT.used_globally(ui) {
+        if T::Shortcut::used_globally(ui, systems) {
             *editor.curr_tool.borrow_mut() = Box::new(T::default());
         }
     }
@@ -46,7 +47,7 @@ impl ScenePanel {
 
     }
 
-    pub(super) fn toolbar(&mut self, ui: &mut pierro::UI, editor: &mut EditorState) {
+    pub(super) fn toolbar(&mut self, ui: &mut pierro::UI, editor: &mut EditorState, systems: &mut AppSystems) {
         let bg = ui.style::<pierro::theme::BgLight>();
         let margin = pierro::Margin::same(Self::GAP);
         ui.with_style::<pierro::theme::WidgetMargin, _, _>(pierro::Margin::same(3.0), |ui| {
@@ -58,10 +59,10 @@ impl ScenePanel {
                             .with_fill(bg)
                             .with_margin(margin),
                         |ui| {
-                            self.tool_button::<SelectTool>(ui, editor);
-                            self.tool_button::<PencilTool>(ui, editor);
-                            self.tool_button::<BucketTool>(ui, editor);
-                            self.tool_button::<ColorPicker>(ui, editor);
+                            self.tool_button::<SelectTool>(ui, editor, systems);
+                            self.tool_button::<PencilTool>(ui, editor, systems);
+                            self.tool_button::<BucketTool>(ui, editor, systems);
+                            self.tool_button::<ColorPicker>(ui, editor, systems);
                             self.color_picker(ui, editor);
 
                             // Spacer

@@ -16,7 +16,7 @@ pub use bucket::*;
 
 use project::{Action, ClipInner, CreateFrame, Frame, FrameTreeData, Layer, Ptr, Stroke};
 use std::collections::HashSet;
-use crate::{AppSystems, EditorState, ProjectState};
+use crate::{AppSystems, EditorState, ProjectState, Shortcut};
 
 pub struct ToolContext<'ctx> {
     pub device: &'ctx pierro::wgpu::Device,
@@ -65,7 +65,8 @@ impl ToolContext<'_> {
 pub trait Tool: Default {
 
     const ICON: &'static str;
-    const SHORTCUT: pierro::KeyboardShortcut;
+
+    type Shortcut: Shortcut;
 
     fn tick(&mut self, _editor: &mut EditorState, _ctx: &mut ToolContext) {}
 

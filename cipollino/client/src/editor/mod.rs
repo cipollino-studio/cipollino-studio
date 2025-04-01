@@ -18,6 +18,7 @@ mod selection;
 pub use selection::*;
 
 mod shortcuts;
+pub use shortcuts::*;
 
 mod menu_bar;
 

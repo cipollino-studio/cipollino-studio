@@ -2,7 +2,7 @@
 use paint::PaintCommands;
 use project::{Action, ClipInner, DeleteFrame};
 
-use crate::{EditorState, ProjectState};
+use crate::{AppSystems, DeleteShortcut, EditorState, ProjectState, Shortcut};
 
 use super::{render_list::RenderLayerKind, RenderList, TimelinePanel};
 
@@ -62,7 +62,7 @@ impl FrameArea {
         }
     }
     
-    fn frame_area_contents(&mut self, ui: &mut pierro::UI, editor: &mut EditorState, project: &ProjectState, render_list: &RenderList, clip: &ClipInner, n_frames: u32) {
+    fn frame_area_contents(&mut self, ui: &mut pierro::UI, editor: &mut EditorState, project: &ProjectState, systems: &mut AppSystems, render_list: &RenderList, clip: &ClipInner, n_frames: u32) {
         let bg_base_color = ui.style::<pierro::theme::BgDark>();
         let bg = bg_base_color.darken(0.2);
         let column_highlight = bg_base_color.darken(0.1);
@@ -109,8 +109,7 @@ impl FrameArea {
         }
 
         // Deleting frames
-        let delete_shortcut = pierro::KeyboardShortcut::new(pierro::KeyModifiers::empty(), pierro::Key::Backspace);
-        if delete_shortcut.used_globally(ui) {
+        if DeleteShortcut::used_globally(ui, systems) {
             Self::delete_frame_selection(project, editor);
         }
 
@@ -160,12 +159,12 @@ impl TimelinePanel {
     
     pub const FRAME_SIZE: pierro::Vec2 = pierro::vec2(Self::FRAME_WIDTH, Self::LAYER_HEIGHT);
 
-    pub(super) fn frame_area(&mut self, ui: &mut pierro::UI, editor: &mut EditorState, project: &ProjectState, render_list: &RenderList, clip: &ClipInner, n_frames: u32) -> pierro::ScrollAreaResponse<()> {
+    pub(super) fn frame_area(&mut self, ui: &mut pierro::UI, editor: &mut EditorState, project: &ProjectState, systems: &mut AppSystems, render_list: &RenderList, clip: &ClipInner, n_frames: u32) -> pierro::ScrollAreaResponse<()> {
         let mut scroll_state = self.scroll_state;
         let response = pierro::ScrollArea::default()
             .with_state(&mut scroll_state)
             .render(ui, |ui| {
-                self.frame_area.frame_area_contents(ui, editor, project, render_list, clip, n_frames);
+                self.frame_area.frame_area_contents(ui, editor, project, systems, render_list, clip, n_frames);
             });
         self.scroll_state = scroll_state;
         response

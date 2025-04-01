@@ -1,7 +1,7 @@
 
 use project::{Action, Ptr, SetStrokeColor, Stroke};
 
-use crate::EditorState;
+use crate::{keyboard_shortcut, EditorState};
 
 use super::{LassoState, Tool, ToolContext};
 
@@ -10,10 +10,13 @@ pub struct BucketTool {
     lasso: Option<LassoState>
 }
 
+keyboard_shortcut!(BucketToolShortcut, B, pierro::KeyModifiers::empty());
+
 impl Tool for BucketTool {
 
     const ICON: &'static str = pierro::icons::PAINT_BUCKET;
-    const SHORTCUT: pierro::KeyboardShortcut = pierro::KeyboardShortcut::new(pierro::KeyModifiers::empty(), pierro::Key::B);
+
+    type Shortcut = BucketToolShortcut;
 
     fn mouse_clicked(&mut self, editor: &mut EditorState, ctx: &mut ToolContext, _pos: malvina::Vec2) {
         if let Some((x, y)) = ctx.picking_mouse_pos {

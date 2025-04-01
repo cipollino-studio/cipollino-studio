@@ -1,7 +1,7 @@
 
 use project::{Ptr, Stroke};
 
-use crate::EditorState;
+use crate::{keyboard_shortcut, EditorState};
 
 use super::{Tool, ToolContext};
 
@@ -10,10 +10,13 @@ pub struct ColorPicker {
 
 }
 
+keyboard_shortcut!(ColorPickerShortcut, P, pierro::KeyModifiers::empty());
+
 impl Tool for ColorPicker {
 
     const ICON: &'static str = pierro::icons::EYEDROPPER;
-    const SHORTCUT: pierro::KeyboardShortcut = pierro::KeyboardShortcut::new(pierro::KeyModifiers::empty(), pierro::Key::P);
+
+    type Shortcut = ColorPickerShortcut;
 
     fn mouse_clicked(&mut self, editor: &mut EditorState, ctx: &mut ToolContext, _pos: elic::Vec2) {
         if let Some((x, y)) = ctx.picking_mouse_pos {

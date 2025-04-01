@@ -4,7 +4,7 @@ mod canvas;
 
 use project::{Action, DeleteStroke};
 
-use crate::{EditorState, ProjectState, SelectionKind};
+use crate::{keyboard_shortcut, DeleteShortcut, EditorState, ProjectState, SelectionKind, Shortcut};
 use super::{Panel, PanelContext};
 
 use std::cell::RefCell;
@@ -12,6 +12,9 @@ use std::rc::Rc;
 
 pub const ONION_SKIN_PREV_COLOR: pierro::Color = pierro::Color::rgb(0.8588, 0.3764, 0.8196);
 pub const ONION_SKIN_NEXT_COLOR: pierro::Color = pierro::Color::rgb(0.4666, 0.8588, 0.3764);
+
+keyboard_shortcut!(RecenterSceneShortcut, G, pierro::KeyModifiers::CONTROL);
+keyboard_shortcut!(MirrorSceneShortcut, M, pierro::KeyModifiers::CONTROL);
 
 pub struct ScenePanel {
     cam_pos: malvina::Vec2,
@@ -83,15 +86,23 @@ impl Panel for ScenePanel {
         };
 
         pierro::horizontal_fill(ui, |ui| {
-            self.toolbar(ui, editor);
+            self.toolbar(ui, editor, context.systems);
             pierro::v_line(ui);
             self.canvas(ui, project, editor, context.systems, renderer, clip_inner); 
         });
 
         // Delete scene selection
-        let delete_shortcut = pierro::KeyboardShortcut::new(pierro::KeyModifiers::empty(), pierro::Key::Backspace);
-        if delete_shortcut.used_globally(ui) && editor.selection.kind() == SelectionKind::Scene {
+        if DeleteShortcut::used_globally(ui, context.systems) && editor.selection.kind() == SelectionKind::Scene {
             Self::delete_scene_selection(project, editor);
+        }
+
+        if RecenterSceneShortcut::used_globally(ui, context.systems) {
+            self.cam_pos = elic::Vec2::ZERO;
+            self.cam_size = 2.0;
+        }
+        if MirrorSceneShortcut::used_globally(ui, context.systems) {
+            self.mirror = !self.mirror;
+            self.cam_pos.x *= -1.0;
         }
         
     }

@@ -1,7 +1,7 @@
 
 use project::{Action, CreateStroke, StrokeData, StrokeTreeData};
 
-use crate::{AppSystems, EditorState};
+use crate::{keyboard_shortcut, AppSystems, EditorState};
 
 use super::{Tool, ToolContext};
 
@@ -89,13 +89,13 @@ impl PencilTool {
 
 }
 
+keyboard_shortcut!(PencilToolShortcut, D, pierro::KeyModifiers::empty());
+
 impl Tool for PencilTool {
 
     const ICON: &'static str = pierro::icons::PENCIL;
-    const SHORTCUT: pierro::KeyboardShortcut = pierro::KeyboardShortcut::new(
-        pierro::KeyModifiers::empty(),
-        pierro::Key::D
-    );
+
+    type Shortcut = PencilToolShortcut;
 
     fn tick(&mut self, editor: &mut EditorState, _ctx: &mut ToolContext) {
         // If the user undo/redoes while drawing as stroke, reset the pencil tool
