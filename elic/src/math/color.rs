@@ -1,7 +1,7 @@
 
 use std::fmt::Display;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Color {
     pub r: f32,
