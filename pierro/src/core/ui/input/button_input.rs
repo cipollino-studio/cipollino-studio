@@ -61,6 +61,16 @@ impl ButtonInput {
         self.state = false;
     }
 
+    pub fn press_with_edge(&mut self) {
+        self.prev_state = false;
+        self.state = true;
+    }
+
+    pub fn release_with_edge(&mut self) {
+        self.prev_state = true;
+        self.state = false;
+    }
+
     /// Update the button without providing a new state
     pub fn tick_with_same_state(&mut self, delta_time: f32) {
         self.prev_state = self.state;

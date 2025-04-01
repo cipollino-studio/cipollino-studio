@@ -160,10 +160,10 @@ impl Input {
             state.tick_with_same_state(raw_input.delta_time);
         }
         for key in self.keys_pressed.clone() {
-            self.key_state_mut(&key).press();
+            self.key_state_mut(&key).press_with_edge();
         }
         for key in self.keys_released.clone() {
-            self.key_state_mut(&key).release();
+            self.key_state_mut(&key).release_with_edge();
         }
         self.key_modifiers = raw_input.key_modifiers;
         self.text = std::mem::replace(&mut raw_input.text, String::new());

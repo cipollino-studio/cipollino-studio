@@ -220,7 +220,7 @@ impl<T: App> AppHandler<'_, T> {
             },
 
             winit::event::WindowEvent::KeyboardInput { device_id: _, event, is_synthetic: _ } => {
-                if let Some(key) = winit_to_pierro_key(event.logical_key.clone()) {
+                if let Some(key) = winit_to_pierro_key(event.key_without_modifiers.clone()) {
                     if event.state.is_pressed() {
                         self.raw_input.keys_pressed.push(key);
                     } else {

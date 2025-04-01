@@ -1,5 +1,6 @@
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum Key {
     ArrowDown,
     ArrowLeft,
@@ -114,6 +115,8 @@ pub enum Key {
 bitflags::bitflags! {
 
     #[derive(Clone, Copy, PartialEq, Eq, Debug)]
+    #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+    #[cfg_attr(feature = "serde", serde(transparent))]
     pub struct KeyModifiers: u8 {
         const CONTROL = 1 << 0;
         const SHIFT = 1 << 1;

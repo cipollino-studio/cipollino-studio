@@ -20,7 +20,7 @@ elic = { path = "../elic" }
 
 winit = { git = "https://github.com/cipollino-studio/winit.git", rev = "a394408" } 
 wgpu = { workspace = true }
-bitflags = "2.9.0"
+bitflags = { version = "2.9.0", features = ["serde"] }
 pollster = "0.3.0"
 bytemuck = { version = "1.19.0", features = ["derive"] }
 etagere = "0.2.13"
