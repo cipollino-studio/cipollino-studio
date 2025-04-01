@@ -25,10 +25,16 @@ mod menu_bar;
 mod export;
 use export::*;
 
+mod window;
+pub use window::*;
+
+mod settings;
+pub use settings::*;
+
 pub struct Editor {
     state: State,
     docking: pierro::DockingState<EditorPanel>,
-    windows: pierro::WindowManager<State>,
+    windows: pierro::WindowManager<WindowInstance>,
     socket: Option<Socket>
 }
 
@@ -56,6 +62,9 @@ impl Editor {
     } 
 
     pub fn tick(&mut self, ui: &mut pierro::UI, systems: &mut AppSystems) {
+
+        // Set the accent color
+        ui.push_style::<pierro::theme::AccentColor>(systems.prefs.get::<AccentColor>());
 
         // Load the currently open clip if it's not open
         if let Some(clip) = self.state.project.client.get(self.state.editor.open_clip) {
@@ -99,7 +108,13 @@ impl Editor {
 
         // Render the windows on top
         self.state.editor.open_queued_windows(&mut self.windows);
-        self.windows.render(ui, &mut self.state);
+        let mut panel_context = PanelContext {
+            editor: &mut self.state.editor,
+            project: &self.state.project,
+            systems,
+            renderer: &mut self.state.renderer
+        };
+        self.windows.render(ui, &mut panel_context);
 
         self.state.editor.selection.end_frame(ui.input().l_mouse.clicked() || ui.input().l_mouse.drag_started());
 
@@ -118,6 +133,9 @@ impl Editor {
         
         // On load callbacks
         self.state.editor.process_on_load_callbacks(&self.state.project);
+
+        // Pop the accent color style
+        ui.pop_style();
     }
 
 }

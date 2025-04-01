@@ -1,7 +1,7 @@
 
 use project::{Client, ClipInner};
 
-use crate::{EditorState, ScenePanel, ONION_SKIN_NEXT_COLOR, ONION_SKIN_PREV_COLOR};
+use crate::{AppSystems, EditorState, OnionSkinFutureColor, OnionSkinPastColor, ScenePanel};
 
 impl ScenePanel {
 
@@ -25,14 +25,17 @@ impl ScenePanel {
         }
     }
 
-    pub(super) fn render_onion_skin(rndr: &mut malvina::LayerRenderer, client: &Client, editor: &EditorState, clip: &ClipInner) {
+    pub(super) fn render_onion_skin(rndr: &mut malvina::LayerRenderer, client: &Client, editor: &EditorState, systems: &mut AppSystems, clip: &ClipInner) {
         let curr_frame = clip.frame_idx(editor.time);
+
+        let past_color = systems.prefs.get::<OnionSkinPastColor>();
+        let future_color = systems.prefs.get::<OnionSkinFutureColor>();
 
         // Render prev onion skins
         for i in (1..=editor.onion_skin_prev_frames).rev() {
             let frame = curr_frame - (i as i32); 
             let alpha = 0.7 * 0.8f32.powi(i as i32);
-            let color = elic::Color::WHITE.lerp(ONION_SKIN_PREV_COLOR, alpha);
+            let color = elic::Color::WHITE.lerp(past_color, alpha);
             Self::render_onion_skin_frame(rndr, client, editor, clip, frame, color);
         }
 
@@ -40,7 +43,7 @@ impl ScenePanel {
         for i in (1..=editor.onion_skin_next_frames).rev() {
             let frame = curr_frame + (i as i32); 
             let alpha = 0.7 * 0.8f32.powi(i as i32);
-            let color = elic::Color::WHITE.lerp(ONION_SKIN_NEXT_COLOR, alpha);
+            let color = elic::Color::WHITE.lerp(future_color, alpha);
             Self::render_onion_skin_frame(rndr, client, editor, clip, frame, color);
         }
 

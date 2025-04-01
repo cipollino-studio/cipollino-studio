@@ -3,11 +3,11 @@ use std::{cell::RefCell, collections::HashMap};
 use std::rc::Rc;
 use project::{Client, Clip, ClipInner, Layer, Project, Ptr, Stroke};
 
-use crate::{SelectTool, ToolDyn};
+use crate::{SelectTool, ToolDyn, Window, WindowInstance};
 
 use crate::{Selection, SelectionKind};
 
-use super::{ProjectState, ScenePreview, State};
+use super::{ProjectState, ScenePreview};
 
 pub struct EditorState {
     pub time: f32,
@@ -33,7 +33,7 @@ pub struct EditorState {
 
     pub color: pierro::Color,
 
-    windows_to_open: Vec<Box<dyn pierro::WindowDyn<Context = State>>>,
+    windows_to_open: Vec<WindowInstance>,
 
     on_load_callbacks: Vec<Box<dyn Fn(&ProjectState, &mut EditorState) -> bool>>
 }
@@ -114,13 +114,20 @@ impl EditorState {
         self.active_layer = Ptr::null();
     }
 
-    pub fn open_window<W: pierro::Window<Context = State>>(&mut self, window: W) {
-        self.windows_to_open.push(Box::new(window));
+    pub fn open_window<W: Window + 'static>(&mut self, window: W) {
+        self.windows_to_open.push(WindowInstance::new(window));
     }
 
-    pub fn open_queued_windows(&mut self, windows: &mut pierro::WindowManager<State>) {
-        for window in std::mem::replace(&mut self.windows_to_open, Vec::new()) {
-            windows.open_window_dyn(window);
+    pub fn open_queued_windows(&mut self, windows: &mut pierro::WindowManager<WindowInstance>) {
+        'windows: for window in std::mem::replace(&mut self.windows_to_open, Vec::new()) {
+            if window.unique() {
+                for existing_window in windows.iter() {
+                    if existing_window.type_id() == window.type_id() {
+                        continue 'windows;
+                    }
+                }
+            }
+            windows.open_window(window);
         }
     }
 

@@ -1,7 +1,7 @@
 
 use project::{Action, Clip, ClipInner, Ptr, RenameClip, SetClipInnerFramerate, SetClipInnerHeight, SetClipInnerLength, SetClipInnerWidth};
 
-use crate::State;
+use crate::{PanelContext, Window};
 
 use super::ClipProperties;
 
@@ -11,21 +11,18 @@ pub struct ClipPropertiesDialog {
     pub clip_inner_ptr: Ptr<ClipInner>
 }
 
-impl pierro::Window for ClipPropertiesDialog {
-    type Context = State;
+impl Window for ClipPropertiesDialog {
 
-    const UNIQUE: bool = true;
-
-    fn title(&self) -> impl Into<String> {
-        "Clip Properties"
+    fn title(&self) -> String {
+        "Clip Properties".to_owned()
     }
 
-    fn render(&mut self, ui: &mut pierro::UI, close: &mut bool, state: &mut State) {
-        let Some(clip) = state.project.client.get(self.clip_ptr) else {
+    fn render(&mut self, ui: &mut pierro::UI, close: &mut bool, ctx: &mut PanelContext) {
+        let Some(clip) = ctx.project.client.get(self.clip_ptr) else {
             *close = true;
             return;
         };
-        let Some(clip_inner) = state.project.client.get(self.clip_inner_ptr) else {
+        let Some(clip_inner) = ctx.project.client.get(self.clip_inner_ptr) else {
             *close = true;
             return;
         };
@@ -33,7 +30,7 @@ impl pierro::Window for ClipPropertiesDialog {
         let response = self.properties.render_ui(ui);
 
         if response.name_response.done_editing {
-            state.project.client.queue_action(Action::single(state.editor.action_context("Rename Clip"), RenameClip {
+            ctx.project.client.queue_action(Action::single(ctx.editor.action_context("Rename Clip"), RenameClip {
                 ptr: self.clip_ptr,
                 name: self.properties.name.clone(),
             }));
@@ -42,7 +39,7 @@ impl pierro::Window for ClipPropertiesDialog {
         }
 
         if response.width_response.done_editing {
-            state.project.client.queue_action(Action::single(state.editor.action_context("Set Clip Width"), SetClipInnerWidth {
+            ctx.project.client.queue_action(Action::single(ctx.editor.action_context("Set Clip Width"), SetClipInnerWidth {
                 ptr: self.clip_inner_ptr,
                 width_value: self.properties.width,
             }));
@@ -51,7 +48,7 @@ impl pierro::Window for ClipPropertiesDialog {
         }
 
         if response.height_response.done_editing {
-            state.project.client.queue_action(Action::single(state.editor.action_context("Set Clip Height"), SetClipInnerHeight {
+            ctx.project.client.queue_action(Action::single(ctx.editor.action_context("Set Clip Height"), SetClipInnerHeight {
                 ptr: self.clip_inner_ptr,
                 height_value: self.properties.height,
             }));
@@ -60,7 +57,7 @@ impl pierro::Window for ClipPropertiesDialog {
         }
 
         if response.length_response.done_editing {
-            state.project.client.queue_action(Action::single(state.editor.action_context("Set Clip Length"), SetClipInnerLength {
+            ctx.project.client.queue_action(Action::single(ctx.editor.action_context("Set Clip Length"), SetClipInnerLength {
                 ptr: self.clip_inner_ptr,
                 length_value: self.properties.length,
             }));
@@ -69,7 +66,7 @@ impl pierro::Window for ClipPropertiesDialog {
         }
         
         if response.framerate_changed {
-            state.project.client.queue_action(Action::single(state.editor.action_context("Set Clip Framerate"), SetClipInnerFramerate {
+            ctx.project.client.queue_action(Action::single(ctx.editor.action_context("Set Clip Framerate"), SetClipInnerFramerate {
                 ptr: self.clip_inner_ptr,
                 framerate_value: self.properties.framerate,
             }));
@@ -79,4 +76,8 @@ impl pierro::Window for ClipPropertiesDialog {
 
     }
 
+    fn unique(&self) -> bool {
+        true
+    }
+    
 }

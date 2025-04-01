@@ -1,7 +1,9 @@
 
 use progress_modal::ExportProgressModal;
 
-use super::State;
+use crate::PanelContext;
+
+use super::Window;
 
 mod progress_modal;
 
@@ -26,24 +28,20 @@ impl ExportDialog {
 
 }
 
-impl pierro::Window for ExportDialog {
+impl Window for ExportDialog {
 
-    type Context = State;
-
-    const UNIQUE: bool = true;
-
-    fn title(&self) -> impl Into<String> {
-        "Export"
+    fn title(&self) -> String {
+        "Export".to_owned()
     }
 
-    fn render(&mut self, ui: &mut pierro::UI, close: &mut bool, state: &mut State) {
-        let Some(clip) = state.project.client.get(state.editor.open_clip) else {
+    fn render<'ctx>(&mut self, ui: &mut pierro::UI, close: &mut bool, ctx: &mut PanelContext<'ctx>) {
+        let Some(clip) = ctx.project.client.get(ctx.editor.open_clip) else {
             pierro::margin(ui, pierro::Margin::same(10.0), |ui| {
                 pierro::label(ui, "No clip open.");
             });
             return;
         };
-        let Some(clip_inner) = state.project.client.get(clip.inner) else {
+        let Some(clip_inner) = ctx.project.client.get(clip.inner) else {
             pierro::margin(ui, pierro::Margin::same(10.0), |ui| {
                 pierro::label(ui, "Clip loading...");
             });
@@ -89,7 +87,7 @@ impl pierro::Window for ExportDialog {
         pierro::v_spacing(ui, 5.0);
         pierro::vertical_centered(ui, |ui| {
             if pierro::button(ui, "Export").mouse_clicked() {
-                state.editor.open_window(
+                ctx.editor.open_window(
                     ExportProgressModal::new(
                         self.export_path.clone().into(),
                         clip.inner,
@@ -103,6 +101,10 @@ impl pierro::Window for ExportDialog {
                 *close = true;
             }
         });
+    }
+
+    fn unique(&self) -> bool {
+        true
     }
 
 }

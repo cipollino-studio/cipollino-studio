@@ -1,10 +1,8 @@
 
-use crate::{AppSystems, BucketTool, ColorPicker, EditorState, PencilTool, SelectTool, Tool};
+use crate::{color_picker, AppSystems, BucketTool, ColorPicker, EditorState, PencilTool, SelectTool, Tool};
 
 use super::ScenePanel;
 use crate::Shortcut;
-
-mod color_picker;
 
 impl ScenePanel {
 
@@ -63,7 +61,7 @@ impl ScenePanel {
                             self.tool_button::<PencilTool>(ui, editor, systems);
                             self.tool_button::<BucketTool>(ui, editor, systems);
                             self.tool_button::<ColorPicker>(ui, editor, systems);
-                            self.color_picker(ui, editor);
+                            color_picker(ui, &mut editor.color);
 
                             // Spacer
                             ui.node(pierro::UINodeParams::new(pierro::Size::px(0.0), pierro::Size::px(0.0).with_grow(1.0)));

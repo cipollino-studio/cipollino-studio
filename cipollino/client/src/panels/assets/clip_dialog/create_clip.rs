@@ -1,7 +1,7 @@
 
 use project::{Action, Client, Clip, ClipTreeData, CreateClip, CreateLayer, LayerParent, LayerTreeData, Ptr};
 
-use crate::{EditorState, State};
+use crate::{EditorState, PanelContext, Window};
 
 use super::ClipProperties;
 
@@ -52,17 +52,13 @@ impl CreateClipDialog {
 
 }
 
-impl pierro::Window for CreateClipDialog {
+impl Window for CreateClipDialog {
 
-    type Context = State;
-
-    const UNIQUE: bool = true;
-
-    fn title(&self) -> impl Into<String> {
-        "Create Clip" 
+    fn title(&self) -> String {
+        "Create Clip".to_owned()
     }
 
-    fn render(&mut self, ui: &mut pierro::UI, close: &mut bool, state: &mut State) {
+    fn render(&mut self, ui: &mut pierro::UI, close: &mut bool, state: &mut PanelContext) {
         self.data.render_ui(ui);
         pierro::v_spacing(ui, 5.0);
         pierro::vertical_centered(ui, |ui| {
@@ -74,6 +70,10 @@ impl pierro::Window for CreateClipDialog {
             }
         });
         
+    }
+
+    fn unique(&self) -> bool {
+        true
     }
 
 }

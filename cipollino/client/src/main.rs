@@ -16,6 +16,9 @@ pub use systems::*;
 mod render;
 pub use render::*;
 
+mod util;
+pub use util::*;
+
 use std::path::PathBuf;
 use clap::Parser;
 use splash::SplashScreen;

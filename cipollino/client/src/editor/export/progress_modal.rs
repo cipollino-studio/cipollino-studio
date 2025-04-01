@@ -3,7 +3,7 @@ use std::path::PathBuf;
 
 use project::{ClipInner, Ptr};
 
-use crate::{render_scene, EditorState, ProjectState, State};
+use crate::{render_scene, EditorState, PanelContext, ProjectState, Window};
 
 use super::VideoWriter;
 
@@ -157,19 +157,14 @@ impl ExportProgressModal {
 
 }
 
-impl pierro::Window for ExportProgressModal {
+impl Window for ExportProgressModal {
 
-    type Context = State;
-
-    const UNIQUE: bool = true;
-    const MODAL: bool = true;
-
-    fn title(&self) -> impl Into<String> {
-        "Export"
+    fn title(&self) -> String {
+        "Export".to_owned()
     }
 
-    fn render(&mut self, ui: &mut pierro::UI, close: &mut bool, state: &mut State) {
-        let Some(clip) = state.project.client.get(self.clip_ptr) else {
+    fn render<'ctx>(&mut self, ui: &mut pierro::UI, close: &mut bool, ctx: &mut PanelContext<'ctx>) {
+        let Some(clip) = ctx.project.client.get(self.clip_ptr) else {
             *close = true;
             let _ = self.writer.close();
             return;
@@ -181,7 +176,7 @@ impl pierro::Window for ExportProgressModal {
         }
         pierro::v_spacing(ui, 3.0);
        
-        self.render_frame(ui, close, &state.project, &mut state.editor, &mut state.renderer, clip);
+        self.render_frame(ui, close, &ctx.project, &mut ctx.editor, &mut ctx.renderer, clip);
 
         pierro::image_with_width(ui, 300.0, self.render_texture.clone());
 
@@ -193,6 +188,14 @@ impl pierro::Window for ExportProgressModal {
         }
 
         ui.request_redraw();
+    }
+
+    fn modal(&self) -> bool {
+        true 
+    }
+
+    fn unique(&self) -> bool {
+        true 
     }
 
 }

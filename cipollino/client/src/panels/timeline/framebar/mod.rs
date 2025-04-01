@@ -1,7 +1,7 @@
 
 use project::ClipInner;
 
-use crate::EditorState;
+use crate::{AppSystems, EditorState};
 
 use super::TimelinePanel;
 
@@ -37,7 +37,7 @@ impl Framebar {
         }
     }
 
-    pub(super) fn render(&mut self, ui: &mut pierro::UI, editor: &mut EditorState, clip: &ClipInner, n_frames: u32, timeline_scroll_state: &mut pierro::ScrollAreaState) -> pierro::ScrollAreaResponse<pierro::Response> {
+    pub(super) fn render(&mut self, ui: &mut pierro::UI, editor: &mut EditorState, systems: &mut AppSystems, clip: &ClipInner, n_frames: u32, timeline_scroll_state: &mut pierro::ScrollAreaState) -> pierro::ScrollAreaResponse<pierro::Response> {
         let fill = ui.style::<pierro::theme::BgDark>();
         let framebar_scroll_response = ui.with_node(
             pierro::UINodeParams::new(pierro::Size::fr(1.0), pierro::Size::fit())
@@ -63,7 +63,7 @@ impl Framebar {
         let framebar_response = framebar_scroll_response.inner;
         self.mouse_interaction(ui, &framebar_response, editor, clip); 
 
-        self.overlay(ui, editor, clip, &framebar_response);
+        self.overlay(ui, editor, systems, clip, &framebar_response);
         
         framebar_scroll_response
     }

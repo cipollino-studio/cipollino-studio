@@ -159,7 +159,7 @@ impl ScenePanel {
         // Render the scene
         renderer.render(ui.wgpu_device(), ui.wgpu_queue(), texture.texture(), camera, elic::Color::WHITE, ui.scale_factor(), |rndr| {
             if editor.show_onion_skin {
-                Self::render_onion_skin(rndr, &project.client, &editor, clip);
+                Self::render_onion_skin(rndr, &project.client, &editor, tool_context.systems, clip);
             }
             render_scene(rndr, &project.client, editor, clip, clip.frame_idx(editor.time));
             Self::render_selection(rndr, &editor, &project.client, render_list);

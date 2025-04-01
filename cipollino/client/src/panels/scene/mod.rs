@@ -10,8 +10,8 @@ use super::{Panel, PanelContext};
 use std::cell::RefCell;
 use std::rc::Rc;
 
-pub const ONION_SKIN_PREV_COLOR: pierro::Color = pierro::Color::rgb(0.8588, 0.3764, 0.8196);
-pub const ONION_SKIN_NEXT_COLOR: pierro::Color = pierro::Color::rgb(0.4666, 0.8588, 0.3764);
+mod onion_skin_colors;
+pub use onion_skin_colors::*;
 
 keyboard_shortcut!(RecenterSceneShortcut, G, pierro::KeyModifiers::CONTROL);
 keyboard_shortcut!(MirrorSceneShortcut, M, pierro::KeyModifiers::CONTROL);

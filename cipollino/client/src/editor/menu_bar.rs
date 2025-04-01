@@ -1,5 +1,5 @@
 
-use super::{ExportDialog, Editor};
+use super::{Editor, ExportDialog, SettingsWindow};
 
 impl Editor {
 
@@ -17,6 +17,9 @@ impl Editor {
                 }
                 if pierro::menu_button(ui, "Redo").mouse_clicked() {
                     self.state.editor.will_redo = true;
+                }
+                if pierro::menu_button(ui, "Settings...").mouse_clicked() {
+                    self.state.editor.open_window(SettingsWindow::new());
                 }
             });
         });

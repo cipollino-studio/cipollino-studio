@@ -122,7 +122,7 @@ impl Panel for TimelinePanel {
             let n_frames = (clip_inner.length + (frame_container_width / Self::FRAME_WIDTH).ceil() as u32).min(50000);
 
             let (framebar_scroll_response, frame_area_scroll_response) = ui.with_parent(frame_container.node_ref, |ui| {
-                let framebar_response = self.framebar.render(ui, editor, clip_inner, n_frames, &mut self.scroll_state);
+                let framebar_response = self.framebar.render(ui, editor, context.systems, clip_inner, n_frames, &mut self.scroll_state);
                 let frame_area_response = self.frame_area(ui, editor, project, context.systems, &render_list, clip_inner, n_frames);
                 (framebar_response, frame_area_response)
             });
