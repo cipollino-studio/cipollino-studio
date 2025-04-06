@@ -58,7 +58,7 @@ impl PencilTool {
     fn create_stroke(editor: &mut EditorState, ctx: &mut ToolContext, stroke: malvina::Stroke) {
         let mut action = Action::new(editor.action_context("New Stroke"));
         let Some(ptr) = ctx.project.client.next_ptr() else { return; };
-        let Some(frame) = ctx.active_frame(&mut action) else { return; };
+        let Some(frame) = ctx.active_frame(editor, &mut action) else { return; };
         let stroke_width = ctx.systems.prefs.get::<PencilStrokeWidthPref>();
         action.push(CreateStroke {
             ptr,
@@ -115,13 +115,15 @@ impl Tool for PencilTool {
         Self::create_stroke(editor, ctx, stroke); 
     }
 
-    fn mouse_drag_started(&mut self, _editor: &mut EditorState, ctx: &mut ToolContext, pos: malvina::Vec2) {
-        self.pts.clear();
-        self.add_point(malvina::StrokePoint {
-            pt: pos,
-            pressure: ctx.pressure,
-        }, ctx.systems);
-        self.drawing_stroke = true;
+    fn mouse_drag_started(&mut self, editor: &mut EditorState, ctx: &mut ToolContext, pos: malvina::Vec2) {
+        if editor.can_modify_layer(editor.active_layer) {
+            self.pts.clear();
+            self.add_point(malvina::StrokePoint {
+                pt: pos,
+                pressure: ctx.pressure,
+            }, ctx.systems);
+            self.drawing_stroke = true;
+        }
     }
 
     fn mouse_dragged(&mut self, editor: &mut EditorState, ctx: &mut ToolContext, pos: malvina::Vec2) {

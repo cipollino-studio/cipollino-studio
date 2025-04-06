@@ -185,7 +185,7 @@ impl Tool for SelectTool {
         if let Some((x, y)) = ctx.picking_mouse_pos {
             let id = ctx.picking_buffer.read_pixel(ctx.device, ctx.queue, x, y);
             let ptr = Ptr::<Stroke>::from_key(id as u64);
-            if !ptr.is_null() {
+            if !ptr.is_null() && ctx.modifiable_strokes.contains(&ptr) {
                 if !editor.selection.selected(ptr) {
                     if !editor.selection.shift_down() {
                         editor.selection.clear();
@@ -229,7 +229,7 @@ impl Tool for SelectTool {
             DragState::Lasso(mut lasso) => {
                 lasso.add_point(pos);
 
-                for stroke in lasso.find_inside(&ctx.project.client, ctx.rendered_strokes) {
+                for stroke in lasso.find_inside(&ctx.project.client, ctx.modifiable_strokes) {
                     editor.selection.select(stroke);
                 }
             },
@@ -260,7 +260,9 @@ impl Tool for SelectTool {
         if let Some((x, y)) = ctx.picking_mouse_pos {
             let id = ctx.picking_buffer.read_pixel(ctx.device, ctx.queue, x, y);
             let ptr = Ptr::<Stroke>::from_key(id as u64);
-            editor.selection.extend_select(ptr);
+            if ctx.modifiable_strokes.contains(&ptr) {
+                editor.selection.extend_select(ptr);
+            }
         }
     }
 

@@ -42,6 +42,7 @@ impl ScenePanel {
         clip: &ClipInner,
         render_list: &Vec<SceneChildPtr>,
         rendered_strokes: &HashSet<Ptr<Stroke>>,
+        modifiable_strokes: &HashSet<Ptr<Stroke>>,
         canvas_width: u32,
         canvas_height: u32,
         resize_margin: u32
@@ -103,6 +104,7 @@ impl ScenePanel {
             frame_time: clip.frame_idx(editor.time),
 
             rendered_strokes,
+            modifiable_strokes,
 
             picking_buffer: &mut picking_buffer,
             picking_mouse_pos: response.mouse_pos(ui)
@@ -161,7 +163,7 @@ impl ScenePanel {
             if editor.show_onion_skin {
                 Self::render_onion_skin(rndr, &project.client, &editor, tool_context.systems, clip);
             }
-            render_scene(rndr, &project.client, editor, clip, clip.frame_idx(editor.time));
+            render_scene(rndr, &project.client, editor, clip, clip.frame_idx(editor.time), true);
             Self::render_selection(rndr, &editor, &project.client, render_list);
 
             tool.render_overlay(&mut tool_context, rndr, accent_color);
@@ -191,8 +193,13 @@ impl ScenePanel {
     pub(super) fn canvas(&mut self, ui: &mut pierro::UI, project: &ProjectState, editor: &mut EditorState, systems: &mut AppSystems, renderer: &mut malvina::Renderer, clip: &ClipInner) {
 
         // Get the list of things to render in the scene
-        let render_list = Self::render_list(&project.client, clip, clip.frame_idx(editor.time));
+        let render_list = Self::render_list(&project.client, &editor, clip, clip.frame_idx(editor.time));
         let rendered_strokes = Self::rendered_strokes(&render_list);
+        let modifiable_strokes = rendered_strokes.iter().filter(|stroke| {
+            let Some(stroke) = project.client.get(**stroke) else { return false; };
+            let Some(frame) = project.client.get(stroke.frame) else { return false; };
+            editor.can_modify_layer(frame.layer)
+        }).copied().collect();
 
         let canvas_container = ui.node(pierro::UINodeParams::new(pierro::Size::fr(1.0), pierro::Size::fr(1.0)));
 
@@ -209,7 +216,7 @@ impl ScenePanel {
         // Render the scene
         ui.with_parent(canvas_container.node_ref, |ui| {
             pierro::canvas(ui, (resize_margin as f32 * ui.scale_factor()) as u32, |ui, texture, response| {
-                self.canvas_contents(ui, texture, response, project, editor, systems, renderer, clip, &render_list, &rendered_strokes, canvas_width, canvas_height, resize_margin); 
+                self.canvas_contents(ui, texture, response, project, editor, systems, renderer, clip, &render_list, &rendered_strokes, &modifiable_strokes, canvas_width, canvas_height, resize_margin); 
             });
         });
         

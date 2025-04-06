@@ -45,7 +45,7 @@ impl Tool for BucketTool {
         if let Some(mut lasso) = self.lasso.take() {
             lasso.add_point(pos);
             let mut action = Action::new(editor.action_context("Set Stroke Color"));
-            for stroke in lasso.find_inside(&ctx.project.client, ctx.rendered_strokes) {
+            for stroke in lasso.find_inside(&ctx.project.client, ctx.modifiable_strokes) {
                 if ctx.project.client.get(stroke).is_some() {
                     action.push(SetStrokeColor {
                         ptr: stroke,

@@ -6,7 +6,7 @@ use crate::{AppSystems, EditorState, OnionSkinFutureColor, OnionSkinPastColor, S
 impl ScenePanel {
 
     fn render_onion_skin_frame(rndr: &mut malvina::LayerRenderer, client: &Client, editor: &EditorState, clip: &ClipInner, time: i32, color: elic::Color) {
-        let render_list = Self::render_list(client, clip, time);
+        let render_list = Self::render_list(client, editor, clip, time);
         for scene_obj in render_list {
             match scene_obj {
                 project::SceneChildPtr::Stroke(stroke_ptr) => {

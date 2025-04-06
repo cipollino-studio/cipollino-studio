@@ -1,4 +1,5 @@
 
+use std::collections::HashSet;
 use std::{cell::RefCell, collections::HashMap};
 use std::rc::Rc;
 use project::{Client, Clip, ClipInner, Layer, Project, Ptr, Stroke};
@@ -22,6 +23,9 @@ pub struct EditorState {
 
     pub will_undo: bool,
     pub will_redo: bool,
+
+    pub hidden_layers: HashSet<Ptr<Layer>>,
+    pub locked_layers: HashSet<Ptr<Layer>>,
 
     pub show_onion_skin: bool,
     pub onion_skin_prev_frames: u32,
@@ -54,6 +58,9 @@ impl EditorState {
 
             will_undo: false,
             will_redo: false,
+
+            hidden_layers: HashSet::new(),
+            locked_layers: HashSet::new(),
 
             show_onion_skin: false,
             onion_skin_prev_frames: 2,
@@ -160,6 +167,10 @@ impl EditorState {
         } else {
             elic::Mat4::IDENTITY
         }
+    }
+
+    pub fn can_modify_layer(&self, layer: Ptr<Layer>) -> bool {
+        !self.locked_layers.contains(&layer) && !self.hidden_layers.contains(&layer)
     }
 
 }

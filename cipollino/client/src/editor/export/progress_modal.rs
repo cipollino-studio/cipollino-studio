@@ -91,7 +91,7 @@ impl ExportProgressModal {
         // Render the scene into the render texture
         let camera = malvina::Camera::new(elic::Vec2::ZERO, (self.msaa as f32) * (self.width as f32) / (clip.width as f32));
         renderer.render(ui.wgpu_device(), ui.wgpu_queue(), self.render_texture.texture(), camera, elic::Color::WHITE, 1.0, |rndr| {
-            render_scene(rndr, &project.client, editor, clip, self.time);
+            render_scene(rndr, &project.client, editor, clip, self.time, false);
         });
 
         // Copy the render texture to the pixel copy buffer

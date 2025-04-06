@@ -115,6 +115,14 @@ impl Selection {
     pub fn iter<S: Selectable>(&self) -> impl Iterator<Item = Ptr<S>> + '_ {
         S::selection_list(self).iter().cloned()
     }
+    
+    pub fn retain<S: Selectable, F: Fn(Ptr<S>) -> bool>(&mut self, filter: F) {
+        let initial_size = S::selection_list(self).len();
+        S::selection_list_mut(self).retain(|ptr| filter(*ptr));
+        if S::selection_list(self).len() < initial_size {
+            self.version += 1;
+        }
+    }
 
     pub fn kind(&self) -> SelectionKind {
         self.kind

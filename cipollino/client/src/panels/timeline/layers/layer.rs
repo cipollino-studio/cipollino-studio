@@ -57,9 +57,31 @@ impl TimelinePanel {
             });
 
             pierro::container(ui, pierro::Size::fit(), pierro::Size::fr(1.0), pierro::Layout::horizontal().align_center(), |ui| {
-                pierro::clickable_icon(ui, pierro::icons::EYE);
+
+                // Hide/show layer
+                let show_hide_icon = if editor.hidden_layers.contains(&layer_ptr) {
+                    pierro::icons::EYE_CLOSED
+                } else {
+                    pierro::icons::EYE
+                };
+                if pierro::clickable_icon(ui, show_hide_icon).mouse_clicked() {
+                    if !editor.hidden_layers.remove(&layer_ptr) {
+                        editor.hidden_layers.insert(layer_ptr); 
+                    }
+                }
                 pierro::h_spacing(ui, 3.0);
-                pierro::clickable_icon(ui, pierro::icons::LOCK);
+
+                // Lock/unlock layer
+                let lock_unlock_icon = if editor.locked_layers.contains(&layer_ptr) {
+                    pierro::icons::LOCK_LAMINATED
+                } else {
+                    pierro::icons::LOCK_SIMPLE_OPEN
+                };
+                if pierro::clickable_icon(ui, lock_unlock_icon).mouse_clicked() {
+                    if !editor.locked_layers.remove(&layer_ptr) {
+                        editor.locked_layers.insert(layer_ptr); 
+                    }
+                }
                 pierro::h_spacing(ui, 5.0);
             });
         });

@@ -20,16 +20,18 @@ impl TimelinePanel {
             // Add keyframe
             ui.with_style::<pierro::theme::WidgetRounding, _, _>(widget_rounding.left_side(), |ui| {
                 if pierro::icon_button(ui, pierro::icons::PLUS_CIRCLE).mouse_clicked() {
-                    if let Some(ptr) = project.client.next_ptr() {
-                        editor.playing = false;
-                        project.client.queue_action(Action::single(editor.action_context("New Frame"), CreateFrame {
-                            ptr,
-                            layer: editor.active_layer,
-                            data: FrameTreeData {
-                                time: clip.frame_idx(editor.time),
-                                ..Default::default()
-                            },
-                        }));
+                    if !editor.locked_layers.contains(&editor.active_layer) {
+                        if let Some(ptr) = project.client.next_ptr() {
+                            editor.playing = false;
+                            project.client.queue_action(Action::single(editor.action_context("New Frame"), CreateFrame {
+                                ptr,
+                                layer: editor.active_layer,
+                                data: FrameTreeData {
+                                    time: clip.frame_idx(editor.time),
+                                    ..Default::default()
+                                },
+                            }));
+                        }
                     }
                 }
             });

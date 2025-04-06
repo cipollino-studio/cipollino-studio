@@ -25,32 +25,36 @@ fn render_frame(rndr: &mut malvina::LayerRenderer, editor: &EditorState, client:
     }
 }
 
-fn render_layer(rndr: &mut malvina::LayerRenderer, client: &Client, editor: &EditorState, layer: &Layer, layer_ptr: Ptr<Layer>, time: i32) {
+fn render_layer(rndr: &mut malvina::LayerRenderer, client: &Client, editor: &EditorState, layer: &Layer, layer_ptr: Ptr<Layer>, time: i32, editor_view: bool) {
+    if editor_view && editor.hidden_layers.contains(&layer_ptr) {
+        return;
+    } 
+
     if let Some(frame_ptr) = layer.frame_at(client, time) {
         if let Some(frame) = client.get(frame_ptr) {
             render_frame(rndr, editor, client, frame);
         }
     } 
 
-    if layer_ptr == editor.active_layer {
+    if layer_ptr == editor.active_layer && editor_view {
         if let Some(stroke_preview) = &editor.preview.stroke_preview {
             rndr.render_stroke(stroke_preview, editor.color, elic::Mat4::IDENTITY);
         }
     } 
 }
 
-fn render_layer_list(rndr: &mut malvina::LayerRenderer, client: &Client, editor: &EditorState, layer_list: &LayerChildList, time: i32) {
+fn render_layer_list(rndr: &mut malvina::LayerRenderer, client: &Client, editor: &EditorState, layer_list: &LayerChildList, time: i32, editor_view: bool) {
     for layer in layer_list.iter().rev() {
         match layer {
             LayerChildPtr::Layer(layer_ptr) => {
                 if let Some(layer) = client.get(layer_ptr.ptr()) {
-                    render_layer(rndr, client, editor, layer, layer_ptr.ptr(), time);
+                    render_layer(rndr, client, editor, layer, layer_ptr.ptr(), time, editor_view);
                 }
             }
         } 
     }
 }
 
-pub fn render_scene(rndr: &mut malvina::LayerRenderer, client: &Client, editor: &EditorState, clip: &ClipInner, time: i32) {
-    render_layer_list(rndr, client, editor, &clip.layers, time);
+pub fn render_scene(rndr: &mut malvina::LayerRenderer, client: &Client, editor: &EditorState, clip: &ClipInner, time: i32, editor_view: bool) {
+    render_layer_list(rndr, client, editor, &clip.layers, time, editor_view);
 }

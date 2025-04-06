@@ -29,7 +29,11 @@ impl FrameArea {
             }
             let layer = &render_list.layers[layer_idx as usize];
             match &layer.kind {
-                RenderLayerKind::Layer(_layer_ptr, layer) => self.box_select_layer(project, editor, layer, x_range)
+                RenderLayerKind::Layer(layer_ptr, layer) => {
+                    if !editor.locked_layers.contains(layer_ptr) {
+                        self.box_select_layer(project, editor, layer, x_range);
+                    }
+                }
             }
         }
     }

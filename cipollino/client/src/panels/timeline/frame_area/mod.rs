@@ -57,7 +57,7 @@ impl FrameArea {
     fn render_layers(&mut self, ui: &mut pierro::UI, project: &ProjectState, editor: &mut EditorState, frame_area: &pierro::Response, paint_commands: &mut PaintCommands, clip: &ClipInner, render_list: &RenderList) {
         for (idx, render_layer) in render_list.iter().enumerate() {
             match render_layer.kind {
-                RenderLayerKind::Layer(_ptr, layer) => self.render_layer_contents(ui, project, editor, frame_area, paint_commands, clip, idx, layer),
+                RenderLayerKind::Layer(ptr, layer) => self.render_layer_contents(ui, project, editor, frame_area, paint_commands, clip, idx, layer, ptr),
             }
         }
     }

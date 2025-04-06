@@ -2,7 +2,7 @@
 use std::path::PathBuf;
 
 use project::alisa::rmpv;
-use project::{deep_load_clip, Client};
+use project::{deep_load_clip, Client, Frame, Ptr, Stroke};
 
 use crate::{AppSystems, DockingLayoutPref, EditorPanel, PanelContext};
 
@@ -74,6 +74,17 @@ impl Editor {
                 deep_load_clip(self.state.editor.open_clip, &self.state.project.client);
             }
         }
+
+        // Removed locked objects from the seletion 
+        self.state.editor.selection.retain(|frame: Ptr<Frame>| {
+            let Some(frame) = self.state.project.client.get(frame) else { return  false; };
+            !self.state.editor.locked_layers.contains(&frame.layer)
+        });
+        self.state.editor.selection.retain(|stroke: Ptr<Stroke>| {
+            let Some(stroke) = self.state.project.client.get(stroke) else { return false; };
+            let Some(frame) = self.state.project.client.get(stroke.frame) else { return false; };
+            !self.state.editor.locked_layers.contains(&frame.layer) && !self.state.editor.hidden_layers.contains(&frame.layer)
+        });
 
         self.menu_bar(ui);
         self.use_shortcuts(ui, systems);

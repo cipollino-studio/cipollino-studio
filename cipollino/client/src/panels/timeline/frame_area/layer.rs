@@ -1,5 +1,5 @@
 
-use project::{ClipInner, Layer};
+use project::{ClipInner, Layer, Ptr};
 
 use crate::{EditorState, ProjectState, TimelinePanel};
 
@@ -71,8 +71,11 @@ impl FrameArea {
         paint_commands: &mut PaintCommands,
         clip: &ClipInner,
         layer_idx: usize,
-        layer: &Layer
+        layer: &Layer,
+        layer_ptr: Ptr<Layer>
     ) {
+
+        let layer_editable = !editor.locked_layers.contains(&layer_ptr);
 
         let mut frames_to_render = Vec::new();
 
@@ -99,7 +102,7 @@ impl FrameArea {
                 };
                 let display_time = display_time.max(0);
 
-                frames_to_render.push((display_time, frame.scene.as_slice().is_empty(), selected || in_selection_rect));
+                frames_to_render.push((display_time, frame.scene.as_slice().is_empty(), layer_editable && (selected || in_selection_rect)));
 
                 if let Some(mouse_pos) = frame_area.mouse_pos(ui) {
                     

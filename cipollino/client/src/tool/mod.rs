@@ -29,6 +29,7 @@ pub struct ToolContext<'ctx> {
     pub frame_time: i32,
 
     pub rendered_strokes: &'ctx HashSet<Ptr<Stroke>>,
+    pub modifiable_strokes: &'ctx HashSet<Ptr<Stroke>>,
 
     // Picking
     pub picking_buffer: &'ctx mut malvina::PickingBuffer,
@@ -41,7 +42,11 @@ pub struct ToolContext<'ctx> {
 
 impl ToolContext<'_> {
 
-    pub fn active_frame(&self, action: &mut Action) -> Option<Ptr<Frame>> {
+    pub fn active_frame(&self, editor: &EditorState, action: &mut Action) -> Option<Ptr<Frame>> {
+        if !editor.can_modify_layer(self.active_layer) {
+            return None;
+        }
+
         let layer = self.project.client.get(self.active_layer)?;
         if let Some(frame) = layer.frame_at(&self.project.client, self.frame_time) {
             return Some(frame);
