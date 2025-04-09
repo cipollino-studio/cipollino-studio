@@ -186,7 +186,7 @@ pub fn deep_load_clip(clip_ptr: alisa::Ptr<Clip>, client: &Client) {
         return;
     };
     
-    if client.has_load_failed(clip.inner) {
+    if client.get_ref(clip.inner).is_deleted() {
         if let Some(inner) = client.next_ptr() {
             client.queue_operation(CreateClipInner {
                 clip: clip_ptr, 

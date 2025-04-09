@@ -40,6 +40,12 @@ impl Panel for DebugPanel {
         pierro::label(ui, format!("FPS: {}", 1.0 / ui.input().delta_time));
         pierro::v_spacing(ui, 10.0);
 
+        if context.project.client.is_collab() {
+            pierro::checkbox_labeled(ui, "Send collab messages", &mut context.editor.send_messages);
+            pierro::checkbox_labeled(ui, "Receive collab messages", &mut context.editor.receive_messages);
+            pierro::v_spacing(ui, 10.0);
+        }
+
         let undo = context.project.client.undo_stack().borrow();
         pierro::collapsing_label(ui, format!("Undo: {}", undo.len()), |ui| {
             for action in undo.iter().rev() {

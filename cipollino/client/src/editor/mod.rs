@@ -89,19 +89,6 @@ impl Editor {
         self.menu_bar(ui);
         self.use_shortcuts(ui, systems);
 
-        // Collab
-        if let Some(socket) = &mut self.socket {
-            for to_send in self.state.project.client.take_messages() {
-                socket.send(to_send);
-            }
-            while let Some(msg) = socket.receive() {
-                self.state.project.client.receive_message(msg, &mut ());
-            }
-            
-            if !socket.has_signal() {
-                socket.set_signal(ui.redraw_signal());
-            }
-        }
 
         self.state.editor.selection.begin_frame(ui.input().key_modifiers.contains(pierro::KeyModifiers::SHIFT));
 
@@ -136,6 +123,34 @@ impl Editor {
         // Update the project client
         self.state.project.tick(&self.state.editor);
         self.state.project.client.tick(&mut ());
+
+        // Collab
+        if let Some(socket) = &mut self.socket {
+            #[cfg(debug_assertions)]
+            let send_messages = self.state.editor.send_messages;
+            #[cfg(not(debug_assertions))]
+            let send_messages = true;
+            if send_messages {
+                for to_send in self.state.project.client.take_messages() {
+                    socket.send(to_send);
+                }
+            }
+
+            #[cfg(debug_assertions)]
+            let receive_messages = self.state.editor.receive_messages;
+            #[cfg(not(debug_assertions))]
+            let receive_messages = true;
+            if receive_messages {
+                while let Some(msg) = socket.receive() {
+                    self.state.project.client.receive_message(msg, &mut ());
+                    ui.request_redraw();
+                }
+            }
+
+            if !socket.has_signal() {
+                socket.set_signal(ui.redraw_signal());
+            }
+        }
 
         // Invalidate cached meshes for updated strokes
         for updated_stroke in self.state.project.client.modified() {

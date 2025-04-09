@@ -195,11 +195,13 @@ impl ScenePanel {
         // Get the list of things to render in the scene
         let render_list = Self::render_list(&project.client, &editor, clip, clip.frame_idx(editor.time));
         let rendered_strokes = Self::rendered_strokes(&render_list);
-        let modifiable_strokes = rendered_strokes.iter().filter(|stroke| {
+        let modifiable_strokes: HashSet<Ptr<Stroke>> = rendered_strokes.iter().filter(|stroke| {
             let Some(stroke) = project.client.get(**stroke) else { return false; };
             let Some(frame) = project.client.get(stroke.frame) else { return false; };
             editor.can_modify_layer(frame.layer)
         }).copied().collect();
+
+        editor.selection.retain(|stroke| modifiable_strokes.contains(&stroke));
 
         let canvas_container = ui.node(pierro::UINodeParams::new(pierro::Size::fr(1.0), pierro::Size::fr(1.0)));
 

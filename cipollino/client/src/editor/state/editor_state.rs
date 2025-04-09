@@ -39,7 +39,12 @@ pub struct EditorState {
 
     windows_to_open: Vec<WindowInstance>,
 
-    on_load_callbacks: Vec<Box<dyn Fn(&ProjectState, &mut EditorState) -> bool>>
+    on_load_callbacks: Vec<Box<dyn Fn(&ProjectState, &mut EditorState) -> bool>>,
+
+    #[cfg(debug_assertions)]
+    pub send_messages: bool,
+    #[cfg(debug_assertions)]
+    pub receive_messages: bool
 }
 
 impl EditorState {
@@ -74,7 +79,12 @@ impl EditorState {
 
             windows_to_open: Vec::new(),
 
-            on_load_callbacks: Vec::new()
+            on_load_callbacks: Vec::new(),
+
+            #[cfg(debug_assertions)]
+            send_messages: true,
+            #[cfg(debug_assertions)]
+            receive_messages: true,
         }
     }
 
