@@ -75,7 +75,7 @@ impl<P: Project> Local<P> {
 
     pub(crate) fn load_objects(&mut self, objects: &mut P::Objects) {
         for object_kind in P::OBJECTS {
-            (object_kind.load_objects)(&mut self.file, objects)
+            (object_kind.local_load_objects)(&mut self.file, objects)
         }
     }
 

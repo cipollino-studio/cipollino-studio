@@ -1,16 +1,17 @@
 
 use std::{any::{type_name, TypeId}, collections::HashSet};
 
-use crate::{DeserializationContext, File, LoadingPtr, Project, Serializable, SerializationContext};
+use crate::{Collab, DeserializationContext, File, LoadingPtr, Project, Serializable, SerializationContext};
 
-use super::{Object, Ptr};
+use super::{ObjRef, Object, Ptr};
 
 
 pub struct ObjectKind<P: Project> {
     pub(crate) name: &'static str,
     pub(crate) clear_modifications: fn(&mut P::Objects),
     pub(crate) save_modifications: fn(&mut File, objects: &mut P::Objects),
-    pub(crate) load_objects: fn(&mut File, &mut P::Objects),
+    pub(crate) local_load_objects: fn(&mut File, &mut P::Objects),
+    pub(crate) collab_load_objects: fn(&mut P::Objects, &mut Collab<P>),
     pub(crate) load_object: fn(&mut File, &mut P::Objects, u64),
     pub(crate) load_object_from_message: fn(&mut P::Objects, u64, &rmpv::Value),
     pub(crate) load_failed: fn(&mut P::Objects, u64),
@@ -51,10 +52,27 @@ impl<P: Project> ObjectKind<P> {
                     file.delete(deleted.key);
                 }
             },
-            load_objects: |file, objects| {
+            local_load_objects: |file, objects| {
                 let to_load = std::mem::replace(&mut *O::list_mut(objects).to_load.borrow_mut(), HashSet::new());
                 for ptr in to_load {
                     load_object::<O>(file, objects, ptr.key);
+                }
+            },
+            collab_load_objects: |objects, collab| {
+                let to_load = std::mem::replace(&mut *O::list_mut(objects).to_load.borrow_mut(), HashSet::new());
+                for ptr in to_load {
+                    println!("{:?}", ptr);
+                    match O::list(objects).get_ref(ptr) {
+                        ObjRef::Loading | ObjRef::Loaded(_) => { continue; },
+                        _ => {}
+                    }
+                    println!("!!!");
+                    O::list_mut(objects).mark_loading(ptr);
+                    collab.send_message(rmpv::Value::Map(vec![
+                        ("type".into(), "load".into()),
+                        ("object".into(), O::NAME.into()),
+                        ("key".into(), ptr.key.into()),
+                    ]));
                 }
             },
             load_object: |file, objects, key| {
@@ -62,7 +80,7 @@ impl<P: Project> ObjectKind<P> {
             },
             load_object_from_message: |objects, key, data| {
                 if let Some(obj) = O::deserialize(data, &mut DeserializationContext::collab(objects)) {
-                    O::list_mut(objects).insert(Ptr::from_key(key), obj);
+                    O::list_mut(objects).insert_loaded(Ptr::from_key(key), obj);
                 }
             },
             load_failed: |objects, key| {

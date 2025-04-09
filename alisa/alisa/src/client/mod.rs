@@ -2,13 +2,13 @@
 
 use std::{any::{type_name, TypeId}, cell::RefCell, ops::Deref};
 
-use crate::{Act, Action, Delta, Object, Operation, OperationDyn, OperationSource, Project, ProjectContext, ProjectContextMut, Ptr, Recorder};
+use crate::{Act, Action, Delta, ObjRef, Object, Operation, OperationDyn, OperationSource, Project, ProjectContext, ProjectContextMut, Ptr, Recorder};
 
 mod local;
 use local::*;
 
 mod collab;
-use collab::*;
+pub(crate) use collab::*;
 
 pub(crate) enum ClientKind<P: Project> {
     Local(Local<P>),
@@ -222,6 +222,7 @@ impl<P: Project> Client<P> {
 
         if let Some(collab) = self.kind.as_collab() {
             collab.request_keys(); 
+            collab.load_objects(&mut self.objects);
         }
 
         if let Some(local) = self.kind.as_local() {
@@ -259,28 +260,12 @@ impl<P: Project> Client<P> {
         O::list(&self.objects).get(ptr)
     }
 
-    pub fn request_load<O: Object<Project = P>>(&self, ptr: Ptr<O>) {
-        if O::list(&self.objects).tried_loading.borrow().contains(&ptr) {
-            return;
-        }
-        O::list(&self.objects).to_load.borrow_mut().insert(ptr);
-        O::list(&self.objects).tried_loading.borrow_mut().insert(ptr);
-        match &self.kind {
-            ClientKind::Local(_) => {  },
-            ClientKind::Collab(collab) => {
-                collab.send_message(rmpv::Value::Map(vec![
-                    ("type".into(), "load".into()),
-                    ("object".into(), O::NAME.into()),
-                    ("key".into(), ptr.key.into()),
-                ]));
-            },
-        }
+    pub fn get_ref<O: Object<Project = P>>(&self, ptr: Ptr<O>) -> ObjRef<O> {
+        O::list(&self.objects).get_ref(ptr)
     }
 
-    pub fn has_load_failed<O: Object<Project = P>>(&self, ptr: Ptr<O>) -> bool {
-        let tried_loading = O::list(&self.objects).tried_loading.borrow().contains(&ptr);
-        let to_load = O::list(&self.objects).to_load.borrow().contains(&ptr);
-        tried_loading && !to_load
+    pub fn request_load<O: Object<Project = P>>(&self, ptr: Ptr<O>) {
+        O::list(&self.objects).to_load.borrow_mut().insert(ptr);
     }
 
     pub fn undo_stack(&self) -> &RefCell<Vec<Action<P>>> {

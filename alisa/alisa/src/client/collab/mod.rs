@@ -52,6 +52,12 @@ impl<P: Project> Collab<P> {
         }
     }
 
+    pub(crate) fn load_objects(&mut self, objects: &mut P::Objects) {
+        for object_kind in P::OBJECTS {
+            (object_kind.collab_load_objects)(objects, self);    
+        }
+    }
+
     pub(crate) fn perform_operation(&mut self, operation: Box<dyn OperationDyn<Project = P>>, delta: Delta<P>) {
         self.send_message(rmpv::Value::Map(vec![
             ("type".into(), "operation".into()),
@@ -141,9 +147,7 @@ impl<P: Project> Client<P> {
                     project_modified: &mut self.project_modified,
                 };
                 let mut recorder = Recorder::new(project_context, OperationSource::Local, Some(&mut delta));
-                if unconfirmed_operation.operation.perform(&mut recorder) {
-                    collab.unconfirmed_operations.push(UnconfirmedOperation { operation: unconfirmed_operation.operation, delta });
-                } else {
+                if !unconfirmed_operation.operation.perform(&mut recorder) {
                     let mut project_context = ProjectContextMut {
                         project: &mut self.project,
                         objects: &mut self.objects,
@@ -152,6 +156,7 @@ impl<P: Project> Client<P> {
                     };
                     delta.undo(&mut project_context);
                 }
+                collab.unconfirmed_operations.push(UnconfirmedOperation { operation: unconfirmed_operation.operation, delta });
             }
         }
 
@@ -204,7 +209,11 @@ impl<P: Project> Client<P> {
         match msg_type {
             "confirm" => {
                 if let Some(collab) = self.kind.as_collab() {
-                    collab.unconfirmed_operations.remove(0);
+                    // The check is necessary because an unconfirmed operation might fail after it is reapplied,
+                    // So it might never get re-added to the unconfirmed operation queue
+                    if !collab.unconfirmed_operations.is_empty() {
+                        collab.unconfirmed_operations.remove(0);
+                    }
                 }
             },
             "operation" => {

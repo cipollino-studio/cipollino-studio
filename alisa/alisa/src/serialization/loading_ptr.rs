@@ -31,7 +31,7 @@ impl<O: Object> LoadingPtr<O> {
             match &mut context.kind {
                 DeserializationContextKind::Local { file: _, objects } | 
                 DeserializationContextKind::Collab { objects } => {
-                    O::list_mut(objects).insert(ptr, object);
+                    O::list_mut(objects).insert_loaded(ptr, object);
                 },
                 DeserializationContextKind::Data => unreachable!(),
             }
@@ -84,7 +84,11 @@ impl<O: Object> Serializable<O::Project> for LoadingPtr<O> {
                 Self::load_from_key_and_data(key, object_data, context)
             },
             DeserializationContextKind::Data => {
-                todo!()
+                let key = data.as_u64()?;
+                let ptr = Ptr::from_key(key);
+                Some(LoadingPtr {
+                    ptr
+                })
             }
         }
     }
