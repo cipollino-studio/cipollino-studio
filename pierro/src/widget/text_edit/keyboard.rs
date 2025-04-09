@@ -5,7 +5,7 @@ use crate::{Key, KeyModifiers, KeyboardShortcut, Response, UI};
 
 use super::{font_system, TextEditMemory};
 
-const COPY: KeyboardShortcut = KeyboardShortcut::new(KeyModifiers::CONTROL, Key::V);
+const COPY: KeyboardShortcut = KeyboardShortcut::new(KeyModifiers::CONTROL, Key::C);
 const PASTE: KeyboardShortcut = KeyboardShortcut::new(KeyModifiers::CONTROL, Key::V);
 const CUT: KeyboardShortcut = KeyboardShortcut::new(KeyModifiers::CONTROL, Key::X);
 const ALL: KeyboardShortcut = KeyboardShortcut::new(KeyModifiers::CONTROL, Key::A);
