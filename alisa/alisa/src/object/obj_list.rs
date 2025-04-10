@@ -90,18 +90,19 @@ pub struct ObjList<Obj: Object> {
 
 impl<Obj: Object> ObjList<Obj> {
 
-    pub fn insert(&mut self, ptr: Ptr<Obj>, obj: Obj) {
+    pub fn insert(&mut self, ptr: Ptr<Obj>, obj: Obj) -> bool {
         if ptr.is_null() {
-            return;
+            return false;
         }
         match self.objs.get(&ptr) {
             Some(ObjState::Loading) | Some(ObjState::Loaded(_)) => {
-                return;
+                return false;
             },
             _ => {}
         }
         self.objs.insert(ptr, ObjState::Loaded(obj));
         self.modified.insert(ptr);
+        true
     }
 
     pub(crate) fn insert_loaded(&mut self, ptr: Ptr<Obj>, obj: Obj) {
@@ -118,9 +119,11 @@ impl<Obj: Object> ObjList<Obj> {
     }
 
     pub(crate) fn mark_loading(&mut self, ptr: Ptr<Obj>) {
-        if !self.objs.contains_key(&ptr) {
-            self.objs.insert(ptr, ObjState::Loading);
-        }
+        self.objs.insert(ptr, ObjState::Loading);
+    }
+
+    pub(crate) fn mark_deleted(&mut self, ptr: Ptr<Obj>) {
+        self.objs.insert(ptr, ObjState::Deleted);
     }
 
     pub fn delete(&mut self, ptr: Ptr<Obj>) -> Option<Obj> {

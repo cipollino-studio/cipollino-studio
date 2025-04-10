@@ -61,12 +61,10 @@ impl<P: Project> ObjectKind<P> {
             collab_load_objects: |objects, collab| {
                 let to_load = std::mem::replace(&mut *O::list_mut(objects).to_load.borrow_mut(), HashSet::new());
                 for ptr in to_load {
-                    println!("{:?}", ptr);
                     match O::list(objects).get_ref(ptr) {
                         ObjRef::Loading | ObjRef::Loaded(_) => { continue; },
                         _ => {}
                     }
-                    println!("!!!");
                     O::list_mut(objects).mark_loading(ptr);
                     collab.send_message(rmpv::Value::Map(vec![
                         ("type".into(), "load".into()),
@@ -84,7 +82,7 @@ impl<P: Project> ObjectKind<P> {
                 }
             },
             load_failed: |objects, key| {
-                O::list_mut(objects).to_load.borrow_mut().remove(&Ptr::from_key(key)); 
+                O::list_mut(objects).mark_deleted(Ptr::from_key(key));
             },
             serialize_object: |objects, key| {
                 O::list(objects).get(Ptr::from_key(key)).map(|data| data.serialize(&SerializationContext::deep(objects).with_stored(key)))

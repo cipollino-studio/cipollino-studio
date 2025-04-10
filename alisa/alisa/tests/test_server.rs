@@ -21,8 +21,7 @@ impl<P: alisa::Project> TestingClient<P> {
 pub struct TestingServer<P: alisa::Project> {
     server: alisa::Server<P>,
 
-    alice: TestingClient<P>,
-    bob: TestingClient<P>, 
+    clients: Vec<TestingClient<P>>,
 
     path: PathBuf
 }
@@ -38,8 +37,7 @@ impl<P: alisa::Project<Context = ()>> TestingServer<P> {
 
         let mut server = Self {
             server,
-            alice,
-            bob,
+            clients: vec![alice, bob],
             path
         };
 
@@ -53,7 +51,7 @@ impl<P: alisa::Project<Context = ()>> TestingServer<P> {
     }
 
     pub fn is_stable(&self) -> bool {
-        self.is_client_stable(&self.alice) && self.is_client_stable(&self.bob)
+        self.clients.iter().all(|client| self.is_client_stable(client))
     }
 
     fn send_messages(server: &mut alisa::Server<P>, client: &TestingClient<P>) {
@@ -72,47 +70,61 @@ impl<P: alisa::Project<Context = ()>> TestingServer<P> {
         }
     }
 
+    pub fn client(&self, id: usize) -> &alisa::Client<P> {
+        &self.clients[id].client
+    }
+
     pub fn alice(&self) -> &alisa::Client<P> {
-        &self.alice.client
+        self.client(0)
     }
 
     pub fn bob(&self) -> &alisa::Client<P> {
-        &self.bob.client
+        self.client(1)
+    }
+
+    pub fn tick_client(&mut self, id: usize) {
+        self.clients[id].client.tick(&mut ());
     }
 
     pub fn tick_alice(&mut self) {
-        self.alice.client.tick(&mut ());
+        self.tick_client(0);
     }
 
     pub fn tick_bob(&mut self) {
-        self.bob.client.tick(&mut ());
+        self.tick_client(1);
     }
 
     pub fn send_alice_messages(&mut self) {
         self.tick_alice();
-        Self::send_messages(&mut self.server, &self.alice);
+        Self::send_messages(&mut self.server, &self.clients[0]);
     }
 
     pub fn receive_alice_messages(&mut self) {
-        Self::receive_messages(&mut self.server, &mut self.alice);
+        Self::receive_messages(&mut self.server, &mut self.clients[0]);
     }
 
     pub fn send_bob_messages(&mut self) {
         self.tick_bob();
-        Self::send_messages(&mut self.server, &self.bob);
+        Self::send_messages(&mut self.server, &self.clients[1]);
     }
 
     pub fn receive_bob_messages(&mut self) {
-        Self::receive_messages(&mut self.server, &mut self.bob);
+        Self::receive_messages(&mut self.server, &mut self.clients[1]);
     }
 
     pub fn stabilize(&mut self) {
         while !self.is_stable() {
-            self.send_alice_messages();
-            self.send_bob_messages();
-            self.receive_alice_messages();
-            self.receive_bob_messages();
+            for client in &mut self.clients {
+                client.client.tick(&mut ());
+                Self::send_messages(&mut self.server, &client);
+                Self::receive_messages(&mut self.server, client);
+            }
         }
+    }
+
+    pub fn add_client(&mut self) -> usize {
+        self.clients.push(TestingClient::new(&mut self.server));
+        self.clients.len() - 1
     }
 
 }

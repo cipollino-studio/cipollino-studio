@@ -1,9 +1,8 @@
-use test_server::TestingServer;
-
 
 mod test_server;
+use test_server::TestingServer;
 
-#[derive(Clone, Copy, alisa::Serializable, Default)]
+#[derive(Clone, alisa::Serializable, Default)]
 struct Project {
     n: i32
 }

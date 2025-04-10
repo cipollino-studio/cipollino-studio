@@ -77,9 +77,10 @@ impl<'a, P: Project> Recorder<'a, P> {
         Some(object)
     }
     
-    pub fn add_obj<O: Object<Project = P>>(&mut self, ptr: Ptr<O>, object: O) {
+    /// Add an object to the project. Returns true if successful.
+    pub fn add_obj<O: Object<Project = P>>(&mut self, ptr: Ptr<O>, object: O) -> bool {
         if self.context.obj_list().get(ptr).is_some() {
-            return;
+            return false;
         }
         if let Some(delta) = &mut self.delta {
             delta.push(move |context| {
@@ -88,6 +89,7 @@ impl<'a, P: Project> Recorder<'a, P> {
         }
         self.context.obj_list_mut().insert(ptr, object);
         self.modified.insert(ptr.any());
+        true
     }
 
     pub fn delete_obj<O: Object<Project = P>>(&mut self, ptr: Ptr<O>) -> Option<O> {
