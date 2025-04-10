@@ -96,7 +96,7 @@ impl alisa::TreeObj for Folder {
             folders: data.folders.instance(ptr, recorder),
             clips: data.clips.instance(ptr, recorder),
         };
-        recorder.add_obj(ptr, folder)
+        recorder.add_obj(ptr, folder);
     }
 
     fn destroy(&self, recorder: &mut alisa::Recorder<Project>) {
