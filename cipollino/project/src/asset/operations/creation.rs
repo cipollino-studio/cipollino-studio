@@ -33,7 +33,7 @@ macro_rules! asset_creation_operations {
                     let Some(child_list) = $asset::child_list(self.parent, &context) else {
                         return false;
                     };
-                    let sibling_names = $asset::get_sibling_names(child_list, recorder.obj_list(), None);
+                    let sibling_names = $asset::get_sibling_names(child_list, recorder, None);
 
                     // Instance the object and its children
                     $asset::instance(&self.data, self.ptr, self.parent, recorder);

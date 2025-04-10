@@ -20,10 +20,10 @@ pub trait Asset: alisa::TreeObj<ParentPtr = alisa::Ptr<Folder>, Project = Projec
     fn rename(action: &mut Action, ptr: alisa::Ptr<Self>, name: String);
     fn delete(action: &mut Action, ptr: alisa::Ptr<Self>);
 
-    fn get_sibling_names(child_list: &Self::ChildList, objects: &alisa::ObjList<Self>, exclude: Option<alisa::Ptr<Self>>) -> HashSet<String> {
+    fn get_sibling_names(child_list: &Self::ChildList, recorder: &alisa::Recorder<Project>, exclude: Option<alisa::Ptr<Self>>) -> HashSet<String> {
         child_list.iter()
             .filter(|ptr| Some(ptr.ptr()) != exclude)
-            .filter_map(|ptr| objects.get(ptr.ptr())).map(|asset| asset.name().clone())
+            .filter_map(|ptr| recorder.get_obj(ptr.ptr())).map(|asset| asset.name().clone())
             .collect()
     }
 

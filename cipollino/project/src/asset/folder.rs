@@ -181,12 +181,12 @@ impl Default for TransferFolder {
 
 }
 
-fn is_inside_folder(folders: &alisa::ObjList<Folder>, parent_ptr: alisa::Ptr<Folder>, child_ptr: alisa::Ptr<Folder>) -> bool {
+fn is_inside_folder(recorder: &alisa::Recorder<Project>, parent_ptr: alisa::Ptr<Folder>, child_ptr: alisa::Ptr<Folder>) -> bool {
     if parent_ptr == child_ptr {
         return true;
     }
-    if let Some(child) = folders.get(child_ptr) {
-        return is_inside_folder(folders, parent_ptr, child.parent);
+    if let Some(child) = recorder.get_obj(child_ptr) {
+        return is_inside_folder(recorder, parent_ptr, child.parent);
     }
     false
 }
@@ -199,7 +199,7 @@ impl alisa::Operation for TransferFolder {
     fn perform(&self, recorder: &mut alisa::Recorder<'_, Project>) -> bool {
 
         // Make sure we're not moving the folder somewhere inside itself
-        if is_inside_folder(recorder.obj_list(), self.ptr, self.new_parent) {
+        if is_inside_folder(recorder, self.ptr, self.new_parent) {
             return false;
         }
 
@@ -207,7 +207,7 @@ impl alisa::Operation for TransferFolder {
             // Fix the name of the folder
             let context = recorder.context();
             let Some(child_list) = Folder::child_list(self.new_parent, &context) else { return false; };
-            let sibling_names = Folder::get_sibling_names(child_list, recorder.obj_list(), Some(self.ptr));
+            let sibling_names = Folder::get_sibling_names(child_list, recorder, Some(self.ptr));
             rectify_name_duplication(self.ptr, sibling_names, recorder);
 
             true

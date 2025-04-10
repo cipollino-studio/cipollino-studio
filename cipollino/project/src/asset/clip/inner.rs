@@ -78,11 +78,11 @@ impl alisa::Operation for CreateClipInner {
 
     fn perform(&self, recorder: &mut alisa::Recorder<'_, Self::Project>) -> bool {
 
-        let Some(clip) = recorder.obj_list().get(self.clip) else {
+        let Some(clip) = recorder.get_obj(self.clip) else {
             return false;
         };
         let old_inner = clip.inner;
-        if recorder.obj_list().get(old_inner).is_some() {
+        if recorder.get_obj(old_inner).is_some() {
             return false;
         }
 

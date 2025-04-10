@@ -34,7 +34,7 @@ macro_rules! asset_transfer_operation {
                         // Fix the name of the folder
                         let context = recorder.context();
                         let Some(child_list) = $asset::child_list(self.new_folder, &context) else { return false; };
-                        let sibling_names = $asset::get_sibling_names(child_list, recorder.obj_list(), Some(self.ptr));
+                        let sibling_names = $asset::get_sibling_names(child_list, recorder, Some(self.ptr));
                         crate::rectify_name_duplication(self.ptr, sibling_names, recorder);
 
                         true

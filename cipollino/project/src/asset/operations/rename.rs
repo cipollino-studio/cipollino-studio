@@ -30,14 +30,14 @@ macro_rules! asset_rename_operation {
 
                 fn perform(&self, recorder: &mut alisa::Recorder<Self::Project>) -> bool {
                     use alisa::TreeObj; 
-                    let Some(obj) = recorder.obj_list().get(self.ptr) else {
+                    let Some(obj) = recorder.get_obj(self.ptr) else {
                         return false;
                     };
                     let context = recorder.context();
                     let Some(child_list) = $asset::child_list(obj.parent(), &context) else {
                         return false;
                     };
-                    let sibling_names = $asset::get_sibling_names(child_list, recorder.obj_list(), Some(self.ptr));
+                    let sibling_names = $asset::get_sibling_names(child_list, recorder, Some(self.ptr));
 
                     let Some(obj) = recorder.get_obj_mut(self.ptr) else {
                         return false;
