@@ -145,7 +145,7 @@ impl<P: Project> Client<P> {
             context,
             project_modified: &mut self.project_modified,
         }, OperationSource::Local, Some(&mut delta));
-        let success = operation.perform(&mut recorder);
+        let success = operation.perform(&mut recorder) && *recorder.success.borrow();
 
         if success {
             if let Some(collab) = self.kind.as_collab() {

@@ -1,6 +1,6 @@
-use std::collections::HashSet;
+use std::{cell::RefCell, collections::HashSet};
 
-use crate::{AnyPtr, ObjList, Object, Project, ProjectContext, ProjectContextMut, Ptr};
+use crate::{AnyPtr, ObjRef, Object, Project, ProjectContext, ProjectContextMut, Ptr};
 
 use super::{Delta, OperationSource};
 
@@ -15,7 +15,11 @@ pub struct Recorder<'a, P: Project> {
     /// What objects were already modified by this recorder
     modified: HashSet<AnyPtr>,
     /// Was the project modified by the recorder
-    modified_project: bool
+    modified_project: bool,
+
+    /// Was the operation successful?
+    /// Note: the operation's `perform` method could also indicate that the operation was unsuccessful
+    pub(crate) success: RefCell<bool>
 }
 
 impl<'a, P: Project> Recorder<'a, P> {
@@ -26,7 +30,8 @@ impl<'a, P: Project> Recorder<'a, P> {
             delta,
             source,
             modified: HashSet::new(),
-            modified_project: false
+            modified_project: false,
+            success: RefCell::new(true)
         }
     }
 
@@ -41,10 +46,6 @@ impl<'a, P: Project> Recorder<'a, P> {
         self.context.project()
     }
 
-    pub fn obj_list<O: Object<Project = P>>(&self) -> &ObjList<O> {
-        self.context.obj_list()
-    }
-    
     pub fn project_mut(&mut self) -> &mut P {
         if let Some(delta) = self.delta.as_mut() {
             if !self.modified_project {
@@ -59,10 +60,27 @@ impl<'a, P: Project> Recorder<'a, P> {
     }
 
     pub fn get_obj<O: Object<Project = P>>(&self, ptr: Ptr<O>) -> Option<&O> {
-        self.context.obj_list().get(ptr)
-    } 
+        match self.context.obj_list().get_ref(ptr) {
+            ObjRef::None | ObjRef::Loading => {
+                *self.success.borrow_mut() = false;
+                None
+            },
+            ObjRef::Loaded(obj) => Some(obj),
+            ObjRef::Deleted => None,
+        }
+    }
 
     pub fn get_obj_mut<O: Object<Project = P>>(&mut self, ptr: Ptr<O>) -> Option<&mut O> {
+
+        match self.context.obj_list().get_ref(ptr) {
+            ObjRef::None | ObjRef::Loading => {
+                *self.success.borrow_mut() = false;
+                return None; 
+            },
+            ObjRef::Loaded(_) => {},
+            ObjRef::Deleted => { return None; }
+        }
+
         let object = self.context.obj_list_mut().get_mut(ptr)?;
         if let Some(delta) = &mut self.delta {
             if self.modified.insert(ptr.any()) {

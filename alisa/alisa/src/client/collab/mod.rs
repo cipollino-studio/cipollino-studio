@@ -132,7 +132,7 @@ impl<P: Project> Client<P> {
 
         // Apply the newly-received operation
         let mut recorder = Recorder::new(project_context, OperationSource::Server, None);
-        let success = (operation_kind.perform)(operation, &mut recorder);
+        let success = (operation_kind.perform)(operation, &mut recorder) && *recorder.success.borrow();
 
         // Reapply the operations we've done on top of the inserted operation
         if let Some(collab) = self.kind.as_collab() {
@@ -147,7 +147,7 @@ impl<P: Project> Client<P> {
                     project_modified: &mut self.project_modified,
                 };
                 let mut recorder = Recorder::new(project_context, OperationSource::Local, Some(&mut delta));
-                if !unconfirmed_operation.operation.perform(&mut recorder) {
+                if !unconfirmed_operation.operation.perform(&mut recorder) && *recorder.success.borrow() {
                     let mut project_context = ProjectContextMut {
                         project: &mut self.project,
                         objects: &mut self.objects,
