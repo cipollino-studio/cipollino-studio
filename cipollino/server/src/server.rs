@@ -34,11 +34,17 @@ impl Server {
     }
 
     async fn receive_message(&mut self, client_id: ClientId, msg: rmpv::Value) {
-        self.server.receive_message(client_id, msg);
+        if let Some(msgs) = msg.as_array() {
+            for submsg in msgs {
+                self.server.receive_message(client_id, submsg);
+            }
+        } else {
+            self.server.receive_message(client_id, &msg);
+        }
         for (client_id, msgs) in self.server.take_all_msgs_to_send() {
             if let Some(client) = self.clients.get_mut(&client_id) {
-                for msg in msgs {
-                    client.send(msg).await;
+                if !msgs.is_empty() {
+                    client.send(rmpv::Value::Array(msgs)).await;
                 }
             }
         }

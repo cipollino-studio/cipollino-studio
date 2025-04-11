@@ -35,7 +35,8 @@ pub struct Editor {
     state: State,
     docking: pierro::DockingState<EditorPanel>,
     windows: pierro::WindowManager<WindowInstance>,
-    socket: Option<Socket>
+    socket: Option<Socket>,
+    redraw_requests: u32 
 }
 
 impl Editor {
@@ -49,7 +50,8 @@ impl Editor {
             },
             docking: systems.prefs.get::<DockingLayoutPref>(),
             windows: pierro::WindowManager::new(),
-            socket
+            socket,
+            redraw_requests: 0
         }
     }
 
@@ -120,10 +122,6 @@ impl Editor {
 
         self.state.editor.preview.end_frame();
 
-        // Update the project client
-        self.state.project.tick(&self.state.editor);
-        self.state.project.client.tick(&mut ());
-
         // Collab
         if let Some(socket) = &mut self.socket {
             #[cfg(debug_assertions)]
@@ -131,8 +129,9 @@ impl Editor {
             #[cfg(not(debug_assertions))]
             let send_messages = true;
             if send_messages {
-                for to_send in self.state.project.client.take_messages() {
-                    socket.send(to_send);
+                let to_send = self.state.project.client.take_messages();
+                if !to_send.is_empty() {
+                    socket.send(rmpv::Value::Array(to_send));
                 }
             }
 
@@ -142,26 +141,64 @@ impl Editor {
             let receive_messages = true;
             if receive_messages {
                 while let Some(msg) = socket.receive() {
-                    self.state.project.client.receive_message(msg, &mut ());
-                    ui.request_redraw();
+                    if let Some(msgs) = msg.as_array() {
+                        for submsg in msgs {
+                            self.state.project.client.receive_message(submsg, &mut ());
+                        }
+                    } else {
+                        self.state.project.client.receive_message(&msg, &mut ());
+                    }
+                    // Redraw the UI a few times to make sure everything gets updated
+                    self.redraw_requests = 3;
                 }
             }
 
             if !socket.has_signal() {
                 socket.set_signal(ui.redraw_signal());
             }
+
+            for updated_stroke in self.state.project.client.modified::<Stroke>() {
+                // Invalidate cached meshes for updated strokes
+                self.state.editor.stroke_mesh_cache.borrow_mut().remove(&updated_stroke);
+
+                // If someone else we're collabing with modifies a stroke we selected, clear the selection to be safe
+                if self.state.editor.selection.selected(updated_stroke) {
+                    self.state.editor.selection.clear();
+                }
+            }
+            self.state.project.client.clear_modified::<Stroke>();
+
+            for updated_frame in self.state.project.client.modified::<Frame>() {
+                // If someone else we're collabing with modifies a frame we selected, clear the selection to be safe
+                if self.state.editor.selection.selected(updated_frame) {
+                    self.state.editor.selection.clear();
+                }
+            }
+            self.state.project.client.clear_modified::<Frame>();
+
         }
+
+        // Update the project client
+        self.state.project.tick(&self.state.editor);
+        self.state.project.client.tick(&mut ());
 
         // Invalidate cached meshes for updated strokes
         for updated_stroke in self.state.project.client.modified() {
             self.state.editor.stroke_mesh_cache.borrow_mut().remove(&updated_stroke);
         }
-        
+        self.state.project.client.clear_modified::<Stroke>();
+
         // On load callbacks
         self.state.editor.process_on_load_callbacks(&self.state.project);
 
         // Pop the accent color style
         ui.pop_style();
+
+        if self.redraw_requests > 0 {
+            self.redraw_requests -= 1;
+            ui.request_redraw();
+        }
+        self.state.project.client.clear_all_modified();
     }
 
 }
