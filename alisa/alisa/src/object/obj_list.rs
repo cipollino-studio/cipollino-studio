@@ -83,8 +83,17 @@ impl<'a, Obj: Object> ObjRef<'a, Obj> {
 
 pub struct ObjList<Obj: Object> {
     objs: HashMap<Ptr<Obj>, ObjState<Obj>>,
+    /// Set of objects that were modified since the last client tick.
+    /// Used by local clients to track what objects need to be modified on disk on the next client tick. 
     pub(crate) modified: HashSet<Ptr<Obj>>,
+    /// Set of objects that were modified.
+    /// This set is exposed to the user of the library. As opposed to `modified`, this set is not cleared on every tick. 
+    /// This can be used by users of the library for things like cache invalidation.
+    pub(crate) user_modified: HashSet<Ptr<Obj>>,
+    /// Set of objects that were deleted since the last client tick.
+    /// Used by local clients to track what objects need to be deleted from disk on the next client tick.
     pub(crate) to_delete: HashSet<Ptr<Obj>>,
+    /// Ptrs to objects that the user requested to load
     pub(crate) to_load: RefCell<HashSet<Ptr<Obj>>>,
 }
 
@@ -102,6 +111,7 @@ impl<Obj: Object> ObjList<Obj> {
         }
         self.objs.insert(ptr, ObjState::Loaded(obj));
         self.modified.insert(ptr);
+        self.user_modified.insert(ptr);
         true
     }
 
@@ -149,6 +159,7 @@ impl<Obj: Object> ObjList<Obj> {
 
     pub fn get_mut(&mut self, ptr: Ptr<Obj>) -> Option<&mut Obj> {
         self.modified.insert(ptr);
+        self.user_modified.insert(ptr);
         self.objs.get_mut(&ptr)?.as_mut()
     }
 
@@ -168,6 +179,7 @@ impl<O: Object> Default for ObjList<O> {
         Self {
             objs: HashMap::new(),
             modified: HashSet::new(),
+            user_modified: HashSet::new(),
             to_delete: HashSet::new(),
             to_load: RefCell::new(HashSet::new()),
         }

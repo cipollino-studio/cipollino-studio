@@ -184,11 +184,6 @@ impl<P: Project> Client<P> {
     /// Update the client. Performs all the queued operations. Returns the messages that should be sent to the server.
     pub fn tick(&mut self, context: &mut P::Context) {
 
-        // Clear modifications from the previous tick
-        for object_kind in P::OBJECTS {
-            (object_kind.clear_modifications)(&mut self.objects);
-        }
-
         let mut operations_ref = self.operations_to_perform.borrow_mut();
         let operations = &mut *operations_ref;
         let operations = std::mem::replace(operations, Vec::new());
@@ -229,6 +224,12 @@ impl<P: Project> Client<P> {
             local.save_changes(&mut self.project, &mut self.objects, &mut self.project_modified);
             local.load_objects(&mut self.objects);
         }
+
+        // Clear modifications for the next tick 
+        for object_kind in P::OBJECTS {
+            (object_kind.clear_modifications)(&mut self.objects);
+        }
+
     }
 
     pub fn has_messages(&self) -> bool {
@@ -277,7 +278,17 @@ impl<P: Project> Client<P> {
     }
 
     pub fn modified<O: Object<Project = P>>(&self) -> impl Iterator<Item = Ptr<O>> + '_ {
-        O::list(&self.objects).modified.iter().copied()
+        O::list(&self.objects).user_modified.iter().copied()
+    }
+
+    pub fn clear_modified<O: Object<Project = P>>(&mut self) {
+        O::list_mut(&mut self.objects).user_modified.clear();
+    }
+
+    pub fn clear_all_modified(&mut self) {
+        for obj_kind in P::OBJECTS {
+            (obj_kind.clear_user_modified)(&mut self.objects); 
+        }
     }
 
 }

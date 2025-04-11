@@ -57,7 +57,7 @@ impl<P: alisa::Project<Context = ()>> TestingServer<P> {
     fn send_messages(server: &mut alisa::Server<P>, client: &TestingClient<P>) {
         let messages = client.client.take_messages();
         for message in messages {
-            server.receive_message(client.id, message);
+            server.receive_message(client.id, &message);
         }
     }
 
@@ -65,7 +65,7 @@ impl<P: alisa::Project<Context = ()>> TestingServer<P> {
         if let Some(messages) = server.get_msgs_to_send_mut(client.id) {
             let messages = std::mem::replace(messages, Vec::new());
             for message in messages {
-                client.client.receive_message(message, &mut ());
+                client.client.receive_message(&message, &mut ());
             }
         }
     }

@@ -9,6 +9,7 @@ use super::{ObjRef, Object, Ptr};
 pub struct ObjectKind<P: Project> {
     pub(crate) name: &'static str,
     pub(crate) clear_modifications: fn(&mut P::Objects),
+    pub(crate) clear_user_modified: fn(&mut P::Objects),
     pub(crate) save_modifications: fn(&mut File, objects: &mut P::Objects),
     pub(crate) local_load_objects: fn(&mut File, &mut P::Objects),
     pub(crate) collab_load_objects: fn(&mut P::Objects, &mut Collab<P>),
@@ -38,6 +39,9 @@ impl<P: Project> ObjectKind<P> {
             clear_modifications: |objects| {
                 O::list_mut(objects).modified.clear();
                 O::list_mut(objects).to_delete.clear();
+            },
+            clear_user_modified: |objects| {
+                O::list_mut(objects).user_modified.clear();
             },
             save_modifications: |file, objects| {
                 for modified in &mut O::list(objects).modified.iter() {

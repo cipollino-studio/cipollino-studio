@@ -163,7 +163,7 @@ impl<P: Project> Client<P> {
         success
     }
 
-    pub fn receive_message(&mut self, msg: rmpv::Value, context: &mut P::Context) -> Option<()> {
+    pub fn receive_message(&mut self, msg: &rmpv::Value, context: &mut P::Context) -> Option<()> {
 
         if !self.is_collab() {
             return None;

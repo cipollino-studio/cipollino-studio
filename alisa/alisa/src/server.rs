@@ -80,7 +80,7 @@ impl<P: Project> Server<P> {
         }
     }
 
-    pub fn receive_message(&mut self, client_id: ClientId, msg: rmpv::Value) -> Option<()> {
+    pub fn receive_message(&mut self, client_id: ClientId, msg: &rmpv::Value) -> Option<()> {
         let msg = msg.as_map()?;
 
         let mut msg_type = "";
