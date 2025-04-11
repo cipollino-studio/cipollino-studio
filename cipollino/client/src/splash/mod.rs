@@ -37,6 +37,15 @@ impl SplashScreen {
         }
     }
 
+    pub fn new_with_error(msg: String) -> Self {
+        use rand::Rng;
+        Self {
+            state: SplashScreenState::Menu,
+            quote: QUOTES[rand::rng().random_range(0..QUOTES.len())],
+            error: Some(msg)
+        }
+    }
+
     pub fn tick(&mut self, ui: &mut pierro::UI, next_app_state: &mut Option<AppState>, systems: &mut AppSystems) {
         let mut next_state = None;
 

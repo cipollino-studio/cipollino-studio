@@ -23,10 +23,11 @@ use std::path::PathBuf;
 use clap::Parser;
 use splash::SplashScreen;
 
-enum AppState {
+pub enum AppState {
     SplashScreen(SplashScreen),
     Editor(Editor)
 }
+
 struct App {
     state: AppState,
     systems: AppSystems
@@ -45,7 +46,7 @@ impl pierro::App for App {
 
         match &mut self.state {
             AppState::SplashScreen(splash_screen) => splash_screen.tick(ui, &mut next_app_state, &mut self.systems),
-            AppState::Editor(editor) => editor.tick(ui, &mut self.systems),
+            AppState::Editor(editor) => editor.tick(ui, &mut self.systems, &mut next_app_state),
         }
 
         if let Some(next_app_state) = next_app_state {

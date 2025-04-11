@@ -4,7 +4,8 @@ use std::path::PathBuf;
 use project::alisa::rmpv;
 use project::{deep_load_clip, Client, Frame, Ptr, Stroke};
 
-use crate::{AppSystems, DockingLayoutPref, EditorPanel, PanelContext};
+use crate::splash::SplashScreen;
+use crate::{AppState, AppSystems, DockingLayoutPref, EditorPanel, PanelContext};
 
 mod socket;
 pub use socket::*;
@@ -63,7 +64,7 @@ impl Editor {
         Some(Self::new(Client::collab(welcome_msg)?, Some(socket), systems))
     } 
 
-    pub fn tick(&mut self, ui: &mut pierro::UI, systems: &mut AppSystems) {
+    pub fn tick(&mut self, ui: &mut pierro::UI, systems: &mut AppSystems, next_app_state: &mut Option<AppState>) {
 
         // Set the accent color
         ui.push_style::<pierro::theme::AccentColor>(systems.prefs.get::<AccentColor>());
@@ -88,9 +89,8 @@ impl Editor {
             !self.state.editor.locked_layers.contains(&frame.layer) && !self.state.editor.hidden_layers.contains(&frame.layer)
         });
 
-        self.menu_bar(ui);
+        self.menu_bar(ui, next_app_state);
         self.use_shortcuts(ui, systems);
-
 
         self.state.editor.selection.begin_frame(ui.input().key_modifiers.contains(pierro::KeyModifiers::SHIFT));
 
@@ -175,6 +175,11 @@ impl Editor {
                 }
             }
             self.state.project.client.clear_modified::<Frame>();
+
+            if socket.closed() {
+                let msg = "Collab server disconnected.".to_owned();
+                *next_app_state = Some(AppState::SplashScreen(SplashScreen::new_with_error(msg)));
+            }
 
         }
 
