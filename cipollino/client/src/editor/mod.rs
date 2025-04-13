@@ -2,7 +2,7 @@
 use std::path::PathBuf;
 
 use project::alisa::rmpv;
-use project::{deep_load_clip, Client, Frame, Ptr, Stroke};
+use project::{deep_load_clip, Client, Frame, Project, Ptr, Stroke};
 
 use crate::splash::SplashScreen;
 use crate::{AppState, AppSystems, DockingLayoutPref, EditorPanel, PanelContext};
@@ -31,6 +31,9 @@ pub use window::*;
 
 mod settings;
 pub use settings::*;
+
+mod presence;
+pub use presence::*;
 
 pub struct Editor {
     state: State,
@@ -62,7 +65,29 @@ impl Editor {
 
     pub fn collab(socket: Socket, welcome_msg: &rmpv::Value, systems: &mut AppSystems) -> Option<Self> {
         Some(Self::new(Client::collab(welcome_msg)?, Some(socket), systems))
-    } 
+    }
+
+    fn receive_message(msg: &rmpv::Value, state: &mut State) {
+        if let Some(msg_type) = alisa::rmpv_get(msg, "type") {
+            let Some(msg_type) = msg_type.as_str() else { return; };
+            if msg_type == "presence" {
+                let Some(client_id) = alisa::rmpv_get(msg, "client") else { return; };
+                let Some(client_id) = client_id.as_u64() else { return; }; 
+                let Some(data) = alisa::rmpv_get(msg, "data") else { return; };
+                let Some(data) = <PresenceData as alisa::Serializable<Project>>::data_deserialize(data) else { return; };
+                state.editor.other_clients.insert(client_id, data);
+                return;
+            }
+            if msg_type == "disconnect" {
+                let Some(client_id) = alisa::rmpv_get(msg, "client") else { return; };
+                let Some(client_id) = client_id.as_u64() else { return; }; 
+                state.editor.other_clients.remove(&client_id);
+                return;
+            }
+        }
+
+        state.project.client.receive_message(msg, &mut ());
+    }
 
     pub fn tick(&mut self, ui: &mut pierro::UI, systems: &mut AppSystems, next_app_state: &mut Option<AppState>) {
 
@@ -143,10 +168,10 @@ impl Editor {
                 while let Some(msg) = socket.receive() {
                     if let Some(msgs) = msg.as_array() {
                         for submsg in msgs {
-                            self.state.project.client.receive_message(submsg, &mut ());
+                            Self::receive_message(submsg, &mut self.state);
                         }
                     } else {
-                        self.state.project.client.receive_message(&msg, &mut ());
+                        Self::receive_message(&msg, &mut self.state);
                     }
                     // Redraw the UI a few times to make sure everything gets updated
                     self.redraw_requests = 3;
@@ -175,6 +200,8 @@ impl Editor {
                 }
             }
             self.state.project.client.clear_modified::<Frame>();
+
+            self.state.editor.presence.update(socket);
 
             if socket.closed() {
                 let msg = "Collab server disconnected.".to_owned();

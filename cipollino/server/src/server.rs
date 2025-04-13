@@ -1,7 +1,7 @@
 
 use std::{collections::HashMap, path::PathBuf, sync::Arc};
 
-use project::{alisa::{rmpv, rmpv_decode, rmpv_encode}, ClientId};
+use project::{alisa::{rmpv, rmpv_decode, rmpv_encode, rmpv_get}, ClientId};
 use warp::ws::{Message, WebSocket};
 use futures::SinkExt;
 use tokio::sync::Mutex;
@@ -12,7 +12,8 @@ pub struct Server {
 }
 
 pub struct Client {
-    sender: futures::stream::SplitSink<WebSocket, Message>
+    sender: futures::stream::SplitSink<WebSocket, Message>,
+    presence: Option<rmpv::Value>
 }
 
 impl Client {
@@ -33,13 +34,32 @@ impl Server {
         }
     }
 
+    fn process_message(&mut self, client_id: ClientId, msg: &rmpv::Value) {
+        if let Some(msg_type) = rmpv_get(msg, "type") {
+            let Some(msg_type) = msg_type.as_str() else { return; };
+
+            if msg_type == "presence" {
+                let Some(client) = self.clients.get_mut(&client_id) else { return; };
+                let Some(data) = rmpv_get(msg, "data") else { return; };
+                self.server.broadcast(&rmpv::Value::Map(vec![
+                    ("type".into(), "presence".into()),
+                    ("client".into(), client_id.0.into()),
+                    ("data".into(), data.clone()),
+                ]), Some(client_id));
+                client.presence = Some(data.clone());
+                return;
+            }
+        }
+        self.server.receive_message(client_id, msg);
+    }
+
     async fn receive_message(&mut self, client_id: ClientId, msg: rmpv::Value) {
         if let Some(msgs) = msg.as_array() {
             for submsg in msgs {
-                self.server.receive_message(client_id, submsg);
+                self.process_message(client_id, submsg);
             }
         } else {
-            self.server.receive_message(client_id, &msg);
+            self.process_message(client_id, &msg);
         }
         for (client_id, msgs) in self.server.take_all_msgs_to_send() {
             if let Some(client) = self.clients.get_mut(&client_id) {
@@ -59,10 +79,20 @@ impl Server {
 
         let mut client = Client {
             sender,
+            presence: None
         };
 
         if client.send(welcome_msg).await {
-            server_arc.lock().await.clients.insert(client_id, client);
+            let mut server = server_arc.lock().await;
+            for (other_client_id, other_client) in &server.clients {
+                let Some(presence_data) = &other_client.presence else { continue; };
+                client.send(rmpv::Value::Map(vec![
+                    ("type".into(), "presence".into()),
+                    ("client".into(), other_client_id.0.into()),
+                    ("data".into(), presence_data.clone()),
+                ])).await; 
+            }
+            server.clients.insert(client_id, client);
         }
 
         while let Some(Ok(msg)) = receiver.next().await {
@@ -73,7 +103,16 @@ impl Server {
         }
 
         println!("Client disconnected.");
-        server_arc.lock().await.clients.remove(&client_id);
+        let mut server = server_arc.lock().await;
+        server.clients.remove(&client_id);
+
+        // Tell the other clients this client disconnected
+        for (other_client, client) in &mut server.clients {
+            client.send(rmpv::Value::Map(vec![
+                ("type".into(), "disconnect".into()),
+                ("client".into(), client_id.0.into()),
+            ])).await; 
+        }
     }
 
 }

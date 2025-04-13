@@ -3,7 +3,7 @@ use std::{cell::RefCell, collections::HashSet};
 
 use project::{alisa::AnyPtr, Action, Asset, Clip, ClipTreeData, CreateClip, CreateFolder, Folder, FolderTreeData, Ptr};
 
-use crate::{EditorState, ProjectState};
+use crate::{presence_color, presence_icon, EditorState, ProjectState};
 
 use super::{Panel, PanelContext};
 
@@ -28,6 +28,10 @@ pub trait AssetUI: Asset {
 
     /// Called when the asset is double-clicked in the UI
     fn on_open(_ptr: Ptr<Self>, _project: &ProjectState, _state: &mut EditorState) {
+
+    }
+
+    fn label_ui(_ui: &mut pierro::UI, _ptr: Ptr<Self>, _state: &mut EditorState) {
 
     }
 
@@ -99,6 +103,30 @@ impl AssetUI for Clip {
                 });
             }
             pierro::close_context_menu(ui, context_menu_id);
+        }
+    }
+
+    fn label_ui(ui: &mut pierro::UI, ptr: Ptr<Self>, state: &mut EditorState) {
+        pierro::h_spacing(ui, 5.0);
+        for (client_id, presence) in state.other_clients.iter() {
+            if presence.open_clip == ptr {
+                let color = presence_color(*client_id);
+                let icon = presence_icon(*client_id);
+                ui.with_node(
+                    pierro::UINodeParams::new(pierro::Size::fit(), pierro::Size::fit())
+                        .with_fill(color)
+                        .with_layout(pierro::Layout::vertical().align_center().justify_center())
+                        .with_rounding(pierro::Rounding::same(3.0))
+                        .with_margin(pierro::Margin::same(1.0)),
+                    |ui| {
+                        let text_color = ui.style::<pierro::theme::ActiveTextColor>();
+                        ui.with_style::<pierro::theme::TextColor, _, _>(text_color, |ui| {
+                            pierro::icon(ui, icon)
+                        });
+                    }
+                );
+                pierro::h_spacing(ui, 2.0);
+            }
         }
     }
 

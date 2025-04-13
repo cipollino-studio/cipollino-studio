@@ -4,7 +4,7 @@ use std::{cell::RefCell, collections::HashMap};
 use std::rc::Rc;
 use project::{Client, Clip, ClipInner, Layer, Project, Ptr, Stroke};
 
-use crate::{SelectTool, ToolDyn, Window, WindowInstance};
+use crate::{Presence, PresenceData, SelectTool, ToolDyn, Window, WindowInstance};
 
 use crate::{Selection, SelectionKind};
 
@@ -40,6 +40,9 @@ pub struct EditorState {
     windows_to_open: Vec<WindowInstance>,
 
     on_load_callbacks: Vec<Box<dyn Fn(&ProjectState, &mut EditorState) -> bool>>,
+
+    pub presence: Presence,
+    pub other_clients: HashMap<u64, PresenceData>,
 
     #[cfg(debug_assertions)]
     pub send_messages: bool,
@@ -80,6 +83,9 @@ impl EditorState {
             windows_to_open: Vec::new(),
 
             on_load_callbacks: Vec::new(),
+
+            presence: Presence::new(),
+            other_clients: HashMap::new(), 
 
             #[cfg(debug_assertions)]
             send_messages: true,
@@ -129,6 +135,7 @@ impl EditorState {
         self.open_clip = clip_ptr;
         self.jump_to(0.0);
         self.active_layer = Ptr::null();
+        self.presence.set_open_clip(clip_ptr);
     }
 
     pub fn open_window<W: Window + 'static>(&mut self, window: W) {

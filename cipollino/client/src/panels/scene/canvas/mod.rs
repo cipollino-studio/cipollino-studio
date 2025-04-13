@@ -3,7 +3,7 @@ use std::collections::HashSet;
 
 use project::{ClipInner, Ptr, SceneChildPtr, Stroke};
 
-use crate::{render_scene, AppSystems, EditorState, ProjectState, ToolContext};
+use crate::{presence_color, render_scene, AppSystems, EditorState, ProjectState, ToolContext};
 
 use super::ScenePanel;
 
@@ -169,6 +169,18 @@ impl ScenePanel {
             tool.render_overlay(&mut tool_context, rndr, accent_color);
 
             rndr.render_canvas_border(malvina::vec2(clip.width as f32, clip.height as f32));
+
+            // Render the cursors of the other clients on this clip
+            for (id, other_client) in &editor.other_clients {
+                if let Some(other_client_mouse_pos) = other_client.mouse_pos {
+                    if other_client.open_clip == editor.open_clip {
+                        let color = presence_color(*id);
+                        let pos = elic::vec2(other_client_mouse_pos[0], other_client_mouse_pos[1]);
+                        rndr.overlay_circle(pos, 4.0, color);
+                    }
+                }
+            }
+
         });
 
         if response.hovered {
@@ -182,6 +194,10 @@ impl ScenePanel {
                 tool_cursor_icon
             };
             ui.set_cursor(cursor);
+
+            editor.presence.set_mouse_pos(mouse_pos);
+        } else {
+            editor.presence.set_mouse_pos(None);
         }
 
         if pause {

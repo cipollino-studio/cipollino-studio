@@ -16,7 +16,7 @@ pub struct Server<P: Project> {
 }
 
 #[derive(Clone, Copy, Hash, PartialEq, Eq, Default)]
-pub struct ClientId(u64);
+pub struct ClientId(pub u64);
 
 impl Debug for ClientId {
 
@@ -67,12 +67,12 @@ impl<P: Project> Server<P> {
         ]))
     }
 
-    fn send(&mut self, to: ClientId, msg: rmpv::Value) -> Option<()> {
+    pub fn send(&mut self, to: ClientId, msg: rmpv::Value) -> Option<()> {
         self.clients.get_mut(&to)?.to_send.push(msg);
         Some(())
     }
 
-    fn broadcast(&mut self, msg: &rmpv::Value, except: Option<ClientId>) {
+    pub fn broadcast(&mut self, msg: &rmpv::Value, except: Option<ClientId>) {
         for (client_id, client) in self.clients.iter_mut() {
             if Some(*client_id) != except {
                 client.to_send.push(msg.clone());

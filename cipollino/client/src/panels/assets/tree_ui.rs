@@ -63,7 +63,7 @@ impl AssetsPanel {
             let icon_resp = pierro::icon(ui, A::ICON);
             pierro::h_spacing(ui, 3.0);
             let label_resp = self.renamable_asset_label(ui, asset.name(), asset_ptr, project, editor.open_clip, editor.time);
-
+            A::label_ui(ui, asset_ptr, editor);
             (label_resp, icon_resp)
         });
 
