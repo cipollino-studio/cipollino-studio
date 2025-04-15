@@ -3,6 +3,9 @@ use std::{cell::RefCell, collections::HashSet};
 
 use crate::{File, Project};
 
+mod binary;
+pub use binary::*;
+
 mod serialization_impls;
 
 mod loading_ptr;
