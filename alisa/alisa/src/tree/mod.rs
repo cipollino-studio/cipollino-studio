@@ -13,7 +13,7 @@ pub use unordered_child_list::*;
 /// A list of references to the children of a tree object
 pub trait Children<O: Object> {
 
-    type Index: Copy + Serializable<O::Project> + Default + Send + Sync;
+    type Index: Copy + Serializable + Default + Send + Sync;
 
     fn n_children(&self) -> usize;
     fn insert(&mut self, idx: Self::Index, child: Ptr<O>);
@@ -38,7 +38,7 @@ pub trait TreeObj: Object + Send + Sync {
     /// The list of children the parent has that points to this tree object
     type ChildList: Children<Self>;
     /// The information needed to recreate this object and all of its children in the tree
-    type TreeData: Serializable<Self::Project>;
+    type TreeData: Serializable;
 
     /// Get the list of children that points to this object given the parent pointer
     fn child_list<'a>(parent: Self::ParentPtr, context: &'a ProjectContext<Self::Project>) -> Option<&'a Self::ChildList>;

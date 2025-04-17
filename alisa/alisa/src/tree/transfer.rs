@@ -51,7 +51,6 @@ macro_rules! tree_object_transfer_operation {
         ::alisa::paste::paste! {
 
             #[derive(::alisa::Serializable)]
-            #[project(<$object as ::alisa::Object>::Project)]
             pub struct [< Transfer $object >] {
                 pub ptr: ::alisa::Ptr<$object>,
                 pub new_parent: <$object as ::alisa::TreeObj>::ParentPtr,

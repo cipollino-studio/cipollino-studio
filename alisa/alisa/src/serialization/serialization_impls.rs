@@ -1,19 +1,19 @@
 
 use std::{collections::HashSet, hash::Hash};
 
-use crate::{Ptr, Object, Project};
+use crate::{Ptr, Object};
 use super::{Serializable, DeserializationContext, SerializationContext};
 
 macro_rules! number_serializable_impl {
     ($T: ty, $N: ty) => {
         paste::paste! {
-            impl<P: Project> Serializable<P> for $T {
+            impl Serializable for $T {
 
-                fn deserialize(data: &rmpv::Value, _context: &mut DeserializationContext<P>) -> Option<Self> {
+                fn deserialize(data: &rmpv::Value, _context: &mut DeserializationContext) -> Option<Self> {
                     data.[< as_ $N >]()?.try_into().ok()
                 }
 
-                fn serialize(&self, _context: &SerializationContext<P>) -> rmpv::Value {
+                fn serialize(&self, _context: &SerializationContext) -> rmpv::Value {
                     (*self as $N).into()
                 }
 
@@ -34,13 +34,13 @@ number_serializable_impl!(u32, u64);
 number_serializable_impl!(u64, u64);
 number_serializable_impl!(usize, u64);
 
-impl<P: Project> Serializable<P> for f32 {
+impl Serializable for f32 {
 
-    fn deserialize(data: &rmpv::Value, _context: &mut DeserializationContext<P>) -> Option<Self> {
+    fn deserialize(data: &rmpv::Value, _context: &mut DeserializationContext) -> Option<Self> {
         Some(data.as_f64()? as f32)
     }
 
-    fn serialize(&self, _context: &SerializationContext<P>) -> rmpv::Value {
+    fn serialize(&self, _context: &SerializationContext) -> rmpv::Value {
         (*self as f64).into()
     }
 
@@ -48,28 +48,28 @@ impl<P: Project> Serializable<P> for f32 {
 
 number_serializable_impl!(f64, f64);
 
-impl<P: Project> Serializable<P> for String {
+impl Serializable for String {
 
-    fn deserialize(data: &rmpv::Value, _context: &mut DeserializationContext<P>) -> Option<Self> {
+    fn deserialize(data: &rmpv::Value, _context: &mut DeserializationContext) -> Option<Self> {
         Some(data.as_str()?.to_owned())
     }
 
-    fn serialize(&self, _context: &SerializationContext<P>) -> rmpv::Value {
+    fn serialize(&self, _context: &SerializationContext) -> rmpv::Value {
         self.as_str().into()
     }
 
 }
 
-impl<P: Project, T: Serializable<P>> Serializable<P> for Option<T> {
+impl<T: Serializable> Serializable for Option<T> {
 
-    fn serialize(&self, context: &SerializationContext<P>) -> rmpv::Value {
+    fn serialize(&self, context: &SerializationContext) -> rmpv::Value {
         match self {
             Some(value) => rmpv::Value::Array(vec![value.serialize(context)]),
             None => rmpv::Value::Nil,
         }
     }
 
-    fn deserialize(data: &rmpv::Value, context: &mut DeserializationContext<P>) -> Option<Self> {
+    fn deserialize(data: &rmpv::Value, context: &mut DeserializationContext) -> Option<Self> {
         if data.is_nil() {
             return Some(None);
         }
@@ -81,13 +81,13 @@ impl<P: Project, T: Serializable<P>> Serializable<P> for Option<T> {
 
 }
 
-impl<P: Project, T: Serializable<P>, const N: usize> Serializable<P> for [T; N] {
+impl<T: Serializable, const N: usize> Serializable for [T; N] {
 
-    fn serialize(&self, context: &SerializationContext<P>) -> rmpv::Value {
+    fn serialize(&self, context: &SerializationContext) -> rmpv::Value {
         rmpv::Value::Array(self.iter().map(|val| val.serialize(context)).collect())
     }
 
-    fn deserialize(data: &rmpv::Value, context: &mut DeserializationContext<P>) -> Option<Self> {
+    fn deserialize(data: &rmpv::Value, context: &mut DeserializationContext) -> Option<Self> {
         let Some(arr) = data.as_array() else { return None; };
         if arr.len() != N {
             return None;
@@ -102,51 +102,51 @@ impl<P: Project, T: Serializable<P>, const N: usize> Serializable<P> for [T; N] 
 
 }
 
-impl<P: Project, T: Serializable<P>> Serializable<P> for Vec<T> {
+impl<T: Serializable> Serializable for Vec<T> {
 
-    fn deserialize(data: &rmpv::Value, context: &mut DeserializationContext<P>) -> Option<Self> {
+    fn deserialize(data: &rmpv::Value, context: &mut DeserializationContext) -> Option<Self> {
         let Some(arr) = data.as_array() else { return Some(Vec::new()); };
         Some(arr.iter().filter_map(|element| T::deserialize(element, context)).collect())
     }
 
-    fn serialize(&self, context: &SerializationContext<P>) -> rmpv::Value {
+    fn serialize(&self, context: &SerializationContext) -> rmpv::Value {
         rmpv::Value::Array(self.iter().map(|val| val.serialize(context)).collect())
     }
 
 }
 
-impl<P: Project, T: Serializable<P> + Eq + Hash> Serializable<P> for HashSet<T> {
+impl<T: Serializable + Eq + Hash> Serializable for HashSet<T> {
 
-    fn deserialize(data: &rmpv::Value, context: &mut DeserializationContext<P>) -> Option<Self> {
+    fn deserialize(data: &rmpv::Value, context: &mut DeserializationContext) -> Option<Self> {
         let Some(arr) = data.as_array() else { return Some(HashSet::new()); };
         Some(arr.iter().filter_map(|element| T::deserialize(element, context)).collect())
     }
 
-    fn serialize(&self, context: &SerializationContext<P>) -> rmpv::Value {
+    fn serialize(&self, context: &SerializationContext) -> rmpv::Value {
         rmpv::Value::Array(self.iter().map(|val| val.serialize(context)).collect())
     }
 
 }
 
-impl<P: Project> Serializable<P> for () {
+impl Serializable for () {
 
-    fn serialize(&self, _context: &SerializationContext<P>) -> rmpv::Value {
+    fn serialize(&self, _context: &SerializationContext) -> rmpv::Value {
         rmpv::Value::Nil
     }
 
-    fn deserialize(_data: &rmpv::Value, _context: &mut DeserializationContext<P>) -> Option<Self> {
+    fn deserialize(_data: &rmpv::Value, _context: &mut DeserializationContext) -> Option<Self> {
         Some(())
     }
 
 }
 
-impl<O: Object> Serializable<O::Project> for Ptr<O> {
+impl<O: Object> Serializable for Ptr<O> {
 
-    fn deserialize(data: &rmpv::Value, _context: &mut DeserializationContext<O::Project>) -> Option<Self> {
+    fn deserialize(data: &rmpv::Value, _context: &mut DeserializationContext) -> Option<Self> {
         data.as_u64().map(Self::from_key)
     }
 
-    fn serialize(&self, _context: &SerializationContext<O::Project>) -> rmpv::Value {
+    fn serialize(&self, _context: &SerializationContext) -> rmpv::Value {
         self.key.into()
     }
 

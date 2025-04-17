@@ -34,13 +34,13 @@ impl<C: ChildPtr> Default for ChildList<C> {
 
 }
 
-impl<C: ChildPtr> Serializable<C::Project> for ChildList<C> {
+impl<C: ChildPtr> Serializable for ChildList<C> {
 
-    fn serialize(&self, context: &crate::SerializationContext<C::Project>) -> rmpv::Value {
+    fn serialize(&self, context: &SerializationContext) -> rmpv::Value {
         self.children.serialize(context)
     }
 
-    fn deserialize(data: &rmpv::Value, context: &mut crate::DeserializationContext<C::Project>) -> Option<Self> {
+    fn deserialize(data: &rmpv::Value, context: &mut crate::DeserializationContext) -> Option<Self> {
         let children = Vec::<C>::deserialize(data, context)?;
         Some(Self {
             children
@@ -111,9 +111,9 @@ impl<C: ChildPtr> Default for ChildListTreeData<C> {
 
 } 
 
-impl<C: ChildPtr> Serializable<C::Project> for ChildListTreeData<C> {
+impl<C: ChildPtr> Serializable for ChildListTreeData<C> {
 
-    fn serialize(&self, context: &SerializationContext<C::Project>) -> rmpv::Value {
+    fn serialize(&self, context: &SerializationContext) -> rmpv::Value {
         rmpv::Value::Array(
             self.children.iter()
                 .map(|(ptr, obj_data)| rmpv::Value::Array(vec![ptr.serialize(context), obj_data.serialize(context)]))
@@ -121,7 +121,7 @@ impl<C: ChildPtr> Serializable<C::Project> for ChildListTreeData<C> {
         )
     }
 
-    fn deserialize(data: &rmpv::Value, context: &mut DeserializationContext<C::Project>) -> Option<Self> {
+    fn deserialize(data: &rmpv::Value, context: &mut DeserializationContext) -> Option<Self> {
         let data = data.as_array()?;
         let mut children = Vec::new();
         for child in data {

@@ -3,9 +3,9 @@ use crate::{LoadingPtr, Project, Ptr, Recorder, Serializable};
 
 use super::TreeObj;
 
-pub trait ChildPtr: Serializable<Self::Project> + Clone + Eq {
+pub trait ChildPtr: Serializable + Clone + Eq {
     type ParentPtr: Clone; 
-    type TreeData: Serializable<Self::Project>;
+    type TreeData: Serializable;
     type Project: Project;
 
     fn collect_data(&self, objects: &<Self::Project as Project>::Objects) -> Option<Self::TreeData>;

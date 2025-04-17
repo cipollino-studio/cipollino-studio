@@ -1,7 +1,7 @@
 
-use std::{collections::HashMap, fmt::Debug, path::Path};
+use std::{collections::{HashMap, HashSet}, fmt::Debug, path::Path};
 
-use crate::{Client, Serializable, Project, SerializationContext};
+use crate::{Client, DeserializationContext, ObjectKind, Project, Serializable, SerializationContext};
 
 struct ServerClient {
     to_send: Vec<rmpv::Value>
@@ -26,13 +26,13 @@ impl Debug for ClientId {
 
 }
 
-impl<P: Project> Serializable<P> for ClientId {
+impl Serializable for ClientId {
 
-    fn deserialize(data: &rmpv::Value, _context: &mut crate::DeserializationContext<P>) -> Option<Self> {
+    fn deserialize(data: &rmpv::Value, _context: &mut DeserializationContext) -> Option<Self> {
         data.as_u64().map(|id| Self(id))
     }
     
-    fn serialize(&self, _context: &SerializationContext<P>) -> rmpv::Value {
+    fn serialize(&self, _context: &SerializationContext) -> rmpv::Value {
         self.0.into()
     }
 
@@ -58,12 +58,32 @@ impl<P: Project> Server<P> {
             to_send: Vec::new()
         });
 
-        let storing_context = SerializationContext::deep(&self.client.objects);
+        let storing_context = SerializationContext::new();
         let project_data = self.client.project.serialize(&storing_context); 
+
+        let mut load_data = Vec::new(); 
+        let mut encoded = HashSet::new();
+        let mut to_encode = storing_context.take_serialization_requests();
+        while let Some((obj_type, key)) = to_encode.pop() {
+            encoded.insert(key);
+            let context = SerializationContext::new();
+            let Some(object_data) = (P::OBJECTS[obj_type as usize].serialize_object)(&mut self.client.objects, key, &context) else { continue; };
+            for (next_obj_type, next_key) in context.take_serialization_requests() {
+                if !encoded.contains(&next_key) {
+                    to_encode.push((next_obj_type, next_key));
+                }
+            }
+            load_data.push(rmpv::Value::Map(vec![
+                ("object".into(), P::OBJECTS[obj_type as usize].name.into()),
+                ("key".into(), key.into()),
+                ("data".into(), object_data),
+            ]));
+        }
 
         (id, rmpv::Value::Map(vec![
             ("id".into(), id.0.into()),
-            ("project".into(), project_data)
+            ("project".into(), project_data),
+            ("objects".into(), rmpv::Value::Array(load_data))
         ]))
     }
 
@@ -137,23 +157,7 @@ impl<P: Project> Server<P> {
             "load" => {
                 for object_kind in P::OBJECTS {
                     if object_kind.name == object {
-                        let local = self.client.kind.as_local().unwrap();
-                        local.dyn_load(&object_kind, &mut self.client.objects, load_key);
-                        let data = (object_kind.serialize_object)(&mut self.client.objects, load_key);
-                        if let Some(data) = data {
-                            self.send(client_id, rmpv::Value::Map(vec![
-                                ("type".into(), "load".into()),
-                                ("object".into(), object.into()),
-                                ("key".into(), load_key.into()),
-                                ("data".into(), data)
-                            ]));
-                        } else {
-                            self.send(client_id, rmpv::Value::Map(vec![
-                                ("type".into(), "load_failed".into()),
-                                ("object".into(), object.into()),
-                                ("key".into(), load_key.into()),
-                            ]));
-                        }
+                        self.handle_load_message(object_kind, load_key, client_id); 
                         break;
                     }
                 }
@@ -164,6 +168,41 @@ impl<P: Project> Server<P> {
         self.client.tick(&mut self.context);
 
         Some(())
+    }
+
+    fn handle_load_message(&mut self, object_kind: &ObjectKind<P>, key: u64, client_id: ClientId) {
+        let mut to_encode = vec![(object_kind, key)];
+        let mut encoded = HashSet::new();
+        while let Some((object_kind, key)) = to_encode.pop() {
+            encoded.insert(key);
+
+            let local = self.client.kind.as_local().unwrap();
+            local.dyn_load(&object_kind, &mut self.client.objects, key);
+            let context = SerializationContext::new();
+            let data = (object_kind.serialize_object)(&mut self.client.objects, key, &context);
+
+            if let Some(data) = data {
+                self.send(client_id, rmpv::Value::Map(vec![
+                    ("type".into(), "load".into()),
+                    ("object".into(), object_kind.name.into()),
+                    ("key".into(), key.into()),
+                    ("data".into(), data)
+                ]));
+            } else {
+                self.send(client_id, rmpv::Value::Map(vec![
+                    ("type".into(), "load_failed".into()),
+                    ("object".into(), object_kind.name.into()),
+                    ("key".into(), key.into()),
+                ]));
+            }
+
+            for (obj_type, key) in context.take_serialization_requests() {
+                if !encoded.contains(&key) {
+                    to_encode.push((&P::OBJECTS[obj_type as usize], key));
+                }
+            }
+        }
+        
     }
 
     pub fn project(&self) -> &P {

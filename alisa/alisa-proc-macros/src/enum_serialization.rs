@@ -1,24 +1,14 @@
 
 use proc_macro2::Span;
-use quote::{quote, ToTokens};
+use quote::quote;
 use syn::{DataEnum, Fields, Ident, Generics};
 
-pub fn serializable_enum(enm: DataEnum, name: Ident, project_type: Option<syn::Type>, generics: Generics) -> proc_macro2::TokenStream {
+pub fn serializable_enum(enm: DataEnum, name: Ident, generics: Generics) -> proc_macro2::TokenStream {
 
     if enm.variants.iter().count() == 0 {
         panic!("cannot serialize empty enums.");
     }
 
-    let impl_generic = if project_type.is_none() {
-        quote! { <P: alisa::Project, #generics > }
-    } else {
-        generics.to_token_stream()
-    };
-    let context_generic = if let Some(project_type) = project_type {
-        quote! { <#project_type> }
-    } else {
-        quote! { <P> }
-    };
     let generics_names = generics.type_params().map(|param| &param.ident);
 
     let serialize_variants = enm.variants.iter().map(|variant| {
@@ -112,15 +102,15 @@ pub fn serializable_enum(enm: DataEnum, name: Ident, project_type: Option<syn::T
     });
 
     quote! {
-        impl #impl_generic ::alisa::Serializable #context_generic for #name <#(#generics_names, )*> {
+        impl ::alisa::Serializable for #name <#(#generics_names, )*> {
 
-            fn serialize(&self, context: &alisa::SerializationContext #context_generic) -> ::alisa::rmpv::Value {
+            fn serialize(&self, context: &alisa::SerializationContext) -> ::alisa::rmpv::Value {
                 match self {
                     #(#serialize_variants,)*
                 }
             }
 
-            fn deserialize(data: &::alisa::rmpv::Value, context: &mut ::alisa::DeserializationContext #context_generic) -> Option<Self> {
+            fn deserialize(data: &::alisa::rmpv::Value, context: &mut ::alisa::DeserializationContext) -> Option<Self> {
                 let data = data.as_array()?;
                 let variant_name = data[0].as_str()?;
                 match variant_name {

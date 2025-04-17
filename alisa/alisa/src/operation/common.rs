@@ -2,12 +2,10 @@
 #[macro_export]
 macro_rules! project_set_property_operation {
     ($project: ty, $property: ident, $T: ty) => {
-        alisa::project_set_property_delta!($project, $property, $T); 
 
         ::alisa::paste::paste! {
 
             #[derive(::alisa::Serializable, Default)]
-            #[project($project)]
             pub struct [< Set $property:camel >] {
                 pub $property: $T
             }
@@ -15,7 +13,6 @@ macro_rules! project_set_property_operation {
             impl ::alisa::Operation for [< Set $property:camel >] {
 
                 type Project = $project;
-                type Inverse = Self;
 
                 const NAME: &'static str = stringify!([< SetProject $property:camel >]);
 
@@ -24,6 +21,12 @@ macro_rules! project_set_property_operation {
                     recorder.project_mut().$property = self.$property.clone();
                     true
                 }
+
+            }
+
+            impl ::alisa::InvertibleOperation for [< Set $property:camel >] {
+
+                type Inverse = Self;
 
                 fn inverse(&self, context: &::alisa::ProjectContext<Self::Project>) -> Option<Self::Inverse> {
                     Some(Self {
@@ -43,7 +46,6 @@ macro_rules! object_set_property_operation {
         ::alisa::paste::paste! {
 
             #[derive(::alisa::Serializable, Default)]
-            #[project(<$object as alisa::Object>::Project)]
             pub struct [<Set $object:camel $property:camel >] {
                 pub ptr: ::alisa::Ptr<$object>,
                 pub [< $property:snake _value >]: $T

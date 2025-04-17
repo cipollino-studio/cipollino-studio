@@ -22,6 +22,7 @@ impl alisa::Object for Thing {
 
     type Project = Project;
     const NAME: &'static str = "Thing";
+    const TYPE_ID: u16 = 0;
 
     fn list(objects: &Objects) -> &alisa::ObjList<Self> {
         &objects.things
@@ -35,7 +36,6 @@ impl alisa::Object for Thing {
 alisa::object_set_property_operation!(Thing, x, i32);
 
 #[derive(alisa::Serializable, Default)]
-#[project(Project)]
 pub struct CreateThing {
     ptr: alisa::Ptr<Thing>,
     x: i32

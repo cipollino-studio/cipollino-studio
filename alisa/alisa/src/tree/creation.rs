@@ -40,7 +40,6 @@ macro_rules! tree_object_creation_operations {
         ::alisa::paste::paste! {
 
             #[derive(::alisa::Serializable)]
-            #[project(<$object as ::alisa::Object>::Project)]
             pub struct [< Create $object:camel >] {
                 pub ptr: ::alisa::Ptr<$object>,
                 pub parent: <$object as ::alisa::TreeObj>::ParentPtr,
@@ -87,7 +86,6 @@ macro_rules! tree_object_creation_operations {
             }
 
             #[derive(::alisa::Serializable)]
-            #[project(<$object as ::alisa::Object>::Project)]
             pub struct [< Delete $object:camel >] {
                 pub ptr: ::alisa::Ptr<$object>
             }

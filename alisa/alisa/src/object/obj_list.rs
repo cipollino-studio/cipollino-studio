@@ -171,8 +171,11 @@ impl<O: Object> Default for ObjList<O> {
 
         #[cfg(debug_assertions)]
         {
-            if <O::Project as Project>::OBJECTS.iter().find(|object_kind| (object_kind.type_id)() == TypeId::of::<O>()).is_none() {
+            let Some(idx) = <O::Project as Project>::OBJECTS.iter().position(|object_kind| (object_kind.type_id)() == TypeId::of::<O>()) else {
                 panic!("object '{}' not registered in {}::OBJECTS.", O::NAME, type_name::<O::Project>());
+            };
+            if O::TYPE_ID as usize != idx {
+                panic!("{}::TYPE_ID does not match its index in {}::OBJECTS.", O::NAME, type_name::<O::Project>());
             }
         }
 

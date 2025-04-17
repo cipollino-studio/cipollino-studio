@@ -32,11 +32,18 @@ impl File {
         Some((keymap, curr_key, project_ptr))
     }
 
+    pub fn load_requested_objects<P: Project>(&mut self, reqs: Vec<(u16, u64)>, objects: &mut P::Objects) {
+        for (type_id, key) in reqs {
+            (P::OBJECTS[type_id as usize].load_object)(self, objects, key);
+        }
+    }
+
     fn try_load_project<P: Project>(&mut self) -> Option<(P, P::Objects)> {
         let project_data = self.read(self.project_ptr)?;
         let mut objects = P::Objects::default();
-        let mut context = DeserializationContext::local(&mut objects, self);
+        let mut context = DeserializationContext::new();
         let project = P::deserialize(&project_data, &mut context)?; 
+        self.load_requested_objects::<P>(context.load_requests, &mut objects);
         Some((project, objects))
     }
 
@@ -84,7 +91,7 @@ impl File {
             let project = P::empty();
             let objects = P::Objects::default();
 
-            let project_data = project.serialize(&SerializationContext::shallow());
+            let project_data = project.serialize(&SerializationContext::new());
             file.write_project(&project_data);
 
             (project, objects)

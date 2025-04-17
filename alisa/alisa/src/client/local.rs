@@ -61,7 +61,7 @@ impl<P: Project> Local<P> {
 
         // Project modifications
         if *project_modified {
-            let data = project.serialize(&SerializationContext::shallow());
+            let data = project.serialize(&SerializationContext::new());
             self.file.write_project(&data);
             *project_modified = false;
         }

@@ -23,7 +23,7 @@ pub enum OperationSource {
 /// An operation performed on the project. 
 /// Operations can be inverted for undo/redo. 
 /// Note that when collaborating, undoing an operation and redoing might not return to the original state of the project. 
-pub trait Operation: Sized + Any + Serializable<Self::Project> + Send + Sync {
+pub trait Operation: Sized + Any + Serializable + Send + Sync {
 
     type Project: Project;
 
@@ -56,7 +56,7 @@ pub trait OperationDyn: Send + Sync {
 
 }
 
-impl<O: Operation + Serializable<O::Project>> OperationDyn for O {
+impl<O: Operation + Serializable> OperationDyn for O {
     type Project = O::Project;
 
     fn perform(&self, recorder: &mut Recorder<'_, Self::Project>) -> bool {
@@ -68,7 +68,7 @@ impl<O: Operation + Serializable<O::Project>> OperationDyn for O {
     }
 
     fn serialize(&self) -> rmpv::Value {
-        self.serialize(&SerializationContext::shallow())
+        self.serialize(&SerializationContext::new())
     }
 
     #[cfg(debug_assertions)]
@@ -103,7 +103,7 @@ impl<P: Project> OperationKind<P> {
         Self {
             name: O::NAME,
             deserialize: |data| {
-                Some(Box::new(O::deserialize(data, &mut DeserializationContext::data())?))
+                Some(Box::new(O::deserialize(data, &mut DeserializationContext::new())?))
             },
             perform: |operation, recorder| {
                 let Ok(operation) = operation.downcast::<O>() else { return false; };

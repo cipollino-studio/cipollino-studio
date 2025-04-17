@@ -2,7 +2,7 @@
 use std::collections::HashSet;
 use std::hash::Hash;
 
-use crate::{Object, Project, Ptr, Recorder, Serializable, SerializationContext};
+use crate::{DeserializationContext, Object, Project, Ptr, Recorder, Serializable, SerializationContext};
 
 use super::{ChildPtr, Children};
 
@@ -33,13 +33,13 @@ impl<C: ChildPtr + Hash> Default for UnorderedChildList<C> {
 
 }
 
-impl<C: ChildPtr + Hash> Serializable<C::Project> for UnorderedChildList<C> {
+impl<C: ChildPtr + Hash> Serializable for UnorderedChildList<C> {
 
-    fn serialize(&self, context: &SerializationContext<C::Project>) -> rmpv::Value {
+    fn serialize(&self, context: &SerializationContext) -> rmpv::Value {
         self.children.serialize(context)
     }
 
-    fn deserialize(data: &rmpv::Value, context: &mut crate::DeserializationContext<C::Project>) -> Option<Self> {
+    fn deserialize(data: &rmpv::Value, context: &mut DeserializationContext) -> Option<Self> {
         let children = HashSet::<C>::deserialize(data, context)?;
         Some(Self {
             children
@@ -91,9 +91,9 @@ impl<C: ChildPtr> Default for UnorderedChildListTreeData<C> {
 
 } 
 
-impl<C: ChildPtr + Hash> Serializable<C::Project> for UnorderedChildListTreeData<C> {
+impl<C: ChildPtr + Hash> Serializable for UnorderedChildListTreeData<C> {
 
-    fn serialize(&self, context: &crate::SerializationContext<C::Project>) -> rmpv::Value {
+    fn serialize(&self, context: &crate::SerializationContext) -> rmpv::Value {
         rmpv::Value::Array(
             self.children.iter()
                 .map(|(ptr, obj_data)| rmpv::Value::Array(vec![ptr.serialize(context), obj_data.serialize(context)]))
@@ -101,7 +101,7 @@ impl<C: ChildPtr + Hash> Serializable<C::Project> for UnorderedChildListTreeData
         )
     }
 
-    fn deserialize(data: &rmpv::Value, context: &mut crate::DeserializationContext<C::Project>) -> Option<Self> {
+    fn deserialize(data: &rmpv::Value, context: &mut crate::DeserializationContext) -> Option<Self> {
         let data = data.as_array()?;
         let mut children = Vec::new();
         for child in data {

@@ -1,7 +1,7 @@
 
 use std::{any::{type_name, TypeId}, collections::HashSet};
 
-use crate::{Collab, DeserializationContext, File, LoadingPtr, Project, Serializable, SerializationContext};
+use crate::{Collab, DeserializationContext, File, Project, SerializationContext};
 
 use super::{ObjRef, Object, Ptr};
 
@@ -16,7 +16,7 @@ pub struct ObjectKind<P: Project> {
     pub(crate) load_object: fn(&mut File, &mut P::Objects, u64),
     pub(crate) load_object_from_message: fn(&mut P::Objects, u64, &rmpv::Value),
     pub(crate) load_failed: fn(&mut P::Objects, u64),
-    pub(crate) serialize_object: fn(&mut P::Objects, u64) -> Option<rmpv::Value>,
+    pub(crate) serialize_object: fn(&mut P::Objects, u64, &SerializationContext) -> Option<rmpv::Value>,
 
     #[cfg(debug_assertions)]
     pub(crate) type_id: fn() -> TypeId,
@@ -25,10 +25,30 @@ pub struct ObjectKind<P: Project> {
 }
 
 fn load_object<O: Object>(file: &mut File, objects: &mut <O::Project as Project>::Objects, key: u64) {
-    // Fun trick: instead of implementing loading logic, just deserialize a LoadingPtr pointing to the object we want :)
-    let loading_ptr = LoadingPtr::<O>::new(Ptr::from_key(key));
-    let loading_ptr_data = loading_ptr.serialize(&SerializationContext::shallow());
-    LoadingPtr::<O>::deserialize(&loading_ptr_data, &mut DeserializationContext::local(objects, file));
+    let ptr = Ptr::from_key(key);
+
+    // If the object is already loaded, skip loading it
+    if O::list(objects).get(ptr).is_some() {
+        return;
+    }
+
+    let Some(file_ptr) = file.get_ptr(key) else {
+        O::list_mut(objects).mark_deleted(ptr);
+        return;
+    };
+    let Some(object_data) = file.read(file_ptr) else {
+        O::list_mut(objects).mark_deleted(ptr);
+        return;
+    };
+    let mut context = DeserializationContext::new();
+    let Some(object) = O::deserialize(&object_data, &mut context) else {
+        O::list_mut(objects).mark_deleted(ptr);
+        return;
+    };
+
+    file.load_requested_objects::<O::Project>(context.load_requests, objects);
+
+    O::list_mut(objects).insert_loaded(ptr, object);
 }
 
 impl<P: Project> ObjectKind<P> {
@@ -46,7 +66,7 @@ impl<P: Project> ObjectKind<P> {
             save_modifications: |file, objects| {
                 for modified in &mut O::list(objects).modified.iter() {
                     if let Some(object) = O::list(objects).get(*modified) {
-                        let object_data = object.serialize(&SerializationContext::shallow());
+                        let object_data = object.serialize(&SerializationContext::new());
                         if let Some(ptr) = file.get_ptr(modified.key) {
                             file.write(ptr, &object_data);
                         }
@@ -81,15 +101,15 @@ impl<P: Project> ObjectKind<P> {
                 load_object::<O>(file, objects, key);
             },
             load_object_from_message: |objects, key, data| {
-                if let Some(obj) = O::deserialize(data, &mut DeserializationContext::collab(objects)) {
+                if let Some(obj) = O::deserialize(data, &mut DeserializationContext::new()) {
                     O::list_mut(objects).insert_loaded(Ptr::from_key(key), obj);
                 }
             },
             load_failed: |objects, key| {
                 O::list_mut(objects).mark_deleted(Ptr::from_key(key));
             },
-            serialize_object: |objects, key| {
-                O::list(objects).get(Ptr::from_key(key)).map(|data| data.serialize(&SerializationContext::deep(objects).with_stored(key)))
+            serialize_object: |objects, key, context| {
+                O::list(objects).get(Ptr::from_key(key)).map(|data| data.serialize(context))
             },
             #[cfg(debug_assertions)]
             type_id: || TypeId::of::<O>(),

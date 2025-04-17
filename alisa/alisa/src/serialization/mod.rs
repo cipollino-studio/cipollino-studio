@@ -1,7 +1,5 @@
 
-use std::{cell::RefCell, collections::HashSet};
-
-use crate::{File, Project};
+use std::cell::RefCell;
 
 mod binary;
 pub use binary::*;
@@ -11,102 +9,58 @@ mod serialization_impls;
 mod loading_ptr;
 pub use loading_ptr::*;
 
-enum DeserializationContextKind<'a, P: Project> {
-    Local {
-        file: &'a mut File,
-        objects: &'a mut P::Objects,
-    },
-    Collab {
-        objects: &'a mut P::Objects,
-    },
-    Data
+pub struct DeserializationContext {
+    pub(crate) load_requests: Vec<(u16, u64)>,
 }
 
-pub struct DeserializationContext<'a, P: Project> {
-    kind: DeserializationContextKind<'a, P>,
-    /// The keys of the objects already loaded
-    loaded: HashSet<u64>,
-}
+impl DeserializationContext {
 
-impl<'a, P: Project> DeserializationContext<'a, P> {
-
-    pub(crate) fn local(objects: &'a mut P::Objects, file: &'a mut File) -> Self {
+    pub(crate) fn new() -> Self {
         Self {
-            kind: DeserializationContextKind::Local {
-                file,
-                objects
-            },
-            loaded: HashSet::new(),
+            load_requests: Vec::new(),
         }
-    }
+    } 
 
-    pub(crate) fn collab(objects: &'a mut P::Objects) -> Self {
-        Self {
-            kind: DeserializationContextKind::Collab {
-                objects,
-            },
-            loaded: HashSet::new()
-        }
-    }
-
-    pub(crate) fn data() -> Self {
-        Self {
-            kind: DeserializationContextKind::Data,
-            loaded: HashSet::new(),
-        }
+    pub(crate) fn request_load(&mut self, obj_type: u16, key: u64) {
+        self.load_requests.push((obj_type, key));
     }
 
 }
 
-enum SerializationContextKind<'a, P: Project> {
-    Shallow,
-    Deep {
-        objects: &'a P::Objects,
-    },
+pub struct SerializationContext {
+    serialization_requests: RefCell<Vec<(u16, u64)>>,
 }
 
-pub struct SerializationContext<'a, P: Project> {
-    kind: SerializationContextKind<'a, P>,
-    /// The keys of the objects already stored
-    stored: RefCell<HashSet<u64>>,
-}
+impl SerializationContext {
 
-impl<'a, P: Project> SerializationContext<'a, P> {
-
-    pub(crate) fn shallow() -> Self {
+    pub(crate) fn new() -> Self {
         Self {
-            kind: SerializationContextKind::Shallow,
-            stored: RefCell::new(HashSet::new()),
+            serialization_requests: RefCell::new(Vec::new())
         }
+    } 
+
+    /// Request that another object also be serialized and sent to the client
+    pub(crate) fn request_serialize(&self, obj_type: u16, key: u64) {
+        self.serialization_requests.borrow_mut().push((obj_type, key));
     }
 
-    pub(crate) fn deep(objects: &'a P::Objects) -> Self {
-        Self {
-            kind: SerializationContextKind::Deep {
-                objects
-            },
-            stored: RefCell::new(HashSet::new()),
-        }
-    }
-
-    pub(crate) fn with_stored(self, key: u64) -> Self {
-        self.stored.borrow_mut().insert(key);
-        self
+    pub(crate) fn take_serialization_requests(self) -> Vec<(u16, u64)> {
+        self.serialization_requests.take()
     }
 
 }
 
-pub trait Serializable<P: Project>: Sized {
+pub trait Serializable: Sized {
 
-    fn serialize(&self, context: &SerializationContext<P>) -> rmpv::Value; 
-    fn deserialize(data: &rmpv::Value, context: &mut DeserializationContext<P>) -> Option<Self>;
+    fn serialize(&self, context: &SerializationContext) -> rmpv::Value; 
+    fn deserialize(data: &rmpv::Value, context: &mut DeserializationContext) -> Option<Self>;
 
     fn shallow_serialize(&self) -> rmpv::Value {
-        self.serialize(&SerializationContext::shallow())
+        self.serialize(&SerializationContext::new())
     }
 
     fn data_deserialize(data: &rmpv::Value) -> Option<Self> {
-        Self::deserialize(data, &mut DeserializationContext::data())
+        Self::deserialize(data, &mut DeserializationContext::new())
     }
 
 }

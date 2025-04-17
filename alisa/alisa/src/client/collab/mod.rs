@@ -94,7 +94,20 @@ impl<P: Project> Client<P> {
         welcome_data.as_map()?;
         let project_data = rmpv_get(welcome_data, "project")?;
         let mut objects = P::Objects::default();
-        let project = P::deserialize(project_data, &mut DeserializationContext::collab(&mut objects))?;
+        let project = P::deserialize(project_data, &mut DeserializationContext::new())?;
+
+        for object_data in rmpv_get(welcome_data, "objects")?.as_array()? {
+            let Some(object_name) = rmpv_get(object_data, "object").and_then(rmpv::Value::as_str) else { continue; };
+            let Some(key) = rmpv_get(object_data, "key").and_then(rmpv::Value::as_u64) else { continue; };
+            let Some(data) = rmpv_get(object_data, "data") else { continue; };
+
+            for object_kind in P::OBJECTS {
+                if object_kind.name == object_name {
+                    (object_kind.load_object_from_message)(&mut objects, key, data);
+                }
+            }
+        }
+
         Some(Self {
             kind: ClientKind::Collab(Collab::new()),
             project,

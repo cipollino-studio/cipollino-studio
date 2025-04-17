@@ -1,6 +1,5 @@
 
 use alisa::Serializable;
-use dummy_project::DummyProject;
 
 mod dummy_project;
 
@@ -23,7 +22,7 @@ fn serialize_struct() {
         yes: false,
     };
 
-    assert_eq!(Serializable::<DummyProject>::shallow_serialize(&my_struct), rmpv::Value::Map(vec![
+    assert_eq!(my_struct.shallow_serialize(), rmpv::Value::Map(vec![
         ("num".into(), 321.into()),
         ("yes".into(), false.into())
     ]));
@@ -36,11 +35,11 @@ fn deserialize_struct() {
         ("yes".into(), false.into())
     ]);
 
-    let my_struct: MyStruct = Serializable::<DummyProject>::data_deserialize(&data).unwrap(); 
+    let my_struct = MyStruct::data_deserialize(&data).unwrap(); 
 
     assert_eq!(my_struct, MyStruct { num: 321, yes: false });
 
-    let my_default_struct: MyStruct = Serializable::<DummyProject>::data_deserialize(&rmpv::Value::Nil).unwrap();
+    let my_default_struct: MyStruct = MyStruct::data_deserialize(&rmpv::Value::Nil).unwrap();
     assert_eq!(my_default_struct, MyStruct::default());
 }
 
@@ -56,17 +55,17 @@ enum MyEnum {
 
 #[test]
 fn serialize_enum() {
-    assert_eq!(Serializable::<DummyProject>::shallow_serialize(&MyEnum::Unit), rmpv::Value::Array(vec![
+    assert_eq!(MyEnum::Unit.shallow_serialize(), rmpv::Value::Array(vec![
         "Unit".into()
     ]));
 
-    assert_eq!(Serializable::<DummyProject>::shallow_serialize(&MyEnum::Unnamed(123, true)), rmpv::Value::Array(vec![
+    assert_eq!(MyEnum::Unnamed(123, true).shallow_serialize(), rmpv::Value::Array(vec![
         "Unnamed".into(),
         123.into(),
         true.into()
     ]));
 
-    assert_eq!(Serializable::<DummyProject>::shallow_serialize(&MyEnum::Named { num: 123, yes: true }), rmpv::Value::Array(vec![
+    assert_eq!(MyEnum::Named { num: 123, yes: true }.shallow_serialize(), rmpv::Value::Array(vec![
         "Named".into(),
         rmpv::Value::Map(vec![
             ("num".into(), 123.into()),
@@ -80,7 +79,7 @@ fn deserialize_enum() {
     let unit_data = rmpv::Value::Array(vec![
         "Unit".into()
     ]);
-    let unit: MyEnum = Serializable::<DummyProject>::data_deserialize(&unit_data).unwrap();
+    let unit = MyEnum::data_deserialize(&unit_data).unwrap();
     assert_eq!(unit, MyEnum::Unit);
 
     let unnamed_data = rmpv::Value::Array(vec![
@@ -88,7 +87,7 @@ fn deserialize_enum() {
         123.into(),
         true.into()
     ]);
-    let unnamed: MyEnum = Serializable::<DummyProject>::data_deserialize(&unnamed_data).unwrap();
+    let unnamed = MyEnum::data_deserialize(&unnamed_data).unwrap();
     assert_eq!(unnamed, MyEnum::Unnamed(123, true));
 
     let named_data = rmpv::Value::Array(vec![
@@ -98,9 +97,9 @@ fn deserialize_enum() {
             ("yes".into(), true.into())
         ])
     ]);
-    let named: MyEnum = Serializable::<DummyProject>::data_deserialize(&named_data).unwrap();
+    let named = MyEnum::data_deserialize(&named_data).unwrap();
     assert_eq!(named, MyEnum::Named { num: 123, yes: true });
 
-    let nothing: Option<MyEnum> = Serializable::<DummyProject>::data_deserialize(&rmpv::Value::Nil);
+    let nothing = MyEnum::data_deserialize(&rmpv::Value::Nil);
     assert_eq!(None, nothing);
 }
