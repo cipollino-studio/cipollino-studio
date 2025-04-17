@@ -2,7 +2,6 @@
 use crate::{Clip, ClipInner, CreateClip, CreateClipInner, CreateFolder, CreateFrame, CreateLayer, CreateStroke, DeleteClip, DeleteFolder, DeleteFrame, DeleteLayer, DeleteStroke, Folder, Frame, Layer, RenameClip, RenameFolder, SetClipInnerFramerate, SetClipInnerHeight, SetClipInnerLength, SetClipInnerWidth, SetFrameTime, SetLayerName, SetStrokeColor, SetStrokeStroke, Stroke, TransferClip, TransferFolder, TransferLayer};
 
 #[derive(alisa::Serializable, Clone)]
-#[project(Project)]
 pub struct Project {
     pub folders: alisa::UnorderedChildList<alisa::LoadingPtr<Folder>>,
     pub clips: alisa::UnorderedChildList<alisa::LoadingPtr<Clip>>,
@@ -70,12 +69,12 @@ impl alisa::Project for Project {
     }
 
     const OBJECTS: &'static [alisa::ObjectKind<Self>] = &[
-        alisa::ObjectKind::from::<Folder>(),
+        alisa::ObjectKind::from::<Stroke>(),
+        alisa::ObjectKind::from::<Frame>(),
+        alisa::ObjectKind::from::<Layer>(),
         alisa::ObjectKind::from::<Clip>(),
         alisa::ObjectKind::from::<ClipInner>(),
-        alisa::ObjectKind::from::<Layer>(),
-        alisa::ObjectKind::from::<Frame>(),
-        alisa::ObjectKind::from::<Stroke>(),
+        alisa::ObjectKind::from::<Folder>(),
     ];
 
     const OPERATIONS: &'static [alisa::OperationKind<Self>] = &[

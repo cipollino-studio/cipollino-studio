@@ -107,7 +107,7 @@ impl Server {
         server.clients.remove(&client_id);
 
         // Tell the other clients this client disconnected
-        for (other_client, client) in &mut server.clients {
+        for (_other_client, client) in &mut server.clients {
             client.send(rmpv::Value::Map(vec![
                 ("type".into(), "disconnect".into()),
                 ("client".into(), client_id.0.into()),

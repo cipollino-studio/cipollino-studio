@@ -4,7 +4,6 @@ use super::{LayerChildPtr, LayerChildList, LayerParent, LayerType};
 
 
 #[derive(alisa::Serializable, Clone)]
-#[project(Project)]
 pub struct Layer {
     pub parent: LayerParent,
 
@@ -29,6 +28,7 @@ impl alisa::Object for Layer {
     type Project = Project;
 
     const NAME: &'static str = "Layer";
+    const TYPE_ID: u16 = 2;
 
     fn list(objects: &Objects) -> &alisa::ObjList<Self> {
         &objects.layers
@@ -40,7 +40,6 @@ impl alisa::Object for Layer {
 }
 
 #[derive(alisa::Serializable)]
-#[project(Project)]
 pub struct LayerTreeData {
     pub name: String,
     pub frames: alisa::UnorderedChildListTreeData<alisa::LoadingPtr<Frame>>

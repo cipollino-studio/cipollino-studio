@@ -4,7 +4,6 @@ use crate::{frame::find_frame_at_time, Layer, Project};
 use super::{Frame, FrameTreeData};
 
 #[derive(alisa::Serializable, Default)]
-#[project(Project)]
 pub struct CreateFrame {
     pub ptr: alisa::Ptr<Frame>,
     pub layer: alisa::Ptr<Layer>,
@@ -12,7 +11,6 @@ pub struct CreateFrame {
 }
 
 #[derive(alisa::Serializable, Default)]
-#[project(Project)]
 pub struct DeleteFrame {
     pub ptr: alisa::Ptr<Frame>
 }

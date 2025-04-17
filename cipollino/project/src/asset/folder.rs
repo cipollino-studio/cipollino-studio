@@ -6,7 +6,6 @@ use crate::{asset_creation_operations, asset_rename_operation, rectify_name_dupl
 use super::deep_load_clip;
 
 #[derive(alisa::Serializable, Clone)]
-#[project(Project)]
 pub struct Folder {
     pub parent: alisa::Ptr<Folder>,
     pub name: String,
@@ -32,6 +31,7 @@ impl alisa::Object for Folder {
     type Project = Project;
 
     const NAME: &'static str = "Folder";
+    const TYPE_ID: u16 = 5;
 
     fn list(objects: &Objects) -> &alisa::ObjList<Folder> {
         &objects.folders
@@ -43,7 +43,6 @@ impl alisa::Object for Folder {
 }
 
 #[derive(alisa::Serializable)]
-#[project(Project)]
 pub struct FolderTreeData {
     pub name: String,
     pub folders: alisa::UnorderedChildListTreeData<alisa::LoadingPtr<Folder>>,
@@ -164,7 +163,6 @@ asset_rename_operation!(Folder);
     could be transferred into a child folder, which should be impossible.
 */
 #[derive(alisa::Serializable)]
-#[project(Project)]
 pub struct TransferFolder {
     pub ptr: alisa::Ptr<Folder>,
     pub new_parent: alisa::Ptr<Folder>

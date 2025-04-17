@@ -22,9 +22,9 @@ fn decode_stroke_point(floats: &[f32]) -> Option<malvina::StrokePoint> {
     })
 }
 
-impl<P: alisa::Project> alisa::Serializable<P> for StrokeData {
+impl alisa::Serializable for StrokeData {
 
-    fn serialize(&self, _context: &alisa::SerializationContext<P>) -> alisa::rmpv::Value {
+    fn serialize(&self, _context: &alisa::SerializationContext) -> alisa::rmpv::Value {
         let stroke = &self.0;
         let mut buffer = Vec::new();
         for pt in &stroke.path.pts {
@@ -35,7 +35,7 @@ impl<P: alisa::Project> alisa::Serializable<P> for StrokeData {
         alisa::rmpv::Value::Binary(buffer)
     }
 
-    fn deserialize(data: &alisa::rmpv::Value, _context: &mut alisa::DeserializationContext<P>) -> Option<Self> {
+    fn deserialize(data: &alisa::rmpv::Value, _context: &mut alisa::DeserializationContext) -> Option<Self> {
         if !data.is_bin() {
             return None;
         }
@@ -66,7 +66,6 @@ impl<P: alisa::Project> alisa::Serializable<P> for StrokeData {
 }
 
 #[derive(Clone, alisa::Serializable)]
-#[project(Project)]
 pub struct Stroke {
     pub frame: alisa::Ptr<Frame>,
     pub stroke: StrokeData,
@@ -90,6 +89,7 @@ impl Default for Stroke {
 impl alisa::Object for Stroke {
     type Project = Project;
     const NAME: &'static str = "Stroke";
+    const TYPE_ID: u16 = 0;
 
     fn list(objects: &Objects) -> &alisa::ObjList<Self> {
         &objects.strokes

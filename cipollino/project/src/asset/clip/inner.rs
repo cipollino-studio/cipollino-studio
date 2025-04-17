@@ -7,7 +7,6 @@ use super::Clip;
 /// This is split into a separate object from Clip because we still need to load some basic 
 /// information about the clip to render the assets panel(e.g the name of the clip).
 #[derive(alisa::Serializable, Clone)]
-#[project(Project)]
 pub struct ClipInner {
     pub layers: LayerChildList,
 
@@ -36,6 +35,7 @@ impl alisa::Object for ClipInner {
     type Project = Project;
 
     const NAME: &'static str = "ClipInner";
+    const TYPE_ID: u16 = 4;
 
     fn list(objects: &Objects) -> &alisa::ObjList<Self> {
         &objects.clip_inners
@@ -66,7 +66,6 @@ impl ClipInner {
 }
 
 #[derive(alisa::Serializable, Default)]
-#[project(Project)]
 pub struct CreateClipInner {
     pub clip: alisa::Ptr<Clip>,
     pub inner: alisa::Ptr<ClipInner>

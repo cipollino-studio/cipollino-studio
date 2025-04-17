@@ -8,7 +8,6 @@ mod set_time;
 pub use set_time::*;
 
 #[derive(alisa::Serializable, Clone)]
-#[project(Project)]
 pub struct Frame {
     pub layer: alisa::Ptr<Layer>,
     pub time: i32,
@@ -29,6 +28,7 @@ impl alisa::Object for Frame {
     type Project = Project;
 
     const NAME: &'static str = "Frame";
+    const TYPE_ID: u16 = 1;
 
     fn list(objects: &Objects) -> &alisa::ObjList<Self> {
         &objects.frames
@@ -41,7 +41,6 @@ impl alisa::Object for Frame {
 }
 
 #[derive(alisa::Serializable)]
-#[project(Project)]
 pub struct FrameTreeData {
     pub time: i32,
     pub scene: alisa::ChildListTreeData<SceneChildPtr>

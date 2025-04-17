@@ -5,7 +5,6 @@ macro_rules! asset_rename_operation {
         alisa::paste::paste! {
 
             #[derive(alisa::Serializable)]
-            #[project(crate::Project)]
             pub struct [< Rename $asset:camel >] {
                 pub ptr: alisa::Ptr<$asset>,
                 pub name: String

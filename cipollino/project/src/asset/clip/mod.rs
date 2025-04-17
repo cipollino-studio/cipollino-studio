@@ -5,7 +5,6 @@ mod inner;
 pub use inner::*;
 
 #[derive(alisa::Serializable, Clone)]
-#[project(Project)]
 pub struct Clip {
     pub folder: alisa::Ptr<Folder>,
 
@@ -31,6 +30,7 @@ impl alisa::Object for Clip {
     type Project = Project;
 
     const NAME: &'static str = "Clip";
+    const TYPE_ID: u16 = 3;
 
     fn list(objects: &Objects) -> &alisa::ObjList<Self> {
         &objects.clips
@@ -42,7 +42,6 @@ impl alisa::Object for Clip {
 }
 
 #[derive(alisa::Serializable)]
-#[project(Project)]
 pub struct ClipTreeData {
     pub name: String,
     pub length: u32,

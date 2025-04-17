@@ -6,7 +6,6 @@ use alisa::{Object, Recorder, TreeObj};
 pub use layer::*;
 
 #[derive(Clone, Copy, alisa::Serializable)]
-#[project(Project)]
 pub enum LayerParent {
     Clip(alisa::Ptr<Clip>)
 }
@@ -40,7 +39,6 @@ impl LayerParent {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, alisa::Serializable)]
-#[project(Project)]
 pub enum LayerChildPtr {
     Layer(alisa::LoadingPtr<Layer>)
 }
@@ -59,7 +57,6 @@ impl LayerChildPtr {
 }
 
 #[derive(alisa::Serializable)]
-#[project(Project)]
 enum LayerChildTreeData {
     Layer(alisa::Ptr<Layer>, <Layer as alisa::TreeObj>::TreeData)
 }
@@ -71,7 +68,6 @@ trait LayerType: alisa::Object {
 }
 
 #[derive(Default, alisa::Serializable, Clone)]
-#[project(Project)]
 pub struct LayerChildList {
     children: Vec<LayerChildPtr>
 }
@@ -149,7 +145,6 @@ impl LayerChildList {
 }
 
 #[derive(Default, alisa::Serializable)]
-#[project(Project)]
 pub struct LayerChildListTreeData {
     children: Vec<LayerChildTreeData>
 }

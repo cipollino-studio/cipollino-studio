@@ -4,7 +4,6 @@ use crate::{frame::find_frame_at_time, Layer, Project};
 use super::{Frame, FrameTreeData};
 
 #[derive(alisa::Serializable, Default)]
-#[project(Project)]
 pub struct SetFrameTime {
     pub frame: alisa::Ptr<Frame>,
     pub new_time: i32,

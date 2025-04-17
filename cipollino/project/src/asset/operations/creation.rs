@@ -5,7 +5,6 @@ macro_rules! asset_creation_operations {
         alisa::paste::paste! {
 
             #[derive(alisa::Serializable, Default)]
-            #[project(crate::Project)]
             pub struct [< Create $asset:camel >] {
                 pub ptr: alisa::Ptr<$asset>,
                 pub parent: alisa::Ptr<crate::Folder>,
@@ -13,7 +12,6 @@ macro_rules! asset_creation_operations {
             }
 
             #[derive(alisa::Serializable, Default)]
-            #[project(crate::Project)]
             pub struct [< Delete $asset:camel >] {
                 pub ptr: alisa::Ptr<$asset>
             }

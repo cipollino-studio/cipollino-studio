@@ -1,8 +1,9 @@
 
 use std::path::PathBuf;
 
+use alisa::Serializable;
 use project::alisa::rmpv;
-use project::{deep_load_clip, Client, Frame, Project, Ptr, Stroke};
+use project::{deep_load_clip, Client, Frame, Ptr, Stroke};
 
 use crate::splash::SplashScreen;
 use crate::{AppState, AppSystems, DockingLayoutPref, EditorPanel, PanelContext};
@@ -74,7 +75,7 @@ impl Editor {
                 let Some(client_id) = alisa::rmpv_get(msg, "client") else { return; };
                 let Some(client_id) = client_id.as_u64() else { return; }; 
                 let Some(data) = alisa::rmpv_get(msg, "data") else { return; };
-                let Some(data) = <PresenceData as alisa::Serializable<Project>>::data_deserialize(data) else { return; };
+                let Some(data) = PresenceData::data_deserialize(data) else { return; };
                 state.editor.other_clients.insert(client_id, data);
                 return;
             }

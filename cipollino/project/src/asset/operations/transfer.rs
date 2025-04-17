@@ -5,7 +5,6 @@ macro_rules! asset_transfer_operation {
         alisa::paste::paste! {
 
             #[derive(alisa::Serializable)]
-            #[project(crate::Project)]
             pub struct [< Transfer $asset:camel >] {
                 pub ptr: alisa::Ptr<$asset>,
                 pub new_folder: alisa::Ptr<crate::Folder>

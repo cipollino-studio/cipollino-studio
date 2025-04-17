@@ -1,12 +1,11 @@
 
-use alisa::rmpv;
+use alisa::{rmpv, Serializable};
 use pierro::ColorSpace;
-use project::{Clip, Project, Ptr};
+use project::{Clip, Ptr};
 
 use super::Socket;
 
 #[derive(alisa::Serializable)]
-#[project(Project)]
 pub struct PresenceData {
     pub open_clip: Ptr<Clip>,
     pub mouse_pos: Option<[f32; 2]>
@@ -63,7 +62,7 @@ impl Presence {
             return;
         }
 
-        let data = <PresenceData as alisa::Serializable<Project>>::shallow_serialize(&self.data);
+        let data = self.data.shallow_serialize();
         socket.send(rmpv::Value::Map(vec![
             ("type".into(), "presence".into()),
             ("data".into(), data)

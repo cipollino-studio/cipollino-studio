@@ -5,7 +5,6 @@ pub use stroke::*;
 use crate::{Frame, Objects, Project};
 
 #[derive(Clone, Copy, PartialEq, Eq, alisa::Serializable)]
-#[project(Project)]
 pub enum SceneChildPtr {
     Stroke(alisa::LoadingPtr<Stroke>)
 }
@@ -19,7 +18,6 @@ impl From<alisa::Ptr<Stroke>> for SceneChildPtr {
 }
 
 #[derive(alisa::Serializable)]
-#[project(Project)]
 pub enum SceneChildTreeData {
     Stroke(StrokeTreeData)
 }
