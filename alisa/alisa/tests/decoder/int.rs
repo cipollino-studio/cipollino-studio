@@ -22,6 +22,8 @@ fn int_small() {
 
     assert!(value_skipped(positive_int_bytes));
 
+    assert_eq!(alisa::parse_abf(positive_int_bytes), Some(alisa::ABFNode::PositiveInt(56)));
+
 }
 
 #[test]
@@ -44,6 +46,7 @@ fn int_i8() {
     assert_eq!(decoder.read_i64(), Some(-2));
 
     assert!(value_skipped(i8_bytes));
+    assert_eq!(alisa::parse_abf(i8_bytes), Some(alisa::ABFNode::I8(-2)));
 
 }
 
@@ -66,6 +69,7 @@ fn int_i16() {
     assert_eq!(decoder.read_i64(), Some(259));
 
     assert!(value_skipped(i16_bytes));
+    assert_eq!(alisa::parse_abf(i16_bytes), Some(alisa::ABFNode::I16(259)));
 
 }
 
@@ -87,6 +91,7 @@ fn int_i32() {
     assert_eq!(decoder.read_i64(), Some(65793));
 
     assert!(value_skipped(i32_bytes));
+    assert_eq!(alisa::parse_abf(i32_bytes), Some(alisa::ABFNode::I32(65793)));
 
 }
 
@@ -107,5 +112,6 @@ fn int_i64() {
     assert_eq!(decoder.read_i64(), Some(4295033089));
 
     assert!(value_skipped(i64_bytes));
+    assert_eq!(alisa::parse_abf(i64_bytes), Some(alisa::ABFNode::I64(4295033089)));
 
 }

@@ -37,13 +37,19 @@ fn u8_array() {
 
     assert!(value_skipped(u8_array_bytes));
 
+    assert_eq!(alisa::parse_abf(u8_array_bytes), Some(alisa::ABFNode::Array(Box::new([
+        alisa::ABFNode::PositiveInt(1),
+        alisa::ABFNode::PositiveInt(2),
+        alisa::ABFNode::PositiveInt(3),
+    ]))));
+
 }
 
 #[test]
 fn u16_array() {
 
-    let u8_array_bytes = &[0b11010011, 3, 0, 1, 2, 3];
-    let mut decoder = alisa::Decoder::new(u8_array_bytes);
+    let u16_array_bytes = &[0b11010011, 3, 0, 1, 2, 3];
+    let mut decoder = alisa::Decoder::new(u16_array_bytes);
     assert!(decoder.is_array());
     assert_eq!(decoder.read_array_length(), Some(3));
     assert!(decoder.is_u8());
@@ -54,15 +60,21 @@ fn u16_array() {
     assert_eq!(decoder.read_u8(), Some(3));
     assert!(decoder.done());
 
-    assert!(value_skipped(u8_array_bytes));
+    assert!(value_skipped(u16_array_bytes));
+
+    assert_eq!(alisa::parse_abf(u16_array_bytes), Some(alisa::ABFNode::Array(Box::new([
+        alisa::ABFNode::PositiveInt(1),
+        alisa::ABFNode::PositiveInt(2),
+        alisa::ABFNode::PositiveInt(3),
+    ]))));
 
 }
 
 #[test]
 fn u32_array() {
 
-    let u8_array_bytes = &[0b11010100, 3, 0, 0, 0, 1, 2, 3];
-    let mut decoder = alisa::Decoder::new(u8_array_bytes);
+    let u32_array_bytes = &[0b11010100, 3, 0, 0, 0, 1, 2, 3];
+    let mut decoder = alisa::Decoder::new(u32_array_bytes);
     assert!(decoder.is_array());
     assert_eq!(decoder.read_array_length(), Some(3));
     assert!(decoder.is_u8());
@@ -73,6 +85,12 @@ fn u32_array() {
     assert_eq!(decoder.read_u8(), Some(3));
     assert!(decoder.done());
 
-    assert!(value_skipped(u8_array_bytes));
+    assert!(value_skipped(u32_array_bytes));
+
+    assert_eq!(alisa::parse_abf(u32_array_bytes), Some(alisa::ABFNode::Array(Box::new([
+        alisa::ABFNode::PositiveInt(1),
+        alisa::ABFNode::PositiveInt(2),
+        alisa::ABFNode::PositiveInt(3),
+    ]))));
 
 }

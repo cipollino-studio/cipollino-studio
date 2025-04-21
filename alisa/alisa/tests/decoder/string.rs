@@ -9,6 +9,7 @@ fn small_string() {
     assert!(decoder.is_string());
     assert_eq!(decoder.read_string(), Some("ABC"));
     assert!(value_skipped(small_string_bytes));
+    assert_eq!(alisa::parse_abf(small_string_bytes), Some(alisa::ABFNode::Str("ABC".into())));
 
 }
 
@@ -20,6 +21,7 @@ fn string_u8() {
     assert!(decoder.is_string());
     assert_eq!(decoder.read_string(), Some("ABC"));
     assert!(value_skipped(u8_string_bytes));
+    assert_eq!(alisa::parse_abf(u8_string_bytes), Some(alisa::ABFNode::Str("ABC".into())));
 
 }
 
@@ -31,6 +33,8 @@ fn string_u16() {
     assert!(decoder.is_string());
     assert_eq!(decoder.read_string(), Some("ABC"));
     assert!(value_skipped(u16_string_bytes));
+    assert_eq!(alisa::parse_abf(u16_string_bytes), Some(alisa::ABFNode::Str("ABC".into())));
+
 
 }
 
@@ -42,6 +46,7 @@ fn string_u32() {
     assert!(decoder.is_string());
     assert_eq!(decoder.read_string(), Some("ABC"));
     assert!(value_skipped(u32_string_bytes));
+    assert_eq!(alisa::parse_abf(u32_string_bytes), Some(alisa::ABFNode::Str("ABC".into())));
 
 }
 
@@ -53,5 +58,6 @@ fn invalid_utf8() {
     assert!(decoder.is_string());
     assert_eq!(decoder.read_string(), None);
     assert!(value_skipped(small_string_bytes));
+    assert_eq!(alisa::parse_abf(small_string_bytes), None);
 
 }

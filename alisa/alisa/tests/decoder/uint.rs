@@ -22,6 +22,8 @@ fn uint_small() {
 
     assert!(value_skipped(positive_int_bytes));
 
+    assert_eq!(alisa::parse_abf(positive_int_bytes), Some(alisa::ABFNode::PositiveInt(56)));
+
 }
 
 #[test]
@@ -45,6 +47,8 @@ fn uint_u8() {
 
     assert!(value_skipped(u8_bytes));
 
+    assert_eq!(alisa::parse_abf(u8_bytes), Some(alisa::ABFNode::U8(254)));
+
 }
 
 #[test]
@@ -67,6 +71,8 @@ fn uint_u16() {
 
     assert!(value_skipped(u16_bytes));
 
+    assert_eq!(alisa::parse_abf(u16_bytes), Some(alisa::ABFNode::U16(259)));
+
 }
 
 #[test]
@@ -88,6 +94,8 @@ fn uint_u32() {
 
     assert!(value_skipped(u32_bytes));
 
+    assert_eq!(alisa::parse_abf(u32_bytes), Some(alisa::ABFNode::U32(65793)));
+
 }
 
 #[test]
@@ -107,5 +115,7 @@ fn uint_u64() {
     assert_eq!(decoder.read_u64(), Some(4295033089));
 
     assert!(value_skipped(u64_bytes));
+
+    assert_eq!(alisa::parse_abf(u64_bytes), Some(alisa::ABFNode::U64(4295033089)));
 
 }

@@ -10,6 +10,8 @@ fn binary_u8() {
     assert_eq!(decoder.read_binary(), Some(b"ABC".as_slice()));
     assert!(value_skipped(u8_binary_bytes));
 
+    assert_eq!(alisa::parse_abf(u8_binary_bytes), Some(alisa::ABFNode::Binary(Box::new([65, 66, 67]))));
+
 }
 
 #[test]
@@ -21,6 +23,8 @@ fn binary_u16() {
     assert_eq!(decoder.read_binary(), Some(b"ABC".as_slice()));
     assert!(value_skipped(u16_binary_bytes));
 
+    assert_eq!(alisa::parse_abf(u16_binary_bytes), Some(alisa::ABFNode::Binary(Box::new([65, 66, 67]))));
+
 }
 
 #[test]
@@ -31,5 +35,7 @@ fn binary_u32() {
     assert!(decoder.is_binary());
     assert_eq!(decoder.read_binary(), Some(b"ABC".as_slice()));
     assert!(value_skipped(u32_binary_bytes));
+
+    assert_eq!(alisa::parse_abf(u32_binary_bytes), Some(alisa::ABFNode::Binary(Box::new([65, 66, 67]))));
 
 }

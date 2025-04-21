@@ -9,6 +9,7 @@ fn f32() {
     assert!(decoder.is_f32());
     assert_eq!(decoder.read_f32(), Some(0.0));
     assert!(value_skipped(f32_bytes));
+    assert_eq!(alisa::parse_abf(f32_bytes), Some(alisa::ABFNode::F32(0.0)));
 
 }
 
@@ -20,5 +21,6 @@ fn f64() {
     assert!(decoder.is_f64());
     assert_eq!(decoder.read_f64(), Some(0.0));
     assert!(value_skipped(f64_bytes));
+    assert_eq!(alisa::parse_abf(f64_bytes), Some(alisa::ABFNode::F64(0.0)));
 
 }

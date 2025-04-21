@@ -9,6 +9,7 @@ fn indexed_unit_enum() {
     assert!(decoder.is_indexed_unit_enum());
     assert_eq!(decoder.read_indexed_unit_enum(), Some(2));
     assert!(value_skipped(bytes));
+    assert_eq!(alisa::parse_abf(bytes), Some(alisa::ABFNode::IndexedUnitEnum(2)));
 
 }
 
@@ -22,6 +23,7 @@ fn indexed_enum() {
     assert!(decoder.is_u8());
     assert_eq!(decoder.read_u8(), Some(5));
     assert!(value_skipped(bytes));
+    assert_eq!(alisa::parse_abf(bytes), Some(alisa::ABFNode::IndexedEnum(2, Box::new(alisa::ABFNode::PositiveInt(5)))));
 
 }
 
@@ -33,6 +35,7 @@ fn named_unit_enum_small_name() {
     assert!(decoder.is_named_unit_enum());
     assert_eq!(decoder.read_named_unit_enum(), Some("ABC"));
     assert!(value_skipped(bytes));
+    assert_eq!(alisa::parse_abf(bytes), Some(alisa::ABFNode::NamedUnitEnum("ABC".into())));
 
 }
 
@@ -44,6 +47,7 @@ fn named_unit_enum_u8_name() {
     assert!(decoder.is_named_unit_enum());
     assert_eq!(decoder.read_named_unit_enum(), Some("ABC"));
     assert!(value_skipped(bytes));
+    assert_eq!(alisa::parse_abf(bytes), Some(alisa::ABFNode::NamedUnitEnum("ABC".into())));
 
 }
 
@@ -55,6 +59,7 @@ fn named_unit_enum_u16_name() {
     assert!(decoder.is_named_unit_enum());
     assert_eq!(decoder.read_named_unit_enum(), Some("ABC"));
     assert!(value_skipped(bytes));
+    assert_eq!(alisa::parse_abf(bytes), Some(alisa::ABFNode::NamedUnitEnum("ABC".into())));
 
 }
 
@@ -79,6 +84,7 @@ fn named_enum_small_name() {
     assert!(decoder.is_u8());
     assert_eq!(decoder.read_u8(), Some(5));
     assert!(value_skipped(bytes));
+    assert_eq!(alisa::parse_abf(bytes), Some(alisa::ABFNode::NamedEnum("ABC".into(), Box::new(alisa::ABFNode::PositiveInt(5)))));
 
 }
 
@@ -92,6 +98,7 @@ fn named_enum_u8_name() {
     assert!(decoder.is_u8());
     assert_eq!(decoder.read_u8(), Some(5));
     assert!(value_skipped(bytes));
+    assert_eq!(alisa::parse_abf(bytes), Some(alisa::ABFNode::NamedEnum("ABC".into(), Box::new(alisa::ABFNode::PositiveInt(5)))));
 
 }
 
@@ -105,6 +112,7 @@ fn named_enum_u16_name() {
     assert!(decoder.is_u8());
     assert_eq!(decoder.read_u8(), Some(5));
     assert!(value_skipped(bytes));
+    assert_eq!(alisa::parse_abf(bytes), Some(alisa::ABFNode::NamedEnum("ABC".into(), Box::new(alisa::ABFNode::PositiveInt(5)))));
 
 }
 
@@ -118,5 +126,7 @@ fn named_enum_u32_name() {
     assert!(decoder.is_u8());
     assert_eq!(decoder.read_u8(), Some(5));
     assert!(value_skipped(bytes));
+    assert_eq!(alisa::parse_abf(bytes), Some(alisa::ABFNode::NamedEnum("ABC".into(), Box::new(alisa::ABFNode::PositiveInt(5)))));
+
 
 }

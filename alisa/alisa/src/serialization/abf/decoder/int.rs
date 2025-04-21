@@ -39,6 +39,18 @@ impl Decoder<'_> {
         self.peek().map(is_i64).unwrap_or(false)
     }
 
+    pub(crate) fn read_positive_int(&mut self) -> Option<u8> {
+        let first = self.peek()?;
+
+        // Positive int
+        if first & 0b10000000 == 0 {
+            self.read();
+            return Some(first as u8);
+        }
+
+        None
+    }
+
     pub fn read_i8(&mut self) -> Option<i8> {
         let first = self.peek()?;
 
