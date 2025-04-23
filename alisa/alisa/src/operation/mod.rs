@@ -1,7 +1,7 @@
 
 use std::any::{type_name, Any, TypeId};
 
-use crate::{DeserializationContext, Project, Serializable, SerializationContext};
+use crate::{ABFValue, DeserializationContext, Project, Serializable, SerializationContext};
 
 mod common;
 
@@ -46,7 +46,7 @@ pub trait OperationDyn: Send + Sync {
 
     fn perform(&self, recorder: &mut Recorder<'_, Self::Project>) -> bool;
     fn name(&self) -> &'static str;
-    fn serialize(&self) -> rmpv::Value;
+    fn serialize(&self) -> ABFValue;
 
     #[cfg(debug_assertions)]
     fn verify_operation_type(&self);
@@ -67,7 +67,7 @@ impl<O: Operation + Serializable> OperationDyn for O {
         Self::NAME
     }
 
-    fn serialize(&self) -> rmpv::Value {
+    fn serialize(&self) -> ABFValue {
         self.serialize(&SerializationContext::new())
     }
 
@@ -88,7 +88,7 @@ impl<O: Operation + Serializable> OperationDyn for O {
 /// A kind of operation, stored as a struct in `Project::OPERATIONS`.
 pub struct OperationKind<P: Project> {
     pub(crate) name: &'static str,
-    pub(crate) deserialize: fn(&rmpv::Value) -> Option<Box<dyn Any>>,
+    pub(crate) deserialize: fn(&ABFValue) -> Option<Box<dyn Any>>,
     pub(crate) perform: fn(Box<dyn Any>, &mut Recorder<'_, P>) -> bool,
 
     #[cfg(debug_assertions)]

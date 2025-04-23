@@ -37,10 +37,10 @@ fn u8_array() {
 
     assert!(value_skipped(u8_array_bytes));
 
-    assert_eq!(alisa::parse_abf(u8_array_bytes), Some(alisa::ABFNode::Array(Box::new([
-        alisa::ABFNode::PositiveInt(1),
-        alisa::ABFNode::PositiveInt(2),
-        alisa::ABFNode::PositiveInt(3),
+    assert_eq!(alisa::parse_abf(u8_array_bytes), Some(alisa::ABFValue::Array(Box::new([
+        alisa::ABFValue::PositiveInt(1),
+        alisa::ABFValue::PositiveInt(2),
+        alisa::ABFValue::PositiveInt(3),
     ]))));
 
 }
@@ -62,10 +62,10 @@ fn u16_array() {
 
     assert!(value_skipped(u16_array_bytes));
 
-    assert_eq!(alisa::parse_abf(u16_array_bytes), Some(alisa::ABFNode::Array(Box::new([
-        alisa::ABFNode::PositiveInt(1),
-        alisa::ABFNode::PositiveInt(2),
-        alisa::ABFNode::PositiveInt(3),
+    assert_eq!(alisa::parse_abf(u16_array_bytes), Some(alisa::ABFValue::Array(Box::new([
+        alisa::ABFValue::PositiveInt(1),
+        alisa::ABFValue::PositiveInt(2),
+        alisa::ABFValue::PositiveInt(3),
     ]))));
 
 }
@@ -87,10 +87,10 @@ fn u32_array() {
 
     assert!(value_skipped(u32_array_bytes));
 
-    assert_eq!(alisa::parse_abf(u32_array_bytes), Some(alisa::ABFNode::Array(Box::new([
-        alisa::ABFNode::PositiveInt(1),
-        alisa::ABFNode::PositiveInt(2),
-        alisa::ABFNode::PositiveInt(3),
+    assert_eq!(alisa::parse_abf(u32_array_bytes), Some(alisa::ABFValue::Array(Box::new([
+        alisa::ABFValue::PositiveInt(1),
+        alisa::ABFValue::PositiveInt(2),
+        alisa::ABFValue::PositiveInt(3),
     ]))));
 
 }

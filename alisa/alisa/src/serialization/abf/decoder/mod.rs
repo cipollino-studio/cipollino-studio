@@ -11,6 +11,9 @@ mod array;
 mod map;
 mod skip;
 
+mod parser;
+pub use parser::*;
+
 pub struct Decoder<'data> {
     data: &'data [u8]
 }

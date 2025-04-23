@@ -17,6 +17,7 @@ impl Decoder<'_> {
     pub fn read_obj_ptr(&mut self) -> Option<(u16, u64)> {
         let first = self.peek()?;
         if first == 0b11111101 {
+            self.read()?;
             return Some((u16::MAX, 0));
         }
 

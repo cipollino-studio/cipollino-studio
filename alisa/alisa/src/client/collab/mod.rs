@@ -3,7 +3,7 @@ use std::cell::RefCell;
 
 use keychain::KeyChain;
 
-use crate::{rmpv_get, Delta, DeserializationContext, OperationDyn, OperationSource, Project, ProjectContextMut, Recorder, UnconfirmedOperation};
+use crate::{ABFValue, Delta, DeserializationContext, OperationDyn, OperationSource, Project, ProjectContextMut, Recorder, UnconfirmedOperation};
 
 use super::{Client, ClientKind};
 
@@ -16,7 +16,7 @@ pub(crate) struct Collab<P: Project> {
     keychain: RefCell<KeyChain<2>>,
     key_request_sent: bool,
     unconfirmed_operations: Vec<UnconfirmedOperation<P>>,
-    to_send: RefCell<Vec<rmpv::Value>>
+    to_send: RefCell<Vec<ABFValue>>
 }
 
 impl<P: Project> Collab<P> {
@@ -45,9 +45,7 @@ impl<P: Project> Collab<P> {
     pub(crate) fn request_keys(&mut self) {
         let keychain = self.keychain.borrow_mut();
         if keychain.wants_keys() && !self.key_request_sent {
-            self.send_message(rmpv::Value::Map(vec![
-                ("type".into(), "key_request".into())
-            ]));
+            self.send_message(ABFValue::NamedUnitEnum("key_request".into()));
             self.key_request_sent = true;
         }
     }
@@ -59,18 +57,18 @@ impl<P: Project> Collab<P> {
     }
 
     pub(crate) fn perform_operation(&mut self, operation: Box<dyn OperationDyn<Project = P>>, delta: Delta<P>) {
-        self.send_message(rmpv::Value::Map(vec![
-            ("type".into(), "operation".into()),
-            ("operation".into(), operation.name().into()),
+        self.send_message(ABFValue::NamedEnum("operation".into(), Box::new(ABFValue::Map(Box::new([
+            ("operation".into(), ABFValue::Str(operation.name().into())),
             ("data".into(), operation.serialize())
-        ]));
+        ])))));
+
         self.unconfirmed_operations.push(UnconfirmedOperation {
             operation,
             delta
         });
     }
     
-    pub(crate) fn send_message(&self, message: rmpv::Value) {
+    pub(crate) fn send_message(&self, message: ABFValue) {
         self.to_send.borrow_mut().push(message);
     }
 
@@ -78,7 +76,7 @@ impl<P: Project> Collab<P> {
         !self.to_send.borrow().is_empty()
     } 
 
-    pub(crate) fn take_messages(&self) -> Vec<rmpv::Value> {
+    pub(crate) fn take_messages(&self) -> Vec<ABFValue> {
         std::mem::replace(&mut *self.to_send.borrow_mut(), Vec::new())
     }
 
@@ -86,20 +84,20 @@ impl<P: Project> Collab<P> {
 
 impl<P: Project> Client<P> {
 
-    pub fn collab(welcome_data: &rmpv::Value) -> Option<Self> {
+    pub fn collab(welcome_data: &ABFValue) -> Option<Self> {
 
         #[cfg(debug_assertions)]
         verify_project_type::<P>();
 
         welcome_data.as_map()?;
-        let project_data = rmpv_get(welcome_data, "project")?;
+        let project_data = welcome_data.get("project")?;
         let mut objects = P::Objects::default();
         let project = P::deserialize(project_data, &mut DeserializationContext::new())?;
 
-        for object_data in rmpv_get(welcome_data, "objects")?.as_array()? {
-            let Some(object_name) = rmpv_get(object_data, "object").and_then(rmpv::Value::as_str) else { continue; };
-            let Some(key) = rmpv_get(object_data, "key").and_then(rmpv::Value::as_u64) else { continue; };
-            let Some(data) = rmpv_get(object_data, "data") else { continue; };
+        for object_data in welcome_data.get("objects")?.as_array()? {
+            let Some(object_name) = object_data.get("object").and_then(ABFValue::as_string) else { continue; };
+            let Some(key) = object_data.get("key").and_then(ABFValue::as_u64) else { continue; };
+            let Some(data) = object_data.get("data") else { continue; };
 
             for object_kind in P::OBJECTS {
                 if object_kind.name == object_name {
@@ -119,7 +117,7 @@ impl<P: Project> Client<P> {
         })
     }
 
-    pub(crate) fn handle_operation_message(&mut self, operation_name: &str, data: &rmpv::Value, context: &mut P::Context) -> bool {
+    pub(crate) fn handle_operation_message(&mut self, operation_name: &str, data: &ABFValue, context: &mut P::Context) -> bool {
         // Find the type of operation being performed
         let Some(operation_kind) = P::OPERATIONS.iter().find(|kind| kind.name == operation_name) else {
             return false;
@@ -176,14 +174,17 @@ impl<P: Project> Client<P> {
         success
     }
 
-    pub fn receive_message(&mut self, msg: &rmpv::Value, context: &mut P::Context) -> Option<()> {
-
+    pub fn receive_message(&mut self, msg: &ABFValue, context: &mut P::Context) -> Option<()> {
         if !self.is_collab() {
             return None;
         }
 
-        let msg = msg.as_map()?;
-        let mut msg_type = "";
+        let (msg_type, data) = match msg {
+            ABFValue::NamedEnum(name, data) => (name, &**data),
+            ABFValue::NamedUnitEnum(name) => (name, &ABFValue::Map(Box::new([]))),
+            _ => return None
+        };
+        let msg = data.as_map()?;
         let mut operation_name = "";
         let mut data = None;
         let mut first = 0;
@@ -192,13 +193,9 @@ impl<P: Project> Client<P> {
         let mut object = "";
 
         for (key, val) in msg {
-            let key = key.as_str()?;
-            match key {
-                "type" => {
-                    msg_type = val.as_str()?;
-                },
+            match key.as_str() {
                 "operation" => {
-                    operation_name = val.as_str()?;
+                    operation_name = val.as_string()?;
                 },
                 "data" => {
                     data = Some(val);
@@ -213,13 +210,13 @@ impl<P: Project> Client<P> {
                     load_key = val.as_u64()?;
                 },
                 "object" => {
-                    object = val.as_str()?;
+                    object = val.as_string()?;
                 },
                 _ => {}
             }
         }
 
-        match msg_type {
+        match msg_type.as_str() {
             "confirm" => {
                 if let Some(collab) = self.kind.as_collab() {
                     // The check is necessary because an unconfirmed operation might fail after it is reapplied,

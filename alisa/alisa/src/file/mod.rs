@@ -2,7 +2,7 @@ use std::path::Path;
 
 use keymap::Keymap;
 
-use crate::{rmpv_decode, rmpv_encode, rmpv_get, DeserializationContext, Project, SerializationContext};
+use crate::{encode_abf, parse_abf, ABFValue, DeserializationContext, Project, SerializationContext};
 
 mod keymap;
 
@@ -20,11 +20,11 @@ impl File {
 
         // Load file metadata
         let root_data = file.read_root().ok()?;
-        let mut root_data = root_data.as_slice();
-        let root_data = rmpv::decode::read_value(&mut root_data).ok()?;
-        let curr_key = rmpv_get(&root_data, "curr_key")?.as_u64()?;
-        let project_ptr = rmpv_get(&root_data, "project_ptr")?.as_u64()?;
-        let keymap_ptr = rmpv_get(&root_data, "keymap_ptr")?.as_u64()?;
+        let root_data = root_data.as_slice();
+        let root_data = parse_abf(root_data)?;
+        let curr_key = root_data.get("curr_key")?.as_u64()?;
+        let project_ptr = root_data.get("project_ptr")?.as_u64()?;
+        let keymap_ptr = root_data.get("keymap_ptr")?.as_u64()?;
 
         // Initialize the keymap
         let keymap = Keymap::new(keymap_ptr); 
@@ -48,13 +48,12 @@ impl File {
     }
 
     fn write_root(file: &mut verter::File, curr_key: u64, project_ptr: u64, keymap_ptr: u64) {
-        if let Some(data) = rmpv_encode(&rmpv::Value::Map(vec![
-            ("curr_key".into(), curr_key.into()),
-            ("project_ptr".into(), project_ptr.into()),
-            ("keymap_ptr".into(), keymap_ptr.into()),
-        ])) {
-            let _ = file.write_root(&data);
-        }
+        let data = encode_abf(&ABFValue::Map(Box::new([
+            ("curr_key".into(), ABFValue::U64(curr_key)),
+            ("project_ptr".into(), ABFValue::U64(project_ptr)),
+            ("keymap_ptr".into(), ABFValue::U64(keymap_ptr)),
+        ])));
+        let _ = file.write_root(&data);
     }
 
     pub fn open<P: Project, PathRef: AsRef<Path>>(path: PathRef) -> Option<(Self, P, P::Objects, u64)> {
@@ -104,21 +103,20 @@ impl File {
         self.file.read(ptr).ok()
     }
 
-    pub fn read(&mut self, ptr: u64) -> Option<rmpv::Value> {
-        rmpv_decode(&self.read_bytes(ptr)?)
+    pub fn read(&mut self, ptr: u64) -> Option<ABFValue> {
+        let bytes = self.read_bytes(ptr)?;
+        parse_abf(&bytes)
     }
 
     pub fn write_bytes(&mut self, ptr: u64, data: &[u8]) {
         let _ = self.file.write(ptr, data);
     }
 
-    pub fn write(&mut self, ptr: u64, data: &rmpv::Value) {
-        if let Some(data) = rmpv_encode(data) {
-            self.write_bytes(ptr, &data);
-        }
+    pub fn write(&mut self, ptr: u64, data: &ABFValue) {
+        self.write_bytes(ptr, &encode_abf(data));
     }
 
-    pub fn write_project(&mut self, data: &rmpv::Value) { 
+    pub fn write_project(&mut self, data: &ABFValue) { 
         self.write(self.project_ptr, data);
     }
 

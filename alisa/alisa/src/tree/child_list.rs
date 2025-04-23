@@ -1,7 +1,6 @@
 
-use crate::{DeserializationContext, Object, Project, Ptr, Recorder, Serializable, SerializationContext};
+use crate::{ABFValue, DeserializationContext, Object, Project, Ptr, Recorder, Serializable, SerializationContext};
 use super::{ChildPtr, Children};
-
 
 #[derive(Clone)]
 pub struct ChildList<C: ChildPtr> {
@@ -36,11 +35,11 @@ impl<C: ChildPtr> Default for ChildList<C> {
 
 impl<C: ChildPtr> Serializable for ChildList<C> {
 
-    fn serialize(&self, context: &SerializationContext) -> rmpv::Value {
+    fn serialize(&self, context: &SerializationContext) -> ABFValue {
         self.children.serialize(context)
     }
 
-    fn deserialize(data: &rmpv::Value, context: &mut crate::DeserializationContext) -> Option<Self> {
+    fn deserialize(data: &ABFValue, context: &mut DeserializationContext) -> Option<Self> {
         let children = Vec::<C>::deserialize(data, context)?;
         Some(Self {
             children
@@ -113,15 +112,15 @@ impl<C: ChildPtr> Default for ChildListTreeData<C> {
 
 impl<C: ChildPtr> Serializable for ChildListTreeData<C> {
 
-    fn serialize(&self, context: &SerializationContext) -> rmpv::Value {
-        rmpv::Value::Array(
+    fn serialize(&self, context: &SerializationContext) -> ABFValue {
+        ABFValue::Array(
             self.children.iter()
-                .map(|(ptr, obj_data)| rmpv::Value::Array(vec![ptr.serialize(context), obj_data.serialize(context)]))
+                .map(|(ptr, obj_data)| ABFValue::Array(Box::new([ptr.serialize(context), obj_data.serialize(context)])))
                 .collect()
         )
     }
 
-    fn deserialize(data: &rmpv::Value, context: &mut DeserializationContext) -> Option<Self> {
+    fn deserialize(data: &ABFValue, context: &mut DeserializationContext) -> Option<Self> {
         let data = data.as_array()?;
         let mut children = Vec::new();
         for child in data {

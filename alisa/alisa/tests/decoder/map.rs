@@ -25,11 +25,11 @@ fn small_map() {
     assert!(decoder.done());
     assert!(value_skipped(bytes));
 
-    assert_eq!(alisa::parse_abf(bytes), Some(alisa::ABFNode::Map(Box::new([
-        ("ABC".into(), alisa::ABFNode::PositiveInt(1)),
-        ("AB".into(), alisa::ABFNode::PositiveInt(2)),
-        ("CD".into(), alisa::ABFNode::PositiveInt(3)),
-        ("EF".into(), alisa::ABFNode::PositiveInt(4)),
+    assert_eq!(alisa::parse_abf(bytes), Some(alisa::ABFValue::Map(Box::new([
+        ("ABC".into(), alisa::ABFValue::PositiveInt(1)),
+        ("AB".into(), alisa::ABFValue::PositiveInt(2)),
+        ("CD".into(), alisa::ABFValue::PositiveInt(3)),
+        ("EF".into(), alisa::ABFValue::PositiveInt(4)),
     ]))));
 
 }
@@ -58,11 +58,11 @@ fn u8_map() {
     assert!(decoder.done());
     assert!(value_skipped(bytes));
 
-    assert_eq!(alisa::parse_abf(bytes), Some(alisa::ABFNode::Map(Box::new([
-        ("ABC".into(), alisa::ABFNode::PositiveInt(1)),
-        ("AB".into(), alisa::ABFNode::PositiveInt(2)),
-        ("CD".into(), alisa::ABFNode::PositiveInt(3)),
-        ("EF".into(), alisa::ABFNode::PositiveInt(4)),
+    assert_eq!(alisa::parse_abf(bytes), Some(alisa::ABFValue::Map(Box::new([
+        ("ABC".into(), alisa::ABFValue::PositiveInt(1)),
+        ("AB".into(), alisa::ABFValue::PositiveInt(2)),
+        ("CD".into(), alisa::ABFValue::PositiveInt(3)),
+        ("EF".into(), alisa::ABFValue::PositiveInt(4)),
     ]))));
 
 }
@@ -91,11 +91,11 @@ fn u16_map() {
     assert!(decoder.done());
     assert!(value_skipped(bytes));
 
-    assert_eq!(alisa::parse_abf(bytes), Some(alisa::ABFNode::Map(Box::new([
-        ("ABC".into(), alisa::ABFNode::PositiveInt(1)),
-        ("AB".into(), alisa::ABFNode::PositiveInt(2)),
-        ("CD".into(), alisa::ABFNode::PositiveInt(3)),
-        ("EF".into(), alisa::ABFNode::PositiveInt(4)),
+    assert_eq!(alisa::parse_abf(bytes), Some(alisa::ABFValue::Map(Box::new([
+        ("ABC".into(), alisa::ABFValue::PositiveInt(1)),
+        ("AB".into(), alisa::ABFValue::PositiveInt(2)),
+        ("CD".into(), alisa::ABFValue::PositiveInt(3)),
+        ("EF".into(), alisa::ABFValue::PositiveInt(4)),
     ]))));
 
 }
@@ -124,11 +124,11 @@ fn u32_map() {
     assert!(decoder.done());
     assert!(value_skipped(bytes));
 
-    assert_eq!(alisa::parse_abf(bytes), Some(alisa::ABFNode::Map(Box::new([
-        ("ABC".into(), alisa::ABFNode::PositiveInt(1)),
-        ("AB".into(), alisa::ABFNode::PositiveInt(2)),
-        ("CD".into(), alisa::ABFNode::PositiveInt(3)),
-        ("EF".into(), alisa::ABFNode::PositiveInt(4)),
+    assert_eq!(alisa::parse_abf(bytes), Some(alisa::ABFValue::Map(Box::new([
+        ("ABC".into(), alisa::ABFValue::PositiveInt(1)),
+        ("AB".into(), alisa::ABFValue::PositiveInt(2)),
+        ("CD".into(), alisa::ABFValue::PositiveInt(3)),
+        ("EF".into(), alisa::ABFValue::PositiveInt(4)),
     ]))));
 
 }

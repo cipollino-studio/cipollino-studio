@@ -21,10 +21,10 @@ fn serializable_struct(strct: DataStruct, name: Ident, generics: Generics) -> pr
     quote! {
         impl alisa::Serializable for #name <#(#generics_names, )*> {
 
-            fn deserialize(data: &alisa::rmpv::Value, context: &mut alisa::DeserializationContext) -> Option<Self> {
+            fn deserialize(data: &alisa::ABFValue, context: &mut alisa::DeserializationContext) -> Option<Self> {
                 let mut result = Self::default();
                 #(
-                    if let Some(value) = alisa::rmpv_get(data, stringify!(#serializable_field_names_2)) {
+                    if let Some(value) = data.get(stringify!(#serializable_field_names_2)) {
                         if let Some(value) = <#serializable_field_types>::deserialize(value, context) { 
                             result.#serializable_field_names_2 = value;
                         }
@@ -33,10 +33,10 @@ fn serializable_struct(strct: DataStruct, name: Ident, generics: Generics) -> pr
                 Some(result)
             }
 
-            fn serialize(&self, context: &alisa::SerializationContext) -> alisa::rmpv::Value {
-                alisa::rmpv::Value::Map(vec![
+            fn serialize(&self, context: &alisa::SerializationContext) -> alisa::ABFValue {
+                alisa::ABFValue::Map(Box::new([
                     #((stringify!(#serializable_field_names).into(), self.#serializable_field_names.serialize(context)), )*
-                ])
+                ]))
             }
 
         }
@@ -49,9 +49,11 @@ fn serializable_struct(strct: DataStruct, name: Ident, generics: Generics) -> pr
 pub fn serializable(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     
-    match input.data {
+    let output = match input.data {
         syn::Data::Struct(data_struct) => serializable_struct(data_struct, input.ident, input.generics),
         syn::Data::Enum(data_enum) => enum_serialization::serializable_enum(data_enum, input.ident, input.generics),
         syn::Data::Union(_data_union) => panic!("cannot serialize union."),
-    }.into()
+    };
+
+    output.into()
 }

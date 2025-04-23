@@ -5,5 +5,6 @@ pub use encoder::*;
 mod decoder;
 pub use decoder::*;
 
-mod parser;
-pub use parser::*;
+
+mod value;
+pub use value::*;

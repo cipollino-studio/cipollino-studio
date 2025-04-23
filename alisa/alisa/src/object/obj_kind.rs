@@ -1,7 +1,7 @@
 
 use std::{any::{type_name, TypeId}, collections::HashSet};
 
-use crate::{Collab, DeserializationContext, File, Project, SerializationContext};
+use crate::{ABFValue, Collab, DeserializationContext, File, Project, SerializationContext};
 
 use super::{ObjRef, Object, Ptr};
 
@@ -14,9 +14,9 @@ pub struct ObjectKind<P: Project> {
     pub(crate) local_load_objects: fn(&mut File, &mut P::Objects),
     pub(crate) collab_load_objects: fn(&mut P::Objects, &mut Collab<P>),
     pub(crate) load_object: fn(&mut File, &mut P::Objects, u64),
-    pub(crate) load_object_from_message: fn(&mut P::Objects, u64, &rmpv::Value),
+    pub(crate) load_object_from_message: fn(&mut P::Objects, u64, &ABFValue),
     pub(crate) load_failed: fn(&mut P::Objects, u64),
-    pub(crate) serialize_object: fn(&mut P::Objects, u64, &SerializationContext) -> Option<rmpv::Value>,
+    pub(crate) serialize_object: fn(&mut P::Objects, u64, &SerializationContext) -> Option<ABFValue>,
 
     #[cfg(debug_assertions)]
     pub(crate) type_id: fn() -> TypeId,
@@ -90,11 +90,10 @@ impl<P: Project> ObjectKind<P> {
                         _ => {}
                     }
                     O::list_mut(objects).mark_loading(ptr);
-                    collab.send_message(rmpv::Value::Map(vec![
-                        ("type".into(), "load".into()),
-                        ("object".into(), O::NAME.into()),
-                        ("key".into(), ptr.key.into()),
-                    ]));
+                    collab.send_message(ABFValue::NamedEnum("load".into(), Box::new(ABFValue::Map(Box::new([
+                        ("object".into(), ABFValue::Str(O::NAME.into())),
+                        ("key".into(), ABFValue::U64(ptr.key)),
+                    ])))));
                 }
             },
             load_object: |file, objects, key| {

@@ -2,7 +2,7 @@ use std::{fmt::Debug, hash::Hash};
 
 use crate::{Object, Ptr};
 
-use super::{DeserializationContext, Serializable, SerializationContext};
+use super::{ABFValue, DeserializationContext, Serializable, SerializationContext};
 
 /// A reference to an object that indicates that the object refered to should be loaded from disk/the server when the referer is loaded. 
 #[derive(Default)]
@@ -26,17 +26,20 @@ impl<O: Object> LoadingPtr<O> {
 
 impl<O: Object> Serializable for LoadingPtr<O> {
 
-    fn deserialize(data: &rmpv::Value, context: &mut DeserializationContext) -> Option<Self> {
-        let key = data.as_u64()?; 
+    fn deserialize(data: &ABFValue, context: &mut DeserializationContext) -> Option<Self> {
+        let (obj_type, key) = data.as_obj_ptr()?; 
+        if obj_type != O::TYPE_ID {
+            return None;
+        }
         context.request_load(O::TYPE_ID, key);
         Some(Self {
             ptr: Ptr::from_key(key)
         })
     }
 
-    fn serialize(&self, context: &SerializationContext) -> rmpv::Value {
+    fn serialize(&self, context: &SerializationContext) -> ABFValue {
         context.request_serialize(O::TYPE_ID, self.ptr.key); 
-        self.ptr.key.into()
+        ABFValue::ObjPtr(O::TYPE_ID, self.ptr.key)
     }
 
 }

@@ -17,9 +17,7 @@ pub fn serializable_enum(enm: DataEnum, name: Ident, generics: Generics) -> proc
         let (field_names, serialization) = match &variant.fields {
             Fields::Unit => {
                 (quote! {}, quote!{
-                    ::alisa::rmpv::Value::Array(vec![
-                        stringify!(#variant_name).into()
-                    ])
+                    ::alisa::ABFValue::NamedUnitEnum(stringify!(#variant_name).into())
                 })
             },
             Fields::Named(named) => {
@@ -28,12 +26,12 @@ pub fn serializable_enum(enm: DataEnum, name: Ident, generics: Generics) -> proc
                 let field_names = quote! { {#(#names, )*} };
 
                 let serialization = quote! {
-                    ::alisa::rmpv::Value::Array(vec![
+                    ::alisa::ABFValue::NamedEnum(
                         stringify!(#variant_name).into(),
-                        ::alisa::rmpv::Value::Map(vec![
+                        Box::new(::alisa::ABFValue::Map(Box::new([
                             #((stringify!(#names2).into(), #names2.serialize(context)), )*
-                        ])
-                    ])
+                        ])))
+                    )
                 };
 
                 (field_names, serialization)
@@ -45,10 +43,12 @@ pub fn serializable_enum(enm: DataEnum, name: Ident, generics: Generics) -> proc
                 let field_names = quote! { (#(#names, )*) };
 
                 let serialization = quote! {
-                    ::alisa::rmpv::Value::Array(vec![
+                    ::alisa::ABFValue::NamedEnum(
                         stringify!(#variant_name).into(),
-                        #(#names2.serialize(context),)*
-                    ])
+                        Box::new(::alisa::ABFValue::Array(Box::new([
+                            #(#names2.serialize(context),)*
+                        ])))
+                    )
                 };
 
                 (field_names, serialization)
@@ -73,9 +73,10 @@ pub fn serializable_enum(enm: DataEnum, name: Ident, generics: Generics) -> proc
             },
             Fields::Unnamed(unnamed) => {
                 let n_fields = unnamed.unnamed.iter().count();
-                let idxs = 1..(n_fields + 1);
+                let idxs = 0..n_fields;
                 quote! {
-                    if data.len() < #n_fields + 1 {
+                    let data = data.as_array()?;
+                    if data.len() < #n_fields {
                         return None;
                     }
                     Some(Self::#variant_name(
@@ -86,9 +87,8 @@ pub fn serializable_enum(enm: DataEnum, name: Ident, generics: Generics) -> proc
             Fields::Named(named) => {
                 let names = named.named.iter().map(|field| field.ident.as_ref().unwrap());
                 quote! {
-                    let data = data.get(1)?;
                     Some(Self::#variant_name {
-                        #(#names: ::alisa::Serializable::deserialize(::alisa::rmpv_get(data, stringify!(#names))?, context)?, )*
+                        #(#names: ::alisa::Serializable::deserialize(data.get(stringify!(#names))?, context)?, )*
                     })
                 }
             }
@@ -104,16 +104,19 @@ pub fn serializable_enum(enm: DataEnum, name: Ident, generics: Generics) -> proc
     quote! {
         impl ::alisa::Serializable for #name <#(#generics_names, )*> {
 
-            fn serialize(&self, context: &alisa::SerializationContext) -> ::alisa::rmpv::Value {
+            fn serialize(&self, context: &alisa::SerializationContext) -> ::alisa::ABFValue {
                 match self {
                     #(#serialize_variants,)*
                 }
             }
 
-            fn deserialize(data: &::alisa::rmpv::Value, context: &mut ::alisa::DeserializationContext) -> Option<Self> {
-                let data = data.as_array()?;
-                let variant_name = data[0].as_str()?;
-                match variant_name {
+            fn deserialize(data: &::alisa::ABFValue, context: &mut ::alisa::DeserializationContext) -> Option<Self> {
+                let (name, data) = match data {
+                    ::alisa::ABFValue::NamedUnitEnum(name) => (name.as_str(), &::alisa::ABFValue::PositiveInt(0)),
+                    ::alisa::ABFValue::NamedEnum(name, data) => (name.as_str(), &**data),
+                    _ => { return None; }
+                };
+                match name {
                     #(#deserialize_variants,)*
                     _ => None
                 }

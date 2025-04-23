@@ -2,7 +2,7 @@
 use std::collections::HashSet;
 use std::hash::Hash;
 
-use crate::{DeserializationContext, Object, Project, Ptr, Recorder, Serializable, SerializationContext};
+use crate::{ABFValue, DeserializationContext, Object, Project, Ptr, Recorder, Serializable, SerializationContext};
 
 use super::{ChildPtr, Children};
 
@@ -35,11 +35,11 @@ impl<C: ChildPtr + Hash> Default for UnorderedChildList<C> {
 
 impl<C: ChildPtr + Hash> Serializable for UnorderedChildList<C> {
 
-    fn serialize(&self, context: &SerializationContext) -> rmpv::Value {
+    fn serialize(&self, context: &SerializationContext) -> ABFValue {
         self.children.serialize(context)
     }
 
-    fn deserialize(data: &rmpv::Value, context: &mut DeserializationContext) -> Option<Self> {
+    fn deserialize(data: &ABFValue, context: &mut DeserializationContext) -> Option<Self> {
         let children = HashSet::<C>::deserialize(data, context)?;
         Some(Self {
             children
@@ -93,15 +93,15 @@ impl<C: ChildPtr> Default for UnorderedChildListTreeData<C> {
 
 impl<C: ChildPtr + Hash> Serializable for UnorderedChildListTreeData<C> {
 
-    fn serialize(&self, context: &crate::SerializationContext) -> rmpv::Value {
-        rmpv::Value::Array(
+    fn serialize(&self, context: &crate::SerializationContext) -> ABFValue {
+        ABFValue::Array(
             self.children.iter()
-                .map(|(ptr, obj_data)| rmpv::Value::Array(vec![ptr.serialize(context), obj_data.serialize(context)]))
+                .map(|(ptr, obj_data)| ABFValue::Array(Box::new([ptr.serialize(context), obj_data.serialize(context)])))
                 .collect()
         )
     }
 
-    fn deserialize(data: &rmpv::Value, context: &mut crate::DeserializationContext) -> Option<Self> {
+    fn deserialize(data: &ABFValue, context: &mut crate::DeserializationContext) -> Option<Self> {
         let data = data.as_array()?;
         let mut children = Vec::new();
         for child in data {

@@ -52,14 +52,14 @@ impl SerializationContext {
 
 pub trait Serializable: Sized {
 
-    fn serialize(&self, context: &SerializationContext) -> rmpv::Value; 
-    fn deserialize(data: &rmpv::Value, context: &mut DeserializationContext) -> Option<Self>;
+    fn serialize(&self, context: &SerializationContext) -> ABFValue; 
+    fn deserialize(data: &ABFValue, context: &mut DeserializationContext) -> Option<Self>;
 
-    fn shallow_serialize(&self) -> rmpv::Value {
+    fn shallow_serialize(&self) -> ABFValue {
         self.serialize(&SerializationContext::new())
     }
 
-    fn data_deserialize(data: &rmpv::Value) -> Option<Self> {
+    fn data_deserialize(data: &ABFValue) -> Option<Self> {
         Self::deserialize(data, &mut DeserializationContext::new())
     }
 

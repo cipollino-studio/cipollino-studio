@@ -9,7 +9,7 @@ fn small_obj_ptr_small_type() {
     assert!(decoder.is_obj_ptr());
     assert_eq!(decoder.read_obj_ptr(), Some((2, 256)));
     assert!(value_skipped(bytes));
-    assert_eq!(alisa::parse_abf(bytes), Some(alisa::ABFNode::ObjPtr(2, 256)));
+    assert_eq!(alisa::parse_abf(bytes), Some(alisa::ABFValue::ObjPtr(2, 256)));
 
 }
 
@@ -21,7 +21,7 @@ fn large_obj_ptr_small_type() {
     assert!(decoder.is_obj_ptr());
     assert_eq!(decoder.read_obj_ptr(), Some((2, 256)));
     assert!(value_skipped(bytes));
-    assert_eq!(alisa::parse_abf(bytes), Some(alisa::ABFNode::ObjPtr(2, 256)));
+    assert_eq!(alisa::parse_abf(bytes), Some(alisa::ABFValue::ObjPtr(2, 256)));
 
 }
 
@@ -33,7 +33,7 @@ fn small_obj_ptr_u8_type() {
     assert!(decoder.is_obj_ptr());
     assert_eq!(decoder.read_obj_ptr(), Some((16, 256)));
     assert!(value_skipped(bytes));
-    assert_eq!(alisa::parse_abf(bytes), Some(alisa::ABFNode::ObjPtr(16, 256)));
+    assert_eq!(alisa::parse_abf(bytes), Some(alisa::ABFValue::ObjPtr(16, 256)));
 
 }
 
@@ -45,7 +45,7 @@ fn large_obj_ptr_u8_type() {
     assert!(decoder.is_obj_ptr());
     assert_eq!(decoder.read_obj_ptr(), Some((16, 256)));
     assert!(value_skipped(bytes));
-    assert_eq!(alisa::parse_abf(bytes), Some(alisa::ABFNode::ObjPtr(16, 256)));
+    assert_eq!(alisa::parse_abf(bytes), Some(alisa::ABFValue::ObjPtr(16, 256)));
 
 }
 
@@ -57,7 +57,7 @@ fn small_obj_ptr_u16_type() {
     assert!(decoder.is_obj_ptr());
     assert_eq!(decoder.read_obj_ptr(), Some((272, 256)));
     assert!(value_skipped(bytes));
-    assert_eq!(alisa::parse_abf(bytes), Some(alisa::ABFNode::ObjPtr(272, 256)));
+    assert_eq!(alisa::parse_abf(bytes), Some(alisa::ABFValue::ObjPtr(272, 256)));
 
 }
 
@@ -69,6 +69,6 @@ fn large_obj_ptr_u16_type() {
     assert!(decoder.is_obj_ptr());
     assert_eq!(decoder.read_obj_ptr(), Some((272, 256)));
     assert!(value_skipped(bytes));
-    assert_eq!(alisa::parse_abf(bytes), Some(alisa::ABFNode::ObjPtr(272, 256)));
+    assert_eq!(alisa::parse_abf(bytes), Some(alisa::ABFValue::ObjPtr(272, 256)));
 
 }
