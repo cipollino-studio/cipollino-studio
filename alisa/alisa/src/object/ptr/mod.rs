@@ -48,7 +48,7 @@ impl<Obj: Object> Ptr<Obj> {
     }
 
     pub fn any(&self) -> AnyPtr {
-        AnyPtr(self.key)
+        AnyPtr::new(Obj::TYPE_ID, self.key)
     }
 
     pub fn key(&self) -> u64 {

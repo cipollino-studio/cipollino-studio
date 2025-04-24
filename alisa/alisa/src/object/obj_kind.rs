@@ -1,13 +1,13 @@
 
 use std::{any::{type_name, TypeId}, collections::HashSet};
 
-use crate::{ABFValue, Collab, DeserializationContext, File, Project, SerializationContext};
+use crate::{ABFValue, Collab, DeserializationContext, File, Message, Project, SerializationContext};
 
 use super::{ObjRef, Object, Ptr};
 
-
 pub struct ObjectKind<P: Project> {
     pub(crate) name: &'static str,
+    pub(crate) object_type_id: u16,
     pub(crate) clear_modifications: fn(&mut P::Objects),
     pub(crate) clear_user_modified: fn(&mut P::Objects),
     pub(crate) save_modifications: fn(&mut File, objects: &mut P::Objects),
@@ -56,6 +56,7 @@ impl<P: Project> ObjectKind<P> {
     pub const fn from<O: Object<Project = P>>() -> Self {
         Self {
             name: O::NAME,
+            object_type_id: O::TYPE_ID,
             clear_modifications: |objects| {
                 O::list_mut(objects).modified.clear();
                 O::list_mut(objects).to_delete.clear();
@@ -90,10 +91,9 @@ impl<P: Project> ObjectKind<P> {
                         _ => {}
                     }
                     O::list_mut(objects).mark_loading(ptr);
-                    collab.send_message(ABFValue::NamedEnum("load".into(), Box::new(ABFValue::Map(Box::new([
-                        ("object".into(), ABFValue::Str(O::NAME.into())),
-                        ("key".into(), ABFValue::U64(ptr.key)),
-                    ])))));
+                    collab.send_message(Message::LoadRequest {
+                        ptr: ptr.any(),
+                    });
                 }
             },
             load_object: |file, objects, key| {

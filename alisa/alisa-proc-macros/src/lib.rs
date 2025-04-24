@@ -54,6 +54,6 @@ pub fn serializable(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
         syn::Data::Enum(data_enum) => enum_serialization::serializable_enum(data_enum, input.ident, input.generics),
         syn::Data::Union(_data_union) => panic!("cannot serialize union."),
     };
-
+    // panic!("{}", output);
     output.into()
 }

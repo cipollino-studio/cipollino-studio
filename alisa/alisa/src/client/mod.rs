@@ -2,7 +2,7 @@
 
 use std::{any::{type_name, TypeId}, cell::RefCell, ops::Deref};
 
-use crate::{ABFValue, Act, Action, Delta, ObjRef, Object, Operation, OperationDyn, OperationSource, Project, ProjectContext, ProjectContextMut, Ptr, Recorder};
+use crate::{Act, Action, Delta, Message, ObjRef, Object, Operation, OperationDyn, OperationSource, Project, ProjectContext, ProjectContextMut, Ptr, Recorder};
 
 mod local;
 use local::*;
@@ -239,7 +239,7 @@ impl<P: Project> Client<P> {
         }
     }
 
-    pub fn take_messages(&self) -> Vec<ABFValue> {
+    pub fn take_messages(&self) -> Vec<Message> {
         match &self.kind {
             ClientKind::Local(_) => Vec::new(),
             ClientKind::Collab(collab) => collab.take_messages(),

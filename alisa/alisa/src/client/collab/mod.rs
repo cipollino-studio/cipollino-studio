@@ -3,7 +3,7 @@ use std::cell::RefCell;
 
 use keychain::KeyChain;
 
-use crate::{ABFValue, Delta, DeserializationContext, OperationDyn, OperationSource, Project, ProjectContextMut, Recorder, UnconfirmedOperation};
+use crate::{ABFValue, Delta, DeserializationContext, Message, OperationDyn, OperationSource, Project, ProjectContextMut, Recorder, UnconfirmedOperation, WelcomeMessage};
 
 use super::{Client, ClientKind};
 
@@ -16,7 +16,7 @@ pub(crate) struct Collab<P: Project> {
     keychain: RefCell<KeyChain<2>>,
     key_request_sent: bool,
     unconfirmed_operations: Vec<UnconfirmedOperation<P>>,
-    to_send: RefCell<Vec<ABFValue>>
+    to_send: RefCell<Vec<Message>>
 }
 
 impl<P: Project> Collab<P> {
@@ -45,7 +45,7 @@ impl<P: Project> Collab<P> {
     pub(crate) fn request_keys(&mut self) {
         let keychain = self.keychain.borrow_mut();
         if keychain.wants_keys() && !self.key_request_sent {
-            self.send_message(ABFValue::NamedUnitEnum("key_request".into()));
+            self.send_message(Message::KeyRequest);
             self.key_request_sent = true;
         }
     }
@@ -57,10 +57,10 @@ impl<P: Project> Collab<P> {
     }
 
     pub(crate) fn perform_operation(&mut self, operation: Box<dyn OperationDyn<Project = P>>, delta: Delta<P>) {
-        self.send_message(ABFValue::NamedEnum("operation".into(), Box::new(ABFValue::Map(Box::new([
-            ("operation".into(), ABFValue::Str(operation.name().into())),
-            ("data".into(), operation.serialize())
-        ])))));
+        self.send_message(Message::Operation {
+            operation: operation.name().to_owned(),
+            data: operation.serialize()
+        });
 
         self.unconfirmed_operations.push(UnconfirmedOperation {
             operation,
@@ -68,7 +68,7 @@ impl<P: Project> Collab<P> {
         });
     }
     
-    pub(crate) fn send_message(&self, message: ABFValue) {
+    pub(crate) fn send_message(&self, message: Message) {
         self.to_send.borrow_mut().push(message);
     }
 
@@ -76,7 +76,7 @@ impl<P: Project> Collab<P> {
         !self.to_send.borrow().is_empty()
     } 
 
-    pub(crate) fn take_messages(&self) -> Vec<ABFValue> {
+    pub(crate) fn take_messages(&self) -> Vec<Message> {
         std::mem::replace(&mut *self.to_send.borrow_mut(), Vec::new())
     }
 
@@ -84,26 +84,18 @@ impl<P: Project> Collab<P> {
 
 impl<P: Project> Client<P> {
 
-    pub fn collab(welcome_data: &ABFValue) -> Option<Self> {
-
+    pub fn collab(welcome_data: &WelcomeMessage) -> Option<Self> {
         #[cfg(debug_assertions)]
         verify_project_type::<P>();
 
-        welcome_data.as_map()?;
-        let project_data = welcome_data.get("project")?;
         let mut objects = P::Objects::default();
-        let project = P::deserialize(project_data, &mut DeserializationContext::new())?;
+        let project = P::deserialize(&welcome_data.project, &mut DeserializationContext::new())?;
 
-        for object_data in welcome_data.get("objects")?.as_array()? {
-            let Some(object_name) = object_data.get("object").and_then(ABFValue::as_string) else { continue; };
-            let Some(key) = object_data.get("key").and_then(ABFValue::as_u64) else { continue; };
-            let Some(data) = object_data.get("data") else { continue; };
-
-            for object_kind in P::OBJECTS {
-                if object_kind.name == object_name {
-                    (object_kind.load_object_from_message)(&mut objects, key, data);
-                }
-            }
+        for object_data in &welcome_data.objects {
+            let obj_type = object_data.ptr.obj_type();
+            let object_kind = &P::OBJECTS[obj_type as usize];
+            let key = object_data.ptr.key();
+            (object_kind.load_object_from_message)(&mut objects, key, &object_data.obj);
         }
 
         Some(Self {
@@ -174,50 +166,13 @@ impl<P: Project> Client<P> {
         success
     }
 
-    pub fn receive_message(&mut self, msg: &ABFValue, context: &mut P::Context) -> Option<()> {
+    pub fn receive_message(&mut self, msg: &Message, context: &mut P::Context) {
         if !self.is_collab() {
-            return None;
+            return;
         }
 
-        let (msg_type, data) = match msg {
-            ABFValue::NamedEnum(name, data) => (name, &**data),
-            ABFValue::NamedUnitEnum(name) => (name, &ABFValue::Map(Box::new([]))),
-            _ => return None
-        };
-        let msg = data.as_map()?;
-        let mut operation_name = "";
-        let mut data = None;
-        let mut first = 0;
-        let mut last = 0;
-        let mut load_key = 0;
-        let mut object = "";
-
-        for (key, val) in msg {
-            match key.as_str() {
-                "operation" => {
-                    operation_name = val.as_string()?;
-                },
-                "data" => {
-                    data = Some(val);
-                },
-                "first" => {
-                    first = val.as_u64()?;
-                },
-                "last" => {
-                    last = val.as_u64()?;
-                },
-                "key" => {
-                    load_key = val.as_u64()?;
-                },
-                "object" => {
-                    object = val.as_string()?;
-                },
-                _ => {}
-            }
-        }
-
-        match msg_type.as_str() {
-            "confirm" => {
+        match msg {
+            Message::ConfirmOperation => {
                 if let Some(collab) = self.kind.as_collab() {
                     // The check is necessary because an unconfirmed operation might fail after it is reapplied,
                     // So it might never get re-added to the unconfirmed operation queue
@@ -226,38 +181,32 @@ impl<P: Project> Client<P> {
                     }
                 }
             },
-            "operation" => {
-                if let Some(data) = data {
-                    self.handle_operation_message(operation_name, data, context);
-                }
+            Message::Operation { operation, data } => {
+                self.handle_operation_message(&operation, data, context);
             },
-            "key_grant" => {
-                if first != 0 && last != 0 {
+            Message::KeyGrant { first, last } => {
+                if *first != 0 && *last != 0 {
                     if let Some(collab) = self.kind.as_collab() {
-                        collab.accept_keys(first, last);
+                        collab.accept_keys(*first, *last);
                         collab.key_request_sent = false;
                     }
                 }
             },
-            "load" => {
-                for object_kind in P::OBJECTS {
-                    if object_kind.name == object {
-                        (object_kind.load_object_from_message)(&mut self.objects, load_key, data?);
-                        break;
-                    }
-                }
+            Message::Load { ptr, obj } => {
+                let obj_type = ptr.obj_type();
+                let key = ptr.key();
+                let object_kind = &P::OBJECTS[obj_type as usize];
+                (object_kind.load_object_from_message)(&mut self.objects, key, obj);
             },
-            "load_failed" => {
-                for object_kind in P::OBJECTS {
-                    if object_kind.name == object {
-                        (object_kind.load_failed)(&mut self.objects, load_key); 
-                    }
-                } 
-            }
+            Message::LoadFailed { ptr } => {
+                let obj_type = ptr.obj_type();
+                let key = ptr.key();
+                let object_kind = &P::OBJECTS[obj_type as usize];
+                (object_kind.load_failed)(&mut self.objects, key); 
+            },
             _ => {}
         }
 
-        Some(())
     }
    
 }

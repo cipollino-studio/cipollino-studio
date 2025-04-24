@@ -1,7 +1,7 @@
 
 use std::{collections::HashSet, hash::Hash};
 
-use crate::{Ptr, Object, ABFValue};
+use crate::{ABFValue, AnyPtr, Object, Ptr};
 use super::{Serializable, DeserializationContext, SerializationContext};
 
 macro_rules! number_serializable_impl {
@@ -138,6 +138,31 @@ impl<O: Object> Serializable for Ptr<O> {
 
     fn serialize(&self, _context: &SerializationContext) -> ABFValue {
         ABFValue::ObjPtr(O::TYPE_ID, self.key)
+    }
+
+}
+
+impl Serializable for AnyPtr {
+
+    fn serialize(&self, _context: &SerializationContext) -> ABFValue {
+        ABFValue::ObjPtr(self.obj_type(), self.key())
+    }
+
+    fn deserialize(data: &ABFValue, _context: &mut DeserializationContext) -> Option<Self> {
+        let (obj_type, key) = data.as_obj_ptr()?;
+        Some(Self::new(obj_type, key,))
+    }
+
+}
+
+impl Serializable for ABFValue {
+
+    fn serialize(&self, _context: &SerializationContext) -> ABFValue {
+        self.clone()
+    }
+
+    fn deserialize(data: &ABFValue, _context: &mut DeserializationContext) -> Option<Self> {
+        Some(data.clone())
     }
 
 }

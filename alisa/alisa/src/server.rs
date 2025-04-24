@@ -1,10 +1,10 @@
 
 use std::{collections::{HashMap, HashSet}, fmt::Debug, path::Path};
 
-use crate::{ABFValue, Client, DeserializationContext, ObjectKind, Project, Serializable, SerializationContext};
+use crate::{ABFValue, AnyPtr, Client, DeserializationContext, Message, ObjectKind, Project, Serializable, SerializationContext, WelcomeMessage, WelcomeObject};
 
 struct ServerClient {
-    to_send: Vec<ABFValue>
+    to_send: Vec<Message>
 }
 
 pub struct Server<P: Project> {
@@ -50,7 +50,7 @@ impl<P: Project> Server<P> {
         })
     }
 
-    pub fn add_client(&mut self) -> (ClientId, ABFValue) {
+    pub fn add_client(&mut self) -> (ClientId, WelcomeMessage) {
         let id = ClientId(self.curr_client_id);
         self.curr_client_id += 1;
 
@@ -61,7 +61,7 @@ impl<P: Project> Server<P> {
         let storing_context = SerializationContext::new();
         let project_data = self.client.project.serialize(&storing_context); 
 
-        let mut load_data = Vec::new(); 
+        let mut welcome_objects = Vec::new(); 
         let mut encoded = HashSet::new();
         let mut to_encode = storing_context.take_serialization_requests();
         while let Some((obj_type, key)) = to_encode.pop() {
@@ -73,26 +73,25 @@ impl<P: Project> Server<P> {
                     to_encode.push((next_obj_type, next_key));
                 }
             }
-            load_data.push(ABFValue::Map(Box::new([
-                ("object".into(), P::OBJECTS[obj_type as usize].name.into()),
-                ("key".into(), key.into()),
-                ("data".into(), object_data),
-            ])));
+            welcome_objects.push(WelcomeObject {
+                ptr: AnyPtr::new(obj_type, key),
+                obj: object_data,
+            });
         }
 
-        (id, ABFValue::Map(Box::new([
-            ("id".into(), id.0.into()),
-            ("project".into(), project_data),
-            ("objects".into(), ABFValue::Array(load_data.into_iter().collect()))
-        ])))
+        (id, WelcomeMessage {
+            id,
+            project: project_data,
+            objects: welcome_objects,
+        })
     }
 
-    pub fn send(&mut self, to: ClientId, msg: ABFValue) -> Option<()> {
+    pub fn send(&mut self, to: ClientId, msg: Message) -> Option<()> {
         self.clients.get_mut(&to)?.to_send.push(msg);
         Some(())
     }
 
-    pub fn broadcast(&mut self, msg: &ABFValue, except: Option<ClientId>) {
+    pub fn broadcast(&mut self, msg: &Message, except: Option<ClientId>) {
         for (client_id, client) in self.clients.iter_mut() {
             if Some(*client_id) != except {
                 client.to_send.push(msg.clone());
@@ -100,73 +99,30 @@ impl<P: Project> Server<P> {
         }
     }
 
-    pub fn receive_message(&mut self, client_id: ClientId, msg: &ABFValue) -> Option<()> {
-
-        let (msg_type, msg_data) = match msg {
-            ABFValue::NamedUnitEnum(msg_type) => (msg_type, &ABFValue::PositiveInt(0)),
-            ABFValue::NamedEnum(msg_type, msg_data) => (msg_type, &**msg_data),
-            _ => { return None; }
-        };
-
-        let mut operation_name = "";
-        let mut data = None;
-        let mut object = "";
-        let mut load_key = 0;
-
-        if let Some(msg_data) = msg_data.as_map() {
-            for (key, val) in msg_data {
-                match key.as_str() {
-                    "operation" => {
-                        operation_name = val.as_string()?;
-                    },
-                    "data" => {
-                        data = Some(val);
-                    },
-                    "key" => {
-                        load_key = val.as_u64()?;
-                    },
-                    "object" => {
-                        object = val.as_string()?;
-                    },
-                    _ => {}
-                } 
-            }
-        }
-
-        match msg_type.as_str() {
-            "operation" => {
-                if let Some(data) = data {
-                    if self.client.handle_operation_message(operation_name, data, &mut self.context) {
-                        self.broadcast(&ABFValue::NamedEnum("operation".into(), Box::new(ABFValue::Map(Box::new([
-                            ("operation".into(), operation_name.into()),
-                            ("data".into(), data.clone())
-                        ])))), Some(client_id));
-                    }
-                    self.send(client_id, ABFValue::NamedUnitEnum("confirm".into()));
+    pub fn receive_message(&mut self, client_id: ClientId, msg: &Message) {
+        match msg {
+            Message::Operation { operation, data } => {
+                if self.client.handle_operation_message(operation, data, &mut self.context) {
+                    self.broadcast(msg, Some(client_id));
                 }
+                self.send(client_id, Message::ConfirmOperation);
             },
-            "key_request" => {
+            Message::KeyRequest => {
                 // TODO: make sure the client isn't requesting too many keys
                 let (first, last) = self.client.kind.as_local().expect("server should only use local client.").next_key_range(512);
-                self.send(client_id, ABFValue::NamedEnum("key_grant".into(), Box::new(ABFValue::Map(Box::new([
-                    ("first".into(), first.into()),
-                    ("last".into(), last.into())
-                ])))));
+                self.send(client_id, Message::KeyGrant { first, last });
             },
-            "load" => {
-                for object_kind in P::OBJECTS {
-                    if object_kind.name == object {
-                        self.handle_load_message(object_kind, load_key, client_id); 
-                        break;
-                    }
-                }
+            Message::LoadRequest { ptr } => {
+                let obj_type = ptr.obj_type();
+                let key = ptr.key();
+                let object_kind = &P::OBJECTS[obj_type as usize];
+                self.handle_load_message(object_kind, key, client_id); 
             },
-            _ => {}
+            _ => {
+                return;
+            } 
         }
-
         self.client.tick(&mut self.context);
-
-        Some(())
     }
 
     fn handle_load_message(&mut self, object_kind: &ObjectKind<P>, key: u64, client_id: ClientId) {
@@ -180,17 +136,14 @@ impl<P: Project> Server<P> {
             let context = SerializationContext::new();
             let data = (object_kind.serialize_object)(&mut self.client.objects, key, &context);
 
+            let ptr = AnyPtr::new(object_kind.object_type_id, key);
             if let Some(data) = data {
-                self.send(client_id, ABFValue::NamedEnum("load".into(), Box::new(ABFValue::Map(Box::new([
-                    ("object".into(), object_kind.name.into()),
-                    ("key".into(), key.into()),
-                    ("data".into(), data)
-                ])))));
+                self.send(client_id, Message::Load {
+                    ptr,
+                    obj: data
+                });
             } else {
-                self.send(client_id, ABFValue::NamedEnum("load_failed".into(), Box::new(ABFValue::Map(Box::new([
-                    ("object".into(), object_kind.name.into()),
-                    ("key".into(), key.into()),
-                ])))));
+                self.send(client_id, Message::LoadFailed { ptr });
             }
 
             for (obj_type, key) in context.take_serialization_requests() {
@@ -206,15 +159,15 @@ impl<P: Project> Server<P> {
         &self.client.project
     }
 
-    pub fn get_msgs_to_send(&self, client: ClientId) -> Option<&Vec<ABFValue>> {
+    pub fn get_msgs_to_send(&self, client: ClientId) -> Option<&Vec<Message>> {
         Some(&self.clients.get(&client)?.to_send)
     }
 
-    pub fn get_msgs_to_send_mut(&mut self, client: ClientId) -> Option<&mut Vec<ABFValue>> {
+    pub fn get_msgs_to_send_mut(&mut self, client: ClientId) -> Option<&mut Vec<Message>> {
         Some(&mut self.clients.get_mut(&client)?.to_send)
     }
 
-    pub fn take_all_msgs_to_send(&mut self) -> HashMap<ClientId, Vec<ABFValue>> {
+    pub fn take_all_msgs_to_send(&mut self) -> HashMap<ClientId, Vec<Message>> {
         self.clients.iter_mut().map(|(id, client)| (*id, std::mem::replace(&mut client.to_send, Vec::new()))).collect()
     }
 

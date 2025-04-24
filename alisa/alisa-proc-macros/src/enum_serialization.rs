@@ -17,7 +17,7 @@ pub fn serializable_enum(enm: DataEnum, name: Ident, generics: Generics) -> proc
         let (field_names, serialization) = match &variant.fields {
             Fields::Unit => {
                 (quote! {}, quote!{
-                    ::alisa::ABFValue::NamedUnitEnum(stringify!(#variant_name).into())
+                    alisa::ABFValue::NamedUnitEnum(stringify!(#variant_name).into())
                 })
             },
             Fields::Named(named) => {
@@ -26,9 +26,9 @@ pub fn serializable_enum(enm: DataEnum, name: Ident, generics: Generics) -> proc
                 let field_names = quote! { {#(#names, )*} };
 
                 let serialization = quote! {
-                    ::alisa::ABFValue::NamedEnum(
+                    alisa::ABFValue::NamedEnum(
                         stringify!(#variant_name).into(),
-                        Box::new(::alisa::ABFValue::Map(Box::new([
+                        Box::new(alisa::ABFValue::Map(Box::new([
                             #((stringify!(#names2).into(), #names2.serialize(context)), )*
                         ])))
                     )
@@ -43,9 +43,9 @@ pub fn serializable_enum(enm: DataEnum, name: Ident, generics: Generics) -> proc
                 let field_names = quote! { (#(#names, )*) };
 
                 let serialization = quote! {
-                    ::alisa::ABFValue::NamedEnum(
+                    alisa::ABFValue::NamedEnum(
                         stringify!(#variant_name).into(),
-                        Box::new(::alisa::ABFValue::Array(Box::new([
+                        Box::new(alisa::ABFValue::Array(Box::new([
                             #(#names2.serialize(context),)*
                         ])))
                     )
@@ -80,7 +80,7 @@ pub fn serializable_enum(enm: DataEnum, name: Ident, generics: Generics) -> proc
                         return None;
                     }
                     Some(Self::#variant_name(
-                        #(::alisa::Serializable::deserialize(&data[#idxs], context)?, )*
+                        #(alisa::Serializable::deserialize(&data[#idxs], context)?, )*
                     )) 
                 }
             },
@@ -88,7 +88,7 @@ pub fn serializable_enum(enm: DataEnum, name: Ident, generics: Generics) -> proc
                 let names = named.named.iter().map(|field| field.ident.as_ref().unwrap());
                 quote! {
                     Some(Self::#variant_name {
-                        #(#names: ::alisa::Serializable::deserialize(data.get(stringify!(#names))?, context)?, )*
+                        #(#names: alisa::Serializable::deserialize(data.get(stringify!(#names))?, context)?, )*
                     })
                 }
             }
@@ -102,18 +102,18 @@ pub fn serializable_enum(enm: DataEnum, name: Ident, generics: Generics) -> proc
     });
 
     quote! {
-        impl ::alisa::Serializable for #name <#(#generics_names, )*> {
+        impl alisa::Serializable for #name <#(#generics_names, )*> {
 
-            fn serialize(&self, context: &alisa::SerializationContext) -> ::alisa::ABFValue {
+            fn serialize(&self, context: &alisa::SerializationContext) -> alisa::ABFValue {
                 match self {
                     #(#serialize_variants,)*
                 }
             }
 
-            fn deserialize(data: &::alisa::ABFValue, context: &mut ::alisa::DeserializationContext) -> Option<Self> {
+            fn deserialize(data: &alisa::ABFValue, context: &mut alisa::DeserializationContext) -> Option<Self> {
                 let (name, data) = match data {
-                    ::alisa::ABFValue::NamedUnitEnum(name) => (name.as_str(), &::alisa::ABFValue::PositiveInt(0)),
-                    ::alisa::ABFValue::NamedEnum(name, data) => (name.as_str(), &**data),
+                    alisa::ABFValue::NamedUnitEnum(name) => (name.as_str(), &alisa::ABFValue::PositiveInt(0)),
+                    alisa::ABFValue::NamedEnum(name, data) => (name.as_str(), &**data),
                     _ => { return None; }
                 };
                 match name {
