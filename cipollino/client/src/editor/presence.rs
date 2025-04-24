@@ -1,5 +1,5 @@
 
-use alisa::{rmpv, Serializable};
+use alisa::Serializable;
 use pierro::ColorSpace;
 use project::{Clip, Ptr};
 
@@ -63,10 +63,10 @@ impl Presence {
         }
 
         let data = self.data.shallow_serialize();
-        socket.send(rmpv::Value::Map(vec![
-            ("type".into(), "presence".into()),
-            ("data".into(), data)
-        ]));
+        socket.send(alisa::ABFValue::NamedEnum(
+            "presence".into(),
+            Box::new(data)
+        ));
 
         self.modified = false;
     }

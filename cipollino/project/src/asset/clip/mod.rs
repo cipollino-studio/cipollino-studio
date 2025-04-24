@@ -1,5 +1,5 @@
 
-use crate::{asset_operations, Action, Asset, Client, Folder, LayerChildListTreeData, LayerParent, Objects, Project};
+use crate::{asset_operations, Action, Asset, Client, Folder, LayerParent, LayerPtr, Objects, Project};
 
 mod inner;
 pub use inner::*;
@@ -50,7 +50,7 @@ pub struct ClipTreeData {
     pub height: u32,
     
     pub inner_ptr: alisa::Ptr<ClipInner>,
-    pub layers: LayerChildListTreeData
+    pub layers: alisa::ChildListTreeData<LayerPtr> 
 }
 
 impl Default for ClipTreeData {

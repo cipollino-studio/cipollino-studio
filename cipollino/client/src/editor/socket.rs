@@ -1,4 +1,4 @@
-use project::alisa::{rmpv, rmpv_decode, rmpv_encode};
+
 use std::sync::{Arc, Mutex};
 
 #[derive(PartialEq, Eq)]
@@ -12,7 +12,7 @@ pub struct Socket {
     sender: ewebsock::WsSender,
     state: Arc<Mutex<SocketState>>,
     error: Arc<Mutex<Option<String>>>,
-    msgs: Arc<Mutex<Vec<rmpv::Value>>>,
+    msgs: Arc<Mutex<Vec<alisa::ABFValue>>>,
     signal: Arc<Mutex<Option<pierro::RedrawSignal>>>,
     has_signal: bool
 }
@@ -44,7 +44,7 @@ impl Socket {
                     },
                     ewebsock::WsEvent::Message(msg) => {
                         if let ewebsock::WsMessage::Binary(data) = msg {
-                            if let Some(msg) = rmpv_decode(&data) {
+                            if let Some(msg) = alisa::parse_abf(&data) {
                                 msgs.lock().unwrap().push(msg);
                             }
                         }
@@ -71,7 +71,7 @@ impl Socket {
         })
     }
 
-    pub fn receive(&mut self) -> Option<rmpv::Value> {
+    pub fn receive(&mut self) -> Option<alisa::ABFValue> {
         let mut msgs = self.msgs.lock().ok()?;
         if msgs.is_empty() {
             return None;
@@ -79,8 +79,8 @@ impl Socket {
         Some(msgs.remove(0))
     }
 
-    pub fn send(&mut self, msg: rmpv::Value) {
-        let Some(data) = rmpv_encode(&msg) else { return; };
+    pub fn send(&mut self, msg: alisa::ABFValue) {
+        let data = alisa::encode_abf(&msg);
         let msg = ewebsock::WsMessage::Binary(data);
         self.sender.send(msg);
     }

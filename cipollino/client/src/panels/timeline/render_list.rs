@@ -1,5 +1,5 @@
 
-use project::{Client, ClipInner, Layer, LayerChildList, LayerParent, Ptr};
+use project::{Client, ClipInner, Layer, LayerParent, LayerPtr, Ptr};
 
 use super::layers::LayerDropLocation;
 
@@ -16,11 +16,11 @@ pub(super) struct RenderList<'proj> {
     pub layers: Vec<RenderLayer<'proj>>
 }
 
-fn add_layers<'proj>(render_layers: &mut Vec<RenderLayer<'proj>>, layers: &'proj LayerChildList, client: &'proj Client) {
+fn add_layers<'proj>(render_layers: &mut Vec<RenderLayer<'proj>>, layers: &'proj alisa::ChildList<LayerPtr>, client: &'proj Client) {
     for (idx, layer) in layers.iter().enumerate() {
         match layer {
-            project::LayerChildPtr::Layer(layer_ptr) => {
-                let layer_ptr = layer_ptr.ptr();
+            project::LayerPtr::Layer(layer_ptr) => {
+                let layer_ptr = layer_ptr;
                 if let Some(layer) = client.get(layer_ptr) {
                     render_layers.push(RenderLayer {
                         idx,

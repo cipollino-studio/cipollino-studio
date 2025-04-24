@@ -1,7 +1,7 @@
 
 use std::collections::HashSet;
 
-use project::{Client, ClipInner, Frame, Layer, LayerChildList, LayerChildPtr, Ptr, SceneChildPtr, Stroke};
+use project::{Client, ClipInner, Frame, Layer, LayerPtr, Ptr, SceneChildPtr, Stroke};
 use crate::{EditorState, ScenePanel};
 
 impl ScenePanel {
@@ -21,12 +21,12 @@ impl ScenePanel {
         }
     }
 
-    fn get_layer_list_render_list(client: &Client, editor: &EditorState, layer_list: &LayerChildList, list: &mut Vec<SceneChildPtr>, time: i32) {
+    fn get_layer_list_render_list(client: &Client, editor: &EditorState, layer_list: &alisa::ChildList<LayerPtr>, list: &mut Vec<SceneChildPtr>, time: i32) {
         for layer in layer_list.iter().rev() {
             match layer {
-                LayerChildPtr::Layer(layer_ptr) => {
-                    if let Some(layer) = client.get(layer_ptr.ptr()) {
-                        Self::get_layer_render_list(client, editor, layer, layer_ptr.ptr(), list, time);
+                LayerPtr::Layer(layer_ptr) => {
+                    if let Some(layer) = client.get(layer_ptr) {
+                        Self::get_layer_render_list(client, editor, layer, layer_ptr, list, time);
                     }
                 }
             } 
@@ -43,7 +43,7 @@ impl ScenePanel {
         let mut rendered_strokes = HashSet::new();
         for scene_obj in render_list {
             match scene_obj {
-                SceneChildPtr::Stroke(ptr) => rendered_strokes.insert(ptr.ptr()),
+                SceneChildPtr::Stroke(ptr) => rendered_strokes.insert(*ptr),
             };
         }
         rendered_strokes

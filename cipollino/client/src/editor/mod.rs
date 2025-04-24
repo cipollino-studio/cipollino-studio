@@ -2,7 +2,6 @@
 use std::path::PathBuf;
 
 use alisa::Serializable;
-use project::alisa::rmpv;
 use project::{deep_load_clip, Client, Frame, Ptr, Stroke};
 
 use crate::splash::SplashScreen;
@@ -64,27 +63,30 @@ impl Editor {
         Some(Self::new(Client::local(path)?, None, systems))
     }
 
-    pub fn collab(socket: Socket, welcome_msg: &rmpv::Value, systems: &mut AppSystems) -> Option<Self> {
+    pub fn collab(socket: Socket, welcome_msg: &alisa::ABFValue, systems: &mut AppSystems) -> Option<Self> {
         Some(Self::new(Client::collab(welcome_msg)?, Some(socket), systems))
     }
 
-    fn receive_message(msg: &rmpv::Value, state: &mut State) {
-        if let Some(msg_type) = alisa::rmpv_get(msg, "type") {
-            let Some(msg_type) = msg_type.as_str() else { return; };
-            if msg_type == "presence" {
-                let Some(client_id) = alisa::rmpv_get(msg, "client") else { return; };
-                let Some(client_id) = client_id.as_u64() else { return; }; 
-                let Some(data) = alisa::rmpv_get(msg, "data") else { return; };
-                let Some(data) = PresenceData::data_deserialize(data) else { return; };
-                state.editor.other_clients.insert(client_id, data);
-                return;
-            }
-            if msg_type == "disconnect" {
-                let Some(client_id) = alisa::rmpv_get(msg, "client") else { return; };
-                let Some(client_id) = client_id.as_u64() else { return; }; 
-                state.editor.other_clients.remove(&client_id);
-                return;
-            }
+    fn receive_message(msg: &alisa::ABFValue, state: &mut State) {
+        let (msg_type, data) = match msg {
+            alisa::ABFValue::NamedUnitEnum(name) => (name.as_str(), &alisa::ABFValue::PositiveInt(0)),
+            alisa::ABFValue::NamedEnum(name, data) => (name.as_str(), &**data),
+            _ => { return; }
+        };
+
+        if msg_type == "presence" {
+            let Some(client_id) = data.get("client") else { return; };
+            let Some(client_id) = client_id.as_u64() else { return; }; 
+            let Some(data) = data.get("data") else { return; };
+            let Some(data) = PresenceData::data_deserialize(data) else { return; };
+            state.editor.other_clients.insert(client_id, data);
+            return;
+        }
+        if msg_type == "disconnect" {
+            let Some(client_id) = data.get("client") else { return; };
+            let Some(client_id) = client_id.as_u64() else { return; }; 
+            state.editor.other_clients.remove(&client_id);
+            return;
         }
 
         state.project.client.receive_message(msg, &mut ());
@@ -157,7 +159,7 @@ impl Editor {
             if send_messages {
                 let to_send = self.state.project.client.take_messages();
                 if !to_send.is_empty() {
-                    socket.send(rmpv::Value::Array(to_send));
+                    socket.send(alisa::ABFValue::Array(to_send.into_iter().collect()));
                 }
             }
 

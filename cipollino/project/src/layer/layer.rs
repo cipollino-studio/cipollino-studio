@@ -1,6 +1,6 @@
 
 use crate::{Client, Frame, Objects, Project};
-use super::{LayerChildPtr, LayerChildList, LayerParent, LayerType};
+use super::{LayerPtr, LayerParent};
 
 
 #[derive(alisa::Serializable, Clone)]
@@ -56,7 +56,7 @@ impl Default for LayerTreeData {
 
 impl alisa::TreeObj for Layer {
     type ParentPtr = LayerParent;
-    type ChildList = LayerChildList;
+    type ChildList = alisa::ChildList<LayerPtr>;
     type TreeData = LayerTreeData;
 
     fn child_list<'a>(parent: LayerParent, context: &'a alisa::ProjectContext<Project>) -> Option<&'a Self::ChildList> {
@@ -93,14 +93,6 @@ impl alisa::TreeObj for Layer {
             name: self.name.clone(),
             frames: self.frames.collect_data(objects)
         }
-    }
-
-}
-
-impl LayerType for Layer {
-
-    fn make_child_ptr(ptr: alisa::Ptr<Self>) -> LayerChildPtr {
-        LayerChildPtr::Layer(alisa::LoadingPtr::new(ptr))
     }
 
 }

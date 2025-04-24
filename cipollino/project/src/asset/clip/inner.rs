@@ -1,5 +1,5 @@
 
-use crate::{LayerChildList, Objects, Project};
+use crate::{LayerPtr, Objects, Project};
 
 use super::Clip;
 
@@ -8,7 +8,7 @@ use super::Clip;
 /// information about the clip to render the assets panel(e.g the name of the clip).
 #[derive(alisa::Serializable, Clone)]
 pub struct ClipInner {
-    pub layers: LayerChildList,
+    pub layers: alisa::ChildList<LayerPtr>,
 
     pub width: u32,
     pub height: u32, 

@@ -24,7 +24,7 @@ fn decode_stroke_point(floats: &[f32]) -> Option<malvina::StrokePoint> {
 
 impl alisa::Serializable for StrokeData {
 
-    fn serialize(&self, _context: &alisa::SerializationContext) -> alisa::rmpv::Value {
+    fn serialize(&self, _context: &alisa::SerializationContext) -> alisa::ABFValue {
         let stroke = &self.0;
         let mut buffer = Vec::new();
         for pt in &stroke.path.pts {
@@ -32,14 +32,11 @@ impl alisa::Serializable for StrokeData {
             encode_stroke_point(&mut buffer, &pt.pt);
             encode_stroke_point(&mut buffer, &pt.next);
         }
-        alisa::rmpv::Value::Binary(buffer)
+        alisa::ABFValue::Binary(buffer.into_iter().collect())
     }
 
-    fn deserialize(data: &alisa::rmpv::Value, _context: &mut alisa::DeserializationContext) -> Option<Self> {
-        if !data.is_bin() {
-            return None;
-        }
-        let bytes = data.as_slice()?;
+    fn deserialize(data: &alisa::ABFValue, _context: &mut alisa::DeserializationContext) -> Option<Self> {
+        let bytes = data.as_binary()?;
         let floats: Box<[f32]> = bytes.chunks(4).filter_map(|x| {
             if x.len() != 4 {
                 None
