@@ -2,9 +2,9 @@
 use std::collections::HashSet;
 use std::{cell::RefCell, collections::HashMap};
 use std::rc::Rc;
-use project::{Client, Clip, ClipInner, Layer, Project, Ptr, Stroke};
+use project::{Client, Clip, ClipInner, Layer, PresenceData, Project, Ptr, Stroke};
 
-use crate::{Presence, PresenceData, SelectTool, ToolDyn, Window, WindowInstance};
+use crate::{Presence, SelectTool, ToolDyn, Window, WindowInstance};
 
 use crate::{Selection, SelectionKind};
 

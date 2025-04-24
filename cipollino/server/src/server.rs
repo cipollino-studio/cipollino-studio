@@ -1,8 +1,9 @@
 
 use std::{collections::HashMap, path::PathBuf, sync::Arc};
 
-use project::{alisa, ClientId};
-use warp::ws::{Message, WebSocket};
+use project::{alisa, ClientId, Message};
+use alisa::Serializable;
+use warp::ws;
 use futures::SinkExt;
 use tokio::sync::Mutex;
 
@@ -12,15 +13,16 @@ pub struct Server {
 }
 
 pub struct Client {
-    sender: futures::stream::SplitSink<WebSocket, Message>,
+    sender: futures::stream::SplitSink<ws::WebSocket, ws::Message>,
     presence: Option<alisa::ABFValue>
 }
 
 impl Client {
 
-    async fn send(&mut self, msg: alisa::ABFValue) -> bool {
-        let data = alisa::encode_abf(&msg);
-        self.sender.send(Message::binary(data)).await.is_ok()
+    async fn send<T: alisa::Serializable>(&mut self, msg: T) -> bool {
+        let data = msg.shallow_serialize();
+        let data = alisa::encode_abf(&data);
+        self.sender.send(ws::Message::binary(data)).await.is_ok()
     }
 
 }
@@ -34,47 +36,49 @@ impl Server {
         }
     }
 
-    fn process_message(&mut self, client_id: ClientId, msg: &alisa::ABFValue) {
-        let (msg_type, data) = match msg {
-            alisa::ABFValue::NamedUnitEnum(name) => (name.as_str(), &alisa::ABFValue::PositiveInt(0)),
-            alisa::ABFValue::NamedEnum(name, data) => (name.as_str(), &**data),
-            _ => {
-                return;
-            }
-        };
-        if msg_type == "presence" {
-            let Some(client) = self.clients.get_mut(&client_id) else { return; };
-            self.server.broadcast(&alisa::ABFValue::NamedEnum(
-                "presence".into(),
-                Box::new(alisa::ABFValue::Map(Box::new([
-                    ("client".into(), client_id.0.into()),
-                    ("data".into(), data.clone()),
-                ])))
-            ), Some(client_id));
-            client.presence = Some(data.clone());
-            return;
+    async fn process_message(&mut self, client_id: ClientId, msg: &Message) {
+        match msg {
+            Message::Collab(msg) => {
+                self.server.receive_message(client_id, msg);
+            },
+            Message::Presence(presence_data) => {
+                for (other_client_id, other_client) in &mut self.clients {
+                    if *other_client_id == client_id {
+                        continue;
+                    }
+                    other_client.send(Message::PresenceUpdate(client_id, presence_data.clone())).await;
+                }
+            },
+            _ => {}
         }
-        self.server.receive_message(client_id, msg);
     }
 
     async fn receive_message(&mut self, client_id: ClientId, msg: alisa::ABFValue) {
         if let Some(msgs) = msg.as_array() {
             for submsg in msgs {
-                self.process_message(client_id, submsg);
+                let Some(submsg) = Message::data_deserialize(submsg) else { continue; };
+                self.process_message(client_id, &submsg).await;
             }
         } else {
-            self.process_message(client_id, &msg);
+            let Some(msg) = Message::data_deserialize(&msg) else { return; };
+            self.process_message(client_id, &msg).await;
         }
         for (client_id, msgs) in self.server.take_all_msgs_to_send() {
             if let Some(client) = self.clients.get_mut(&client_id) {
                 if !msgs.is_empty() {
-                    client.send(alisa::ABFValue::Array(msgs.into_iter().collect())).await;
+                    client.send(
+                        alisa::ABFValue::Array(
+                            msgs.into_iter()
+                                .map(|msg| Message::Collab(msg).shallow_serialize())
+                                .collect()
+                        )
+                    ).await;
                 }
             }
         }
     }
 
-    pub async fn handle_connection(server_arc: Arc<Mutex<Self>>, socket: WebSocket) {
+    pub async fn handle_connection(server_arc: Arc<Mutex<Self>>, socket: ws::WebSocket) {
         use futures::StreamExt;
         println!("New client connected.");
 

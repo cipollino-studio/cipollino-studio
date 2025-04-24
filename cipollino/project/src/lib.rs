@@ -14,6 +14,9 @@ pub use frame::*;
 mod scene;
 pub use scene::*;
 
+mod protocol;
+pub use protocol::*;
+
 pub use alisa;
 
 pub use alisa::Ptr;

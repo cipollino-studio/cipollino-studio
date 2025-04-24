@@ -1,26 +1,8 @@
 
-use alisa::Serializable;
 use pierro::ColorSpace;
-use project::{Clip, Ptr};
+use project::{Clip, Message, PresenceData, Ptr};
 
 use super::Socket;
-
-#[derive(alisa::Serializable)]
-pub struct PresenceData {
-    pub open_clip: Ptr<Clip>,
-    pub mouse_pos: Option<[f32; 2]>
-}
-
-impl Default for PresenceData {
-
-    fn default() -> Self {
-        Self {
-            open_clip: Ptr::null(),
-            mouse_pos: None 
-        }
-    }
-
-}
 
 pub struct Presence {
     data: PresenceData,
@@ -62,11 +44,7 @@ impl Presence {
             return;
         }
 
-        let data = self.data.shallow_serialize();
-        socket.send(alisa::ABFValue::NamedEnum(
-            "presence".into(),
-            Box::new(data)
-        ));
+        socket.send(Message::Presence(self.data.clone()));
 
         self.modified = false;
     }

@@ -2,7 +2,7 @@
 use std::path::PathBuf;
 
 use alisa::Serializable;
-use project::{deep_load_clip, Client, Frame, Ptr, Stroke};
+use project::{deep_load_clip, Client, Frame, Message, Ptr, Stroke};
 
 use crate::splash::SplashScreen;
 use crate::{AppState, AppSystems, DockingLayoutPref, EditorPanel, PanelContext};
@@ -64,32 +64,25 @@ impl Editor {
     }
 
     pub fn collab(socket: Socket, welcome_msg: &alisa::ABFValue, systems: &mut AppSystems) -> Option<Self> {
-        Some(Self::new(Client::collab(welcome_msg)?, Some(socket), systems))
+        let welcome_msg = alisa::WelcomeMessage::data_deserialize(welcome_msg)?;
+        Some(Self::new(Client::collab(&welcome_msg)?, Some(socket), systems))
     }
 
-    fn receive_message(msg: &alisa::ABFValue, state: &mut State) {
-        let (msg_type, data) = match msg {
-            alisa::ABFValue::NamedUnitEnum(name) => (name.as_str(), &alisa::ABFValue::PositiveInt(0)),
-            alisa::ABFValue::NamedEnum(name, data) => (name.as_str(), &**data),
-            _ => { return; }
-        };
+    fn receive_message(msg: &Message, state: &mut State) {
 
-        if msg_type == "presence" {
-            let Some(client_id) = data.get("client") else { return; };
-            let Some(client_id) = client_id.as_u64() else { return; }; 
-            let Some(data) = data.get("data") else { return; };
-            let Some(data) = PresenceData::data_deserialize(data) else { return; };
-            state.editor.other_clients.insert(client_id, data);
-            return;
-        }
-        if msg_type == "disconnect" {
-            let Some(client_id) = data.get("client") else { return; };
-            let Some(client_id) = client_id.as_u64() else { return; }; 
-            state.editor.other_clients.remove(&client_id);
-            return;
+        match msg {
+            Message::Collab(msg) => {
+                state.project.client.receive_message(msg, &mut ());
+            },
+            Message::PresenceUpdate(client_id, presence_data) => {
+                state.editor.other_clients.insert(client_id.0, presence_data.clone());
+            },
+            Message::Disconnect(client_id) => {
+                state.editor.other_clients.remove(&client_id.0);
+            },
+            _ => {}
         }
 
-        state.project.client.receive_message(msg, &mut ());
     }
 
     pub fn tick(&mut self, ui: &mut pierro::UI, systems: &mut AppSystems, next_app_state: &mut Option<AppState>) {
@@ -159,7 +152,13 @@ impl Editor {
             if send_messages {
                 let to_send = self.state.project.client.take_messages();
                 if !to_send.is_empty() {
-                    socket.send(alisa::ABFValue::Array(to_send.into_iter().collect()));
+                    socket.send_data(
+                        alisa::ABFValue::Array(
+                            to_send.into_iter()
+                                .map(|msg| Message::Collab(msg).shallow_serialize())
+                                .collect()
+                        )
+                    );
                 }
             }
 
@@ -171,10 +170,15 @@ impl Editor {
                 while let Some(msg) = socket.receive() {
                     if let Some(msgs) = msg.as_array() {
                         for submsg in msgs {
-                            Self::receive_message(submsg, &mut self.state);
+                            let Some(submsg) = Message::data_deserialize(submsg) else {
+                                continue;
+                            };
+                            Self::receive_message(&submsg, &mut self.state);
                         }
                     } else {
-                        Self::receive_message(&msg, &mut self.state);
+                        if let Some(msg) = Message::data_deserialize(&msg) {
+                            Self::receive_message(&msg, &mut self.state);
+                        }
                     }
                     // Redraw the UI a few times to make sure everything gets updated
                     self.redraw_requests = 3;

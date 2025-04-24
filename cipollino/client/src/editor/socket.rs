@@ -1,6 +1,9 @@
 
 use std::sync::{Arc, Mutex};
 
+use project::Message;
+use project::alisa::Serializable;
+
 #[derive(PartialEq, Eq)]
 enum SocketState {
     None,
@@ -79,8 +82,13 @@ impl Socket {
         Some(msgs.remove(0))
     }
 
-    pub fn send(&mut self, msg: alisa::ABFValue) {
-        let data = alisa::encode_abf(&msg);
+    pub fn send(&mut self, msg: Message) {
+        let data = msg.shallow_serialize();
+        self.send_data(data);
+    }
+
+    pub fn send_data(&mut self, data: project::alisa::ABFValue) {
+        let data = alisa::encode_abf(&data);
         let msg = ewebsock::WsMessage::Binary(data);
         self.sender.send(msg);
     }
