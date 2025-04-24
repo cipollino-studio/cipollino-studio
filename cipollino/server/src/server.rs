@@ -1,7 +1,7 @@
 
 use std::{collections::HashMap, path::PathBuf, sync::Arc};
 
-use project::{alisa, ClientId, Message};
+use project::{alisa, ClientId, Message, PresenceData};
 use alisa::Serializable;
 use warp::ws;
 use futures::SinkExt;
@@ -14,7 +14,7 @@ pub struct Server {
 
 pub struct Client {
     sender: futures::stream::SplitSink<ws::WebSocket, ws::Message>,
-    presence: Option<alisa::ABFValue>
+    presence: PresenceData 
 }
 
 impl Client {
@@ -47,6 +47,9 @@ impl Server {
                         continue;
                     }
                     other_client.send(Message::PresenceUpdate(client_id, presence_data.clone())).await;
+                }
+                if let Some(client) = self.clients.get_mut(&client_id) {
+                    client.presence = presence_data.clone();
                 }
             },
             _ => {}
@@ -87,20 +90,13 @@ impl Server {
 
         let mut client = Client {
             sender,
-            presence: None
+            presence: Default::default() 
         };
 
         if client.send(welcome_msg).await {
             let mut server = server_arc.lock().await;
             for (other_client_id, other_client) in &server.clients {
-                let Some(presence_data) = &other_client.presence else { continue; };
-                client.send(alisa::ABFValue::NamedEnum(
-                    "presence".into(),
-                    Box::new(alisa::ABFValue::Map(Box::new([
-                        ("client".into(), other_client_id.0.into()),
-                        ("data".into(), presence_data.clone()),
-                    ])))
-                )).await; 
+                client.send(Message::PresenceUpdate(*other_client_id, other_client.presence.clone())).await; 
             }
             server.clients.insert(client_id, client);
         }
