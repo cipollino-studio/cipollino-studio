@@ -1,8 +1,6 @@
 use std::{fmt::Debug, hash::Hash};
 
-use crate::{Object, Ptr};
-
-use super::{ABFValue, DeserializationContext, Serializable, SerializationContext};
+use crate::{ABFValue, DeserializationContext, Object, Ptr, Serializable, SerializationContext};
 
 /// A reference to an object that indicates that the object refered to should be loaded from disk/the server when the referer is loaded. 
 #[derive(Default)]

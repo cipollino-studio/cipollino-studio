@@ -1,4 +1,12 @@
 
+mod any_ptr;
+pub use any_ptr::*;
+
+mod loading_ptr;
+pub use loading_ptr::*;
+
+mod ptr_enum;
+
 use std::fmt::Debug;
 use std::hash::Hash;
 use std::marker::PhantomData;
@@ -80,31 +88,4 @@ impl<Obj: Object> Debug for Ptr<Obj> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_tuple(Obj::NAME).field(&self.key).finish()
     }
-}
-
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
-pub struct AnyPtr(u64);
-
-impl AnyPtr {
-
-    pub fn null() -> Self {
-        Self(0)
-    }
-
-}
-
-impl Default for AnyPtr {
-
-    fn default() -> Self {
-        Self::null()
-    }
-
-}
-
-impl Debug for AnyPtr {
-
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_tuple("Ptr").field(&self.0).finish()
-    }
-
 }

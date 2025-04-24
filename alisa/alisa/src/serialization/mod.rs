@@ -6,9 +6,6 @@ pub use abf::*;
 
 mod serialization_impls;
 
-mod loading_ptr;
-pub use loading_ptr::*;
-
 pub struct DeserializationContext {
     pub(crate) load_requests: Vec<(u16, u64)>,
 }
@@ -21,7 +18,8 @@ impl DeserializationContext {
         }
     } 
 
-    pub(crate) fn request_load(&mut self, obj_type: u16, key: u64) {
+    /// Request that another object also be loaded
+    pub fn request_load(&mut self, obj_type: u16, key: u64) {
         self.load_requests.push((obj_type, key));
     }
 
@@ -40,7 +38,7 @@ impl SerializationContext {
     } 
 
     /// Request that another object also be serialized and sent to the client
-    pub(crate) fn request_serialize(&self, obj_type: u16, key: u64) {
+    pub fn request_serialize(&self, obj_type: u16, key: u64) {
         self.serialization_requests.borrow_mut().push((obj_type, key));
     }
 
