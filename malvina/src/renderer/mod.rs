@@ -36,7 +36,7 @@ impl Renderer {
         let canvas_border = CanvasBorderRenderer::new(device);
         let line_renderer = OverlayLineRenderer::new(device);
         let circle_renderer = OverlayCircleRenderer::new(device);
-        let circle_brush = BrushTexture::circle(device, queue, &brush_texture_resources, 100);
+        let circle_brush = BrushTexture::circle(device, queue, &brush_texture_resources, 512);
         Self {
             stroke,
             canvas_border,

@@ -110,10 +110,12 @@ impl BrushTexture {
 
         for y in 0..(size as i32) {
             for x in 0..(size as i32) {
-                let r = (size as i32) / 2;
+                let x = x as f32;
+                let y = y as f32;
+                let r = (size as f32) / 2.0 - 0.5;
                 let dist = (x - r) * (x - r) + (y - r) * (y - r);
-                let dist = (dist as f32).sqrt();
-                let val = 1.0 - (dist - r as f32).clamp(0.0, 1.0);
+                let dist = dist.sqrt();
+                let val = 1.0 - (dist - r).clamp(0.0, 1.0);
                 data.push((val * 255.0).floor() as u8);
             }
         }

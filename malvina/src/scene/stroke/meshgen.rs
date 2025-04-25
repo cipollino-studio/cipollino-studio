@@ -22,28 +22,36 @@ impl Stroke {
 
         let mut stamps = Vec::new();
 
-        let spacing = 0.6;
+        let mut t = 0.0;
+        let mut prev_t = 0.0;
+        let pt_0 = self.path.sample(0.0);
+        let tang_0 = self.path.sample_derivative(0.0).pt.normalize();
+        let mut prev_pt = pt_0.pt;
+        let mut prev_size = pt_0.pressure * radius;
+        stamps.push(StrokeStampInstance {
+            pos: prev_pt.into(),
+            right: (tang_0 * prev_size).into(),
+        });
 
-        for i in 0..(self.path.pts.len() - 1) {
-            let mut t = 0.0;
-            while t < 1.0 {
-                let a = &self.path.pts[i];
-                let b = &self.path.pts[i + 1];
-                let segment = elic::BezierSegment::from_points(*a, *b);
-
-                let bezier_pt = segment.sample(t); 
-                let pos = bezier_pt.pt;
-                let pressure = bezier_pt.pressure;
-                let derivative = segment.sample_derivative(t).pt;
-                let tangent = derivative.normalize();
-                let size = radius * pressure;
-                let right = tangent * size; 
+        while t < (self.path.pts.len() - 1) as f32 {
+            t += 0.0025;
+            let pt = self.path.sample(t);
+            let size = pt.pressure * radius;
+            let distance = pt.pt.distance(prev_pt);
+            let target_distance = (prev_size + size) * 0.08;
+            if distance >= target_distance {
+                let scale_fac = target_distance / distance;
+                t = prev_t + scale_fac * (t - prev_t);
+                let pt = self.path.sample(t);
+                let size = pt.pressure * radius;
+                let tang = self.path.sample_derivative(t).pt.normalize();
                 stamps.push(StrokeStampInstance {
-                    pos: pos.into(),
-                    right: right.into()
+                    pos: pt.pt.into(),
+                    right: (tang * size).into(),
                 });
-
-                t += (spacing / derivative.length() * size).max(0.005); 
+                prev_t = t;
+                prev_pt = pt.pt;
+                prev_size = size;
             }
         }
 
