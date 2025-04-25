@@ -114,13 +114,7 @@ impl Server {
 
         // Tell the other clients this client disconnected
         for (_other_client, client) in &mut server.clients {
-            client.send(alisa::ABFValue::NamedEnum(
-                "disconnect".into(),
-                Box::new(alisa::ABFValue::Map(Box::new([
-                    ("type".into(), "disconnect".into()),
-                    ("client".into(), client_id.0.into()),
-                ])))
-            )).await; 
+            client.send(Message::Disconnect(client_id)).await; 
         }
     }
 
