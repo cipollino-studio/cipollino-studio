@@ -41,7 +41,7 @@ impl Stroke {
             let target_distance = (prev_size + size) * 0.08;
             if distance >= target_distance {
                 let scale_fac = target_distance / distance;
-                t = prev_t + scale_fac * (t - prev_t);
+                t = (prev_t + scale_fac * (t - prev_t)).max(prev_t + 0.0005);
                 let pt = self.path.sample(t);
                 let size = pt.pressure * radius;
                 let tang = self.path.sample_derivative(t).pt.normalize();
