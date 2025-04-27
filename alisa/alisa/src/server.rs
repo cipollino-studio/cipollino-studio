@@ -10,7 +10,6 @@ struct ServerClient {
 pub struct Server<P: Project> {
     /// The pseudo-client holding the server's project. Handles receiving operation messages and serialization.
     client: Client<P>,
-    context: P::Context,
     curr_client_id: u64,
     clients: HashMap<ClientId, ServerClient>
 }
@@ -40,11 +39,10 @@ impl Serializable for ClientId {
 
 impl<P: Project> Server<P> {
 
-    pub fn new<PathRef: AsRef<Path>>(path: PathRef, context: P::Context) -> Option<Self> {
+    pub fn new<PathRef: AsRef<Path>>(path: PathRef) -> Option<Self> {
         let client = Client::local(path)?;
         Some(Self {
             client,
-            context,
             curr_client_id: 1,
             clients: HashMap::new()
         })
@@ -102,7 +100,7 @@ impl<P: Project> Server<P> {
     pub fn receive_message(&mut self, client_id: ClientId, msg: &Message) {
         match msg {
             Message::Operation { operation, data } => {
-                if self.client.handle_operation_message(operation, data, &mut self.context) {
+                if self.client.handle_operation_message(operation, data) {
                     self.broadcast(msg, Some(client_id));
                 }
                 self.send(client_id, Message::ConfirmOperation);
@@ -122,7 +120,7 @@ impl<P: Project> Server<P> {
                 return;
             } 
         }
-        self.client.tick(&mut self.context);
+        self.client.tick();
     }
 
     fn handle_load_message(&mut self, object_kind: &ObjectKind<P>, key: u64, client_id: ClientId) {

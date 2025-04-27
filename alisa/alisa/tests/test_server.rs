@@ -26,11 +26,11 @@ pub struct TestingServer<P: alisa::Project> {
     path: PathBuf
 }
 
-impl<P: alisa::Project<Context = ()>> TestingServer<P> {
+impl<P: alisa::Project> TestingServer<P> {
 
     pub fn new<Path: Into<PathBuf>>(path: Path) -> Self {
         let path = path.into();
-        let mut server = alisa::Server::new(path.clone(), ()).unwrap();
+        let mut server = alisa::Server::new(path.clone()).unwrap();
 
         let alice = TestingClient::new(&mut server);
         let bob = TestingClient::new(&mut server);
@@ -65,7 +65,7 @@ impl<P: alisa::Project<Context = ()>> TestingServer<P> {
         if let Some(messages) = server.get_msgs_to_send_mut(client.id) {
             let messages = std::mem::replace(messages, Vec::new());
             for message in messages {
-                client.client.receive_message(&message, &mut ());
+                client.client.receive_message(&message);
             }
         }
     }
@@ -83,7 +83,7 @@ impl<P: alisa::Project<Context = ()>> TestingServer<P> {
     }
 
     pub fn tick_client(&mut self, id: usize) {
-        self.clients[id].client.tick(&mut ());
+        self.clients[id].client.tick();
     }
 
     pub fn tick_alice(&mut self) {
@@ -115,7 +115,7 @@ impl<P: alisa::Project<Context = ()>> TestingServer<P> {
     pub fn stabilize(&mut self) {
         while !self.is_stable() {
             for client in &mut self.clients {
-                client.client.tick(&mut ());
+                client.client.tick();
                 Self::send_messages(&mut self.server, &client);
                 Self::receive_messages(&mut self.server, client);
             }

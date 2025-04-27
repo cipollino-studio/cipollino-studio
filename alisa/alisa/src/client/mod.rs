@@ -137,12 +137,11 @@ impl<P: Project> Client<P> {
         Some(context)
     }
 
-    fn perform_act(&mut self, operation: Box<dyn OperationDyn<Project = P>>, context: &mut P::Context) {
+    fn perform_act(&mut self, operation: Box<dyn OperationDyn<Project = P>>) {
         let mut delta = Delta::new();
         let mut recorder = Recorder::new(ProjectContextMut {
             project: &mut self.project,
             objects: &mut self.objects,
-            context,
             project_modified: &mut self.project_modified,
         }, OperationSource::Local, Some(&mut delta));
         let success = operation.perform(&mut recorder) && *recorder.success.borrow();
@@ -155,7 +154,6 @@ impl<P: Project> Client<P> {
             let mut context = ProjectContextMut {
                 project: &mut self.project,
                 objects: &mut self.objects,
-                context,
                 project_modified: &mut self.project_modified,
             };
 
@@ -164,7 +162,7 @@ impl<P: Project> Client<P> {
         }
     }
 
-    fn perform_action(&mut self, action: Action<P>, context: &mut P::Context) -> Action<P> {
+    fn perform_action(&mut self, action: Action<P>) -> Action<P> {
         let mut inverse_acts = Vec::new();
         for act in action.acts {
             if let Some(inverse) = act.operation.inverse(&self.context()) {
@@ -172,7 +170,7 @@ impl<P: Project> Client<P> {
                     operation: inverse,
                 });
             }
-            self.perform_act(act.operation, context);
+            self.perform_act(act.operation);
         }
         inverse_acts.reverse();
         Action {
@@ -182,7 +180,7 @@ impl<P: Project> Client<P> {
     }
 
     /// Update the client. Performs all the queued operations. Returns the messages that should be sent to the server.
-    pub fn tick(&mut self, context: &mut P::Context) {
+    pub fn tick(&mut self) {
 
         let mut operations_ref = self.operations_to_perform.borrow_mut();
         let operations = &mut *operations_ref;
@@ -192,22 +190,22 @@ impl<P: Project> Client<P> {
         // Perform queued operations 
         for operation in operations {
             match operation {
-                OperationToPerform::Operation(act) => self.perform_act(act, context),
+                OperationToPerform::Operation(act) => self.perform_act(act),
                 OperationToPerform::Action(action) => {
-                    let inv_action = self.perform_action(action, context);
+                    let inv_action = self.perform_action(action);
                     if !inv_action.is_empty() {
                         self.undo_stack.borrow_mut().push(inv_action);
                     }
                     self.redo_stack.borrow_mut().clear();
                 },
                 OperationToPerform::Undo(undo_action) => {
-                    let redo_action = self.perform_action(undo_action, context);
+                    let redo_action = self.perform_action(undo_action);
                     if !redo_action.is_empty() {
                         self.redo_stack.borrow_mut().push(redo_action);
                     }
                 },
                 OperationToPerform::Redo(redo_action) => {
-                    let undo_action = self.perform_action(redo_action, context);
+                    let undo_action = self.perform_action(redo_action);
                     if !undo_action.is_empty() {
                         self.undo_stack.borrow_mut().push(undo_action);
                     }

@@ -109,7 +109,7 @@ impl<P: Project> Client<P> {
         })
     }
 
-    pub(crate) fn handle_operation_message(&mut self, operation_name: &str, data: &ABFValue, context: &mut P::Context) -> bool {
+    pub(crate) fn handle_operation_message(&mut self, operation_name: &str, data: &ABFValue) -> bool {
         // Find the type of operation being performed
         let Some(operation_kind) = P::OPERATIONS.iter().find(|kind| kind.name == operation_name) else {
             return false;
@@ -122,7 +122,6 @@ impl<P: Project> Client<P> {
         let mut project_context = ProjectContextMut {
             project: &mut self.project,
             objects: &mut self.objects,
-            context,
             project_modified: &mut self.project_modified,
         };
 
@@ -146,7 +145,6 @@ impl<P: Project> Client<P> {
                 let project_context = ProjectContextMut {
                     project: &mut self.project,
                     objects: &mut self.objects,
-                    context,
                     project_modified: &mut self.project_modified,
                 };
                 let mut recorder = Recorder::new(project_context, OperationSource::Local, Some(&mut delta));
@@ -154,7 +152,6 @@ impl<P: Project> Client<P> {
                     let mut project_context = ProjectContextMut {
                         project: &mut self.project,
                         objects: &mut self.objects,
-                        context,
                         project_modified: &mut self.project_modified,
                     };
                     delta.undo(&mut project_context);
@@ -166,7 +163,7 @@ impl<P: Project> Client<P> {
         success
     }
 
-    pub fn receive_message(&mut self, msg: &Message, context: &mut P::Context) {
+    pub fn receive_message(&mut self, msg: &Message) {
         if !self.is_collab() {
             return;
         }
@@ -182,7 +179,7 @@ impl<P: Project> Client<P> {
                 }
             },
             Message::Operation { operation, data } => {
-                self.handle_operation_message(&operation, data, context);
+                self.handle_operation_message(&operation, data);
             },
             Message::KeyGrant { first, last } => {
                 if *first != 0 && *last != 0 {

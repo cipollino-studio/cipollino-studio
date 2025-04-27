@@ -28,6 +28,10 @@ pub trait Children<O: Object> {
         idx
     }
 
+    fn is_empty(&self) -> bool {
+        self.n_children() == 0
+    }
+
 }
 
 /// An object that is part of a tree of objects. 

@@ -92,9 +92,9 @@ impl<P: Project> Client<P> {
         #[cfg(debug_assertions)]
         verify_project_type::<P>();
         
-        let (file, project, objects, curr_key) = File::open(path)?;
+        let (file, project, objects, curr_key, new_project) = File::open(path)?;
 
-        Some(Self {
+        let mut client = Self {
             kind: ClientKind::Local(Local::new(file, curr_key)),
             project,
             objects,
@@ -102,7 +102,14 @@ impl<P: Project> Client<P> {
             project_modified: false,
             undo_stack: RefCell::new(Vec::new()),
             redo_stack: RefCell::new(Vec::new())
-        })
+        };
+
+        if new_project {
+            P::create_default(&client);
+            client.tick();
+        }
+
+        Some(client)
     }
 
 }

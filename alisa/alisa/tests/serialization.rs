@@ -1,8 +1,6 @@
 
 use alisa::Serializable;
 
-mod dummy_project;
-
 #[derive(alisa::Serializable, PartialEq, Eq, Debug)]
 struct MyStruct {
     num: i32,

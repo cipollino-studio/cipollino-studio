@@ -1,5 +1,6 @@
 
 mod test_server;
+use alisa::Client;
 use test_server::TestingServer;
 
 #[derive(Clone, alisa::Serializable, Default)]
@@ -41,7 +42,7 @@ impl alisa::Operation for Add {
 }
 
 impl alisa::Project for Project {
-    type Context = ();
+
     type Objects = ();
     type ActionContext = ();
 
@@ -49,7 +50,7 @@ impl alisa::Project for Project {
         Self::default()
     }
 
-    fn create_default(&mut self) {
+    fn create_default(_client: &Client<Self>) {
 
     }
 

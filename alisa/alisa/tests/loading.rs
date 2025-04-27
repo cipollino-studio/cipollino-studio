@@ -55,16 +55,11 @@ impl alisa::Operation for CreateThing {
 
 impl alisa::Project for Project {
 
-    type Context = ();
     type Objects = Objects;
     type ActionContext = ();
 
     fn empty() -> Self {
         Self {}
-    }
-
-    fn create_default(&mut self) {
-
     }
 
     const OBJECTS: &'static [alisa::ObjectKind<Self>] = &[

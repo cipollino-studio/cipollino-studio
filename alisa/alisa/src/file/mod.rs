@@ -56,7 +56,7 @@ impl File {
         let _ = file.write_root(&data);
     }
 
-    pub fn open<P: Project, PathRef: AsRef<Path>>(path: PathRef) -> Option<(Self, P, P::Objects, u64)> {
+    pub fn open<P: Project, PathRef: AsRef<Path>>(path: PathRef) -> Option<(Self, P, P::Objects, u64, bool)> {
 
         let mut file = verter::File::open(path, P::verter_config()).ok()?; // TODO: add configuration for magic bytes
 
@@ -84,8 +84,8 @@ impl File {
             file.project_ptr = file.file.alloc().ok()?;
         }
 
-        let (project, objects) = if let Some((projects, objects)) = file.try_load_project() {
-            (projects, objects)
+        let (project, objects, new_project) = if let Some((projects, objects)) = file.try_load_project() {
+            (projects, objects, false)
         } else {
             let project = P::empty();
             let objects = P::Objects::default();
@@ -93,10 +93,10 @@ impl File {
             let project_data = project.serialize(&SerializationContext::new());
             file.write_project(&project_data);
 
-            (project, objects)
+            (project, objects, true)
         };
 
-        Some((file, project, objects, curr_key)) 
+        Some((file, project, objects, curr_key, new_project)) 
     }
 
     pub fn read_bytes(&mut self, ptr: u64) -> Option<Vec<u8>> {

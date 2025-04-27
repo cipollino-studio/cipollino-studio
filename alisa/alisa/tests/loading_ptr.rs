@@ -57,7 +57,7 @@ impl alisa::Object for Node {
 }
 
 impl alisa::Project for Project {
-    type Context = ();
+
     type Objects = Objects;
     type ActionContext = ();
 
@@ -65,10 +65,6 @@ impl alisa::Project for Project {
         Self {
             node: alisa::LoadingPtr::default()
         }
-    }
-
-    fn create_default(&mut self) {
-
     }
 
     const OBJECTS: &'static [alisa::ObjectKind<Self>] = &[
@@ -96,7 +92,7 @@ fn project_load() {
     client.queue_operation(SetNode {
         node: alisa::LoadingPtr::new(ptr),
     });
-    client.tick(&mut ());
+    client.tick();
 
     drop(client);
 
@@ -126,13 +122,13 @@ fn object_load() {
         next: cdr,
     });
 
-    client.tick(&mut ());
+    client.tick();
 
     drop(client);
 
     let mut client = alisa::Client::<Project>::local("object_load.test").unwrap();
     client.request_load(car);
-    client.tick(&mut ());
+    client.tick();
     assert!(client.get(car).is_some());
     assert_eq!(client.get(car).unwrap().x, 1);
     assert!(client.get(cdr).is_some());
