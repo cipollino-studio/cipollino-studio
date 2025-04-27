@@ -166,3 +166,46 @@ impl Serializable for ABFValue {
     }
 
 }
+
+macro_rules! tuple_serializable {
+    ($($t: ident),*) => {
+
+        impl<$($t: Serializable),*> Serializable for ($($t),*) {
+
+            fn serialize(&self, context: &SerializationContext) -> ABFValue {
+                #![allow(non_snake_case)]
+                let ($($t),*) = self;
+                ABFValue::Array(Box::new([
+                    $($t.serialize(context)),*
+                ]))
+            }
+
+            fn deserialize(data: &ABFValue, context: &mut DeserializationContext) -> Option<Self> {
+                #![allow(non_snake_case)]
+                let mut arr = data.as_array()?;
+                $(
+                    let $t = arr.get(0)?; 
+                    let $t = $t::deserialize($t, context)?;
+                    arr = &arr[1..];
+                )*
+                if !arr.is_empty() {
+                    return None;
+                }
+                Some(($($t),*))
+            }
+
+        }
+
+    };
+}
+
+tuple_serializable!(A, B);
+tuple_serializable!(A, B, C);
+tuple_serializable!(A, B, C, D);
+tuple_serializable!(A, B, C, D, E);
+tuple_serializable!(A, B, C, D, E, F);
+tuple_serializable!(A, B, C, D, E, F, G);
+tuple_serializable!(A, B, C, D, E, F, G, H);
+tuple_serializable!(A, B, C, D, E, F, G, H, I);
+tuple_serializable!(A, B, C, D, E, F, G, H, I, J);
+tuple_serializable!(A, B, C, D, E, F, G, H, I, J, K);
