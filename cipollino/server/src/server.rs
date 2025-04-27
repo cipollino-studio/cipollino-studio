@@ -1,7 +1,7 @@
 
 use std::{collections::HashMap, path::PathBuf, sync::Arc};
 
-use project::{alisa, ClientId, Message, PresenceData};
+use project::{alisa, ClientId, Message, PresenceData, WelcomeMessage, PROTOCOL_VERSION};
 use alisa::Serializable;
 use warp::ws;
 use futures::SinkExt;
@@ -85,21 +85,23 @@ impl Server {
         use futures::StreamExt;
         println!("New client connected.");
 
+        let mut server = server_arc.lock().await;
         let (sender, mut receiver) = socket.split();
-        let (client_id, welcome_msg) = server_arc.lock().await.server.add_client();
+        let (client_id, welcome_msg) = server.server.add_client();
+        let welcome_msg = WelcomeMessage {
+            collab: welcome_msg,
+            version: PROTOCOL_VERSION,
+            presence: server.clients.iter().map(|(id, client)| (*id, client.presence.clone())).collect(),
+        };
 
         let mut client = Client {
             sender,
             presence: Default::default() 
         };
 
-        if client.send(welcome_msg).await {
-            let mut server = server_arc.lock().await;
-            for (other_client_id, other_client) in &server.clients {
-                client.send(Message::PresenceUpdate(*other_client_id, other_client.presence.clone())).await; 
-            }
-            server.clients.insert(client_id, client);
-        }
+        client.send(welcome_msg).await;
+        server.clients.insert(client_id, client);
+        drop(server);
 
         while let Some(Ok(msg)) = receiver.next().await {
             let data = msg.as_bytes();

@@ -2,7 +2,7 @@
 use std::collections::HashSet;
 use std::{cell::RefCell, collections::HashMap};
 use std::rc::Rc;
-use project::{Client, Clip, ClipInner, Layer, PresenceData, Project, Ptr, Stroke};
+use project::{Client, ClientId, Clip, ClipInner, Layer, PresenceData, Project, Ptr, Stroke};
 
 use crate::{Presence, SelectTool, ToolDyn, Window, WindowInstance};
 
@@ -42,7 +42,7 @@ pub struct EditorState {
     on_load_callbacks: Vec<Box<dyn Fn(&ProjectState, &mut EditorState) -> bool>>,
 
     pub presence: Presence,
-    pub other_clients: HashMap<u64, PresenceData>,
+    pub other_clients: HashMap<ClientId, PresenceData>,
 
     #[cfg(debug_assertions)]
     pub send_messages: bool,

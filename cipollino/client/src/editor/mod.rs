@@ -2,7 +2,7 @@
 use std::path::PathBuf;
 
 use alisa::Serializable;
-use project::{deep_load_clip, Client, Frame, Message, Ptr, Stroke};
+use project::{deep_load_clip, Client, Frame, Message, Ptr, Stroke, WelcomeMessage, PROTOCOL_VERSION};
 
 use crate::splash::SplashScreen;
 use crate::{AppState, AppSystems, DockingLayoutPref, EditorPanel, PanelContext};
@@ -63,9 +63,19 @@ impl Editor {
         Some(Self::new(Client::local(path)?, None, systems))
     }
 
-    pub fn collab(socket: Socket, welcome_msg: &alisa::ABFValue, systems: &mut AppSystems) -> Option<Self> {
-        let welcome_msg = alisa::WelcomeMessage::data_deserialize(welcome_msg)?;
-        Some(Self::new(Client::collab(&welcome_msg)?, Some(socket), systems))
+    pub fn collab(socket: Socket, welcome_msg: &alisa::ABFValue, systems: &mut AppSystems) -> Result<Self, String> {
+        let welcome_msg = WelcomeMessage::data_deserialize(welcome_msg).ok_or("Invalid server protocol.".to_owned())?;
+        let mut editor = Self::new(Client::collab(&welcome_msg.collab).ok_or("Invalid server protocol.".to_owned())?, Some(socket), systems);
+        editor.state.editor.other_clients = welcome_msg.presence.into_iter().collect();
+
+        if PROTOCOL_VERSION > welcome_msg.version {
+            return Err("Outdated server version. Update the server software.".to_owned());
+        }
+        if PROTOCOL_VERSION < welcome_msg.version {
+            return Err("Outdated client version. Install the latest version of Cipollino.".to_owned());
+        }
+    
+        Ok(editor)
     }
 
     fn receive_message(msg: &Message, state: &mut State) {
@@ -75,10 +85,10 @@ impl Editor {
                 state.project.client.receive_message(msg, &mut ());
             },
             Message::PresenceUpdate(client_id, presence_data) => {
-                state.editor.other_clients.insert(client_id.0, presence_data.clone());
+                state.editor.other_clients.insert(*client_id, presence_data.clone());
             },
             Message::Disconnect(client_id) => {
-                state.editor.other_clients.remove(&client_id.0);
+                state.editor.other_clients.remove(&client_id);
             },
             _ => {}
         }

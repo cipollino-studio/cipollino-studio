@@ -73,10 +73,9 @@ impl CollabScreen {
 
                 if let Some(welcome_msg) = socket.receive() {
                     let socket = self.socket.take().unwrap();
-                    if let Some(editor) = Editor::collab(socket, &welcome_msg, systems) {
-                        *next_app_state = Some(AppState::Editor(editor));
-                    } else {
-                        self.error = "Invalid server protocol.".to_owned();
+                    match Editor::collab(socket, &welcome_msg, systems) {
+                        Ok(editor) => *next_app_state = Some(AppState::Editor(editor)),
+                        Err(msg) => self.error = msg,
                     }
                 } else if let Some(err) = socket.take_error() {
                     self.error = err;

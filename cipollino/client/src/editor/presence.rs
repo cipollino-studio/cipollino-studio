@@ -1,6 +1,6 @@
 
 use pierro::ColorSpace;
-use project::{Clip, Message, PresenceData, Ptr};
+use project::{ClientId, Clip, Message, PresenceData, Ptr};
 
 use super::Socket;
 
@@ -68,12 +68,12 @@ const PRESENCE_ICONS: &[&'static str] = &[
     pierro::icons::ALIEN,
 ];
 
-pub fn presence_icon(client_id: u64) -> &'static str {
+pub fn presence_icon(client_id: ClientId) -> &'static str {
     let idx = (pierro::hash(&client_id) as usize) % PRESENCE_ICONS.len();
     PRESENCE_ICONS[idx]
 }
 
-pub fn presence_color(client_id: u64) -> pierro::Color {
+pub fn presence_color(client_id: ClientId) -> pierro::Color {
     let t = (pierro::hash(&client_id) & 0xFF) as f32 / 255.0;
     let hue = 1.0 / 3.0 + 2.0 / 3.0 * t;
     let [r, g, b] = pierro::HSVColorSpace::to_rgb([hue, 0.9, 0.6]);

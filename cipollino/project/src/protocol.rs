@@ -25,3 +25,12 @@ pub enum Message {
     PresenceUpdate(ClientId, PresenceData),
     Disconnect(ClientId)
 }
+
+#[derive(alisa::Serializable, Default)]
+pub struct WelcomeMessage {
+    pub collab: alisa::WelcomeMessage,
+    pub version: u64,
+    pub presence: Vec<(ClientId, PresenceData)>
+}
+
+pub const PROTOCOL_VERSION: u64 = 0;
