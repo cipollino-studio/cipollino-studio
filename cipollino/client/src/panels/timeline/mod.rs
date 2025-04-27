@@ -115,10 +115,16 @@ impl Panel for TimelinePanel {
                 pierro::v_spacing(ui, Self::FRAMEBAR_HEIGHT);
                 self.layers(ui, project, editor, &render_list)
             });
-            self.layers_width = layers_width;
+            let parent_id = ui.get_node_id(ui.curr_parent());
+            let parent_width = ui.memory().get_opt::<pierro::LayoutInfo>(parent_id).map(|info| info.screen_rect.width()).unwrap_or(ui.window_size().x);
+            if parent_width > 150.0 {
+                self.layers_width = layers_width.max(100.0).min(parent_width - 50.0);
+            } else {
+                self.layers_width = parent_width * 2.0 / 3.0;
+            }
 
             let (frame_container, _) = pierro::vertical_fill(ui, |_| {});
-            let frame_container_width = ui.memory().get::<pierro::LayoutInfo>(frame_container.id).screen_rect.width();
+            let frame_container_width = ui.memory().get_opt::<pierro::LayoutInfo>(frame_container.id).map(|info| info.screen_rect.width()).unwrap_or(ui.window_size().x);
             let n_frames = (clip_inner.length + (frame_container_width / Self::FRAME_WIDTH).ceil() as u32).min(50000);
 
             let (framebar_scroll_response, frame_area_scroll_response) = ui.with_parent(frame_container.node_ref, |ui| {
