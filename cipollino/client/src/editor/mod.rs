@@ -1,7 +1,7 @@
 
 use std::path::PathBuf;
 
-use alisa::Serializable;
+use alisa::{Children, Serializable};
 use project::{deep_load_clip, Client, Frame, Message, Ptr, Stroke, WelcomeMessage, PROTOCOL_VERSION};
 
 use crate::splash::SplashScreen;
@@ -46,7 +46,7 @@ pub struct Editor {
 impl Editor {
 
     fn new(client: Client, socket: Option<Socket>, systems: &mut AppSystems) -> Self {
-        Self {
+        let mut editor = Self {
             state: State {
                 project: ProjectState::new(client),
                 editor: EditorState::new(),
@@ -56,7 +56,16 @@ impl Editor {
             windows: pierro::WindowManager::new(),
             socket,
             redraw_requests: 0
+        };
+
+        let client = &editor.state.project.client;
+        if client.folders.is_empty() && client.clips.n_children() == 1 {
+            if let Some(clip_ptr) = client.clips.iter().next() {
+                editor.state.editor.open_clip(clip_ptr.ptr());
+            }
         }
+
+        editor
     }
 
     pub fn local(path: PathBuf, systems: &mut AppSystems) -> Option<Self> {
@@ -82,7 +91,7 @@ impl Editor {
 
         match msg {
             Message::Collab(msg) => {
-                state.project.client.receive_message(msg, &mut ());
+                state.project.client.receive_message(msg);
             },
             Message::PresenceUpdate(client_id, presence_data) => {
                 state.editor.other_clients.insert(*client_id, presence_data.clone());
@@ -229,7 +238,7 @@ impl Editor {
 
         // Update the project client
         self.state.project.tick(&self.state.editor);
-        self.state.project.client.tick(&mut ());
+        self.state.project.client.tick();
 
         // Invalidate cached meshes for updated strokes
         for updated_stroke in self.state.project.client.modified() {

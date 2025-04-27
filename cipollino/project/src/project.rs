@@ -1,5 +1,5 @@
 
-use crate::{Clip, ClipInner, CreateClip, CreateClipInner, CreateFolder, CreateFrame, CreateLayer, CreateStroke, DeleteClip, DeleteFolder, DeleteFrame, DeleteLayer, DeleteStroke, Folder, Frame, Layer, RenameClip, RenameFolder, SetClipInnerFramerate, SetClipInnerHeight, SetClipInnerLength, SetClipInnerWidth, SetFrameTime, SetLayerName, SetStrokeColor, SetStrokeStroke, Stroke, TransferClip, TransferFolder, TransferLayer};
+use crate::{Clip, ClipInner, ClipTreeData, CreateClip, CreateClipInner, CreateFolder, CreateFrame, CreateLayer, CreateStroke, DeleteClip, DeleteFolder, DeleteFrame, DeleteLayer, DeleteStroke, Folder, Frame, Layer, LayerParent, LayerTreeData, RenameClip, RenameFolder, SetClipInnerFramerate, SetClipInnerHeight, SetClipInnerLength, SetClipInnerWidth, SetFrameTime, SetLayerName, SetStrokeColor, SetStrokeStroke, Stroke, TransferClip, TransferFolder, TransferLayer};
 
 #[derive(alisa::Serializable, Clone)]
 pub struct Project {
@@ -49,7 +49,6 @@ impl ActionContext {
 
 impl alisa::Project for Project {
 
-    type Context = ();
     type Objects = Objects;
     type ActionContext = ActionContext;
 
@@ -57,8 +56,24 @@ impl alisa::Project for Project {
         Self::default()
     }
 
-    fn create_default(&mut self) {
-
+    fn create_default(client: &alisa::Client<Self>) {
+        let Some(default_clip_ptr) = client.next_ptr() else { return; };
+        let Some(default_clip_inner_ptr) = client.next_ptr() else { return; };
+        let Some(layer_ptr) = client.next_ptr() else { return; };
+        client.queue_operation(CreateClip {
+            ptr: default_clip_ptr,
+            parent: alisa::Ptr::null(),
+            data: ClipTreeData {
+                inner_ptr: default_clip_inner_ptr,
+                ..Default::default()
+            },
+        });
+        client.queue_operation(CreateLayer {
+            ptr: layer_ptr,
+            parent: LayerParent::Clip(default_clip_ptr),
+            idx: 0,
+            data: LayerTreeData::default(),
+        });
     }
 
     fn verter_config() -> alisa::verter::Config {

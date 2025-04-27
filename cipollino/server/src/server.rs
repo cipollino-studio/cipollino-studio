@@ -31,7 +31,7 @@ impl Server {
 
     pub fn new(path: PathBuf) -> Self {
         Self {
-            server: project::Server::new(path, ()).expect("could not open project"),
+            server: project::Server::new(path).expect("could not open project"),
             clients: HashMap::new()
         }
     }
