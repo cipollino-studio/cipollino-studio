@@ -1,8 +1,6 @@
 
 use std::cell::RefCell;
 
-use keychain::KeyChain;
-
 use crate::{ABFValue, Delta, DeserializationContext, Message, OperationDyn, OperationSource, Project, ProjectContextMut, Recorder, UnconfirmedOperation, WelcomeMessage};
 
 use super::{Client, ClientKind};
@@ -10,44 +8,30 @@ use super::{Client, ClientKind};
 #[cfg(debug_assertions)]
 use super::verify_project_type;
 
-mod keychain;
-
 pub(crate) struct Collab<P: Project> {
-    keychain: RefCell<KeyChain<2>>,
-    key_request_sent: bool,
+    /// Local operations that haven't yet been confirmed by the server
     unconfirmed_operations: Vec<UnconfirmedOperation<P>>,
-    to_send: RefCell<Vec<Message>>
+    /// Messages that are queued to be sent to the server
+    to_send: RefCell<Vec<Message>>,
+    /// The next key available for use
+    curr_key: RefCell<u64>,
 }
 
 impl<P: Project> Collab<P> {
 
     pub(crate) fn new() -> Self {
         Self {
-            keychain: RefCell::new(KeyChain::new()),
-            key_request_sent: false,
             unconfirmed_operations: Vec::new(),
-            to_send: RefCell::new(Vec::new())
+            to_send: RefCell::new(Vec::new()),
+            curr_key: RefCell::new(1 << 63)
         }
     }
 
-    pub(crate) fn next_key(&self) -> Option<u64> {
-        self.keychain.borrow_mut().next_key()
-    }
-
-    pub(crate) fn has_keys(&self) -> bool {
-        self.keychain.borrow().has_keys()
-    }
-
-    pub(crate) fn accept_keys(&self, first: u64, last: u64) {
-        self.keychain.borrow_mut().accept_keys(first, last);
-    }
-
-    pub(crate) fn request_keys(&mut self) {
-        let keychain = self.keychain.borrow_mut();
-        if keychain.wants_keys() && !self.key_request_sent {
-            self.send_message(Message::KeyRequest);
-            self.key_request_sent = true;
-        }
+    pub(crate) fn next_key(&self) -> u64 {
+        let mut curr_key = self.curr_key.borrow_mut();
+        let key = *curr_key;
+        *curr_key += 1;
+        key
     }
 
     pub(crate) fn load_objects(&mut self, objects: &mut P::Objects) {
@@ -180,14 +164,6 @@ impl<P: Project> Client<P> {
             },
             Message::Operation { operation, data } => {
                 self.handle_operation_message(&operation, data);
-            },
-            Message::KeyGrant { first, last } => {
-                if *first != 0 && *last != 0 {
-                    if let Some(collab) = self.kind.as_collab() {
-                        collab.accept_keys(*first, *last);
-                        collab.key_request_sent = false;
-                    }
-                }
             },
             Message::Load { ptr, obj } => {
                 let obj_type = ptr.obj_type();

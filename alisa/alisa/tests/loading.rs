@@ -80,8 +80,8 @@ fn basic_loading() {
     server.tick_alice();
     server.stabilize();
 
-    let ptr = server.alice().next_ptr().unwrap();
-    let next_ptr = server.alice().next_ptr().unwrap();
+    let ptr = server.alice().next_ptr();
+    let next_ptr = server.alice().next_ptr();
     server.alice().queue_operation(CreateThing {
         ptr,
         x: 123,

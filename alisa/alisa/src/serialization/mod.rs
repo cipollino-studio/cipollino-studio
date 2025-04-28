@@ -33,9 +33,9 @@ impl SerializationContext {
 
     pub(crate) fn new() -> Self {
         Self {
-            serialization_requests: RefCell::new(Vec::new())
+            serialization_requests: RefCell::new(Vec::new()),
         }
-    } 
+    }
 
     /// Request that another object also be serialized and sent to the client
     pub fn request_serialize(&self, obj_type: u16, key: u64) {
@@ -53,12 +53,12 @@ pub trait Serializable: Sized {
     fn serialize(&self, context: &SerializationContext) -> ABFValue; 
     fn deserialize(data: &ABFValue, context: &mut DeserializationContext) -> Option<Self>;
 
-    fn shallow_serialize(&self) -> ABFValue {
-        self.serialize(&SerializationContext::new())
-    }
+}
 
-    fn data_deserialize(data: &ABFValue) -> Option<Self> {
-        Self::deserialize(data, &mut DeserializationContext::new())
-    }
+pub fn serialize<T: Serializable>(obj: &T) -> ABFValue {
+    obj.serialize(&SerializationContext::new())
+}
 
+pub fn deserialize<T: Serializable>(data: &ABFValue) -> Option<T> {
+    T::deserialize(data, &mut DeserializationContext::new())
 }

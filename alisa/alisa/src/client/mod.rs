@@ -31,17 +31,10 @@ impl<P: Project> ClientKind<P> {
         }
     }
 
-    fn next_key(&self) -> Option<u64> {
+    fn next_key(&self) -> u64 {
         match self {
-            ClientKind::Local(local) => Some(local.next_key()),
+            ClientKind::Local(local) => local.next_key(),
             ClientKind::Collab(collab) => collab.next_key(),
-        }
-    }
-
-    fn has_keys(&self) -> bool {
-        match self {
-            ClientKind::Local(_local) => true,
-            ClientKind::Collab(collab) => collab.has_keys(),
         }
     }
 
@@ -80,12 +73,12 @@ impl<P: Project> Client<P> {
         }
     }
 
-    pub fn next_ptr<O: Object>(&self) -> Option<Ptr<O>> {
-        self.kind.next_key().map(Ptr::from_key)
+    pub(crate) fn next_key(&self) -> u64 {
+        self.kind.next_key()
     }
 
-    pub fn has_keys(&self) -> bool {
-        self.kind.has_keys()
+    pub fn next_ptr<O: Object>(&self) -> Ptr<O> {
+        Ptr::from_key(self.next_key())
     }
 
     /// In debug mode, check that the operation being performed is registered in the project.
@@ -214,7 +207,6 @@ impl<P: Project> Client<P> {
         }
 
         if let Some(collab) = self.kind.as_collab() {
-            collab.request_keys(); 
             collab.load_objects(&mut self.objects);
         }
 

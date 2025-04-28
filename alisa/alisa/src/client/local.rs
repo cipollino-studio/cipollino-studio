@@ -39,14 +39,6 @@ impl<P: Project> Local<P> {
         key
     }
 
-    pub(crate) fn next_key_range(&self, n_keys: u64) -> (u64, u64) {
-        let mut curr_key = self.curr_key.borrow_mut();
-        let first = *curr_key;
-        *curr_key += n_keys;
-        *self.root_data_modified.borrow_mut() = true;
-        (first, first + n_keys - 1)
-    }
-
     fn update_root_data(&mut self) {
         self.file.update_root(*self.curr_key.borrow()); 
     }

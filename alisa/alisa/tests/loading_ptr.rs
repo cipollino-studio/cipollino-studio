@@ -83,7 +83,7 @@ fn project_load() {
 
     let mut client = alisa::Client::<Project>::local("project_load.test").unwrap();
     
-    let ptr = client.next_ptr().unwrap();
+    let ptr = client.next_ptr();
     client.queue_operation(CreateNode {
         ptr,
         x: 123,
@@ -109,13 +109,13 @@ fn object_load() {
 
     let mut client = alisa::Client::<Project>::local("object_load.test").unwrap();
 
-    let cdr = client.next_ptr().unwrap();
+    let cdr = client.next_ptr();
     client.queue_operation(CreateNode {
         ptr: cdr,
         x: 2,
         next: alisa::Ptr::null(),
     });
-    let car = client.next_ptr().unwrap();
+    let car = client.next_ptr();
     client.queue_operation(CreateNode {
         ptr: car,
         x: 1,
@@ -147,7 +147,7 @@ fn project_load_collab() {
     server.tick_alice();
     server.stabilize();
 
-    let ptr = server.alice().next_ptr().unwrap();
+    let ptr = server.alice().next_ptr();
     server.alice().queue_operation(CreateNode {
         ptr,
         x: 123,
@@ -174,13 +174,13 @@ fn object_load_collab() {
     server.tick_alice();
     server.stabilize();
 
-    let cdr = server.alice().next_ptr().unwrap();
+    let cdr = server.alice().next_ptr();
     server.alice().queue_operation(CreateNode {
         ptr: cdr,
         x: 2,
         next: alisa::Ptr::null(),
     });
-    let car = server.alice().next_ptr().unwrap();
+    let car = server.alice().next_ptr();
     server.alice().queue_operation(CreateNode {
         ptr: car,
         x: 1,

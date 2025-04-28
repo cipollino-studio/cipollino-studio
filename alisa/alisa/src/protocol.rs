@@ -44,11 +44,6 @@ pub enum Message {
         data: ABFValue
     },
     ConfirmOperation,
-    KeyRequest,
-    KeyGrant {
-        first: u64,
-        last: u64
-    },
     LoadRequest {
         ptr: AnyPtr
     },

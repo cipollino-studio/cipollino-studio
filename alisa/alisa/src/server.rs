@@ -1,10 +1,12 @@
 
 use std::{collections::{HashMap, HashSet}, fmt::Debug, path::Path};
 
-use crate::{ABFValue, AnyPtr, Client, DeserializationContext, Message, ObjectKind, Project, Serializable, SerializationContext, WelcomeMessage, WelcomeObject};
+use crate::{deserialize, serialize, ABFValue, AnyPtr, Client, DeserializationContext, Message, ObjectKind, Project, Serializable, SerializationContext, WelcomeMessage, WelcomeObject};
 
 struct ServerClient {
-    to_send: Vec<Message>
+    to_send: Vec<Message>,
+    to_server_key: HashMap<u64, u64>,
+    to_client_key: HashMap<u64, u64>
 }
 
 pub struct Server<P: Project> {
@@ -53,7 +55,9 @@ impl<P: Project> Server<P> {
         self.curr_client_id += 1;
 
         self.clients.insert(id, ServerClient {
-            to_send: Vec::new()
+            to_send: Vec::new(),
+            to_server_key: HashMap::new(),
+            to_client_key: HashMap::new()
         });
 
         let storing_context = SerializationContext::new();
@@ -105,11 +109,6 @@ impl<P: Project> Server<P> {
                 }
                 self.send(client_id, Message::ConfirmOperation);
             },
-            Message::KeyRequest => {
-                // TODO: make sure the client isn't requesting too many keys
-                let (first, last) = self.client.kind.as_local().expect("server should only use local client.").next_key_range(512);
-                self.send(client_id, Message::KeyGrant { first, last });
-            },
             Message::LoadRequest { ptr } => {
                 let obj_type = ptr.obj_type();
                 let key = ptr.key();
@@ -118,7 +117,7 @@ impl<P: Project> Server<P> {
             },
             _ => {
                 return;
-            } 
+            }
         }
         self.client.tick();
     }
@@ -167,6 +166,82 @@ impl<P: Project> Server<P> {
 
     pub fn take_all_msgs_to_send(&mut self) -> HashMap<ClientId, Vec<Message>> {
         self.clients.iter_mut().map(|(id, client)| (*id, std::mem::replace(&mut client.to_send, Vec::new()))).collect()
+    }
+
+    fn map_to_client_keys(data: &mut ABFValue, to_client_key: &HashMap<u64, u64>) {
+        match data {
+            ABFValue::ObjPtr(_, key) => {
+                if let Some(mapped_key) = to_client_key.get(&key) {
+                    *key = *mapped_key;
+                }
+            },
+            ABFValue::Array(items) => {
+                for item in items {
+                    Self::map_to_client_keys(item, to_client_key);
+                }
+            },
+            ABFValue::Map(items) => {
+                for (_, item) in items {
+                    Self::map_to_client_keys(item, to_client_key);
+                }
+            },
+            ABFValue::IndexedEnum(_, data) => {
+                Self::map_to_client_keys(data, to_client_key);
+            },
+            ABFValue::NamedEnum(_, data) => {
+                Self::map_to_client_keys(data, to_client_key);
+            },
+            _ => {}
+        }
+    }
+
+    /// Serialize an object, taking key mapping into account
+    pub fn serialize<T: Serializable>(&self, client: ClientId, obj: &T) -> ABFValue {
+        let mut data = serialize(obj);
+        if let Some(client) = self.clients.get(&client) {
+            Self::map_to_client_keys(&mut data, &client.to_client_key);
+        }
+        data
+    }
+
+    fn map_to_server_keys(data: &mut ABFValue, to_client_key: &mut HashMap<u64, u64>, to_server_key: &mut HashMap<u64, u64>, client: &Client<P>) {
+        match data {
+            ABFValue::ObjPtr(_, key) => {
+                if let Some(mapped_key) = to_server_key.get(&key) {
+                    *key = *mapped_key;
+                } else if *key & (1 << 63) > 0 {
+                    let server_key = client.next_key();
+                    to_server_key.insert(*key, server_key);
+                    to_client_key.insert(server_key, *key);
+                    *key = server_key;
+                }
+            },
+            ABFValue::Array(items) => {
+                for item in items {
+                    Self::map_to_server_keys(item, to_client_key, to_server_key, client);
+                }
+            },
+            ABFValue::Map(items) => {
+                for (_, item) in items {
+                    Self::map_to_server_keys(item, to_client_key, to_server_key, client);
+                }
+            },
+            ABFValue::IndexedEnum(_, data) => {
+                Self::map_to_server_keys(data, to_client_key, to_server_key, client);
+            },
+            ABFValue::NamedEnum(_, data) => {
+                Self::map_to_server_keys(data, to_client_key, to_server_key, client);
+            },
+            _ => {}
+        }
+    }
+
+    /// Deserialize an object, taking key mapping into account
+    pub fn deserialize<T: Serializable>(&mut self, client: ClientId, mut data: ABFValue) -> Option<T> {
+        if let Some(client) = self.clients.get_mut(&client) {
+            Self::map_to_server_keys(&mut data, &mut client.to_client_key, &mut client.to_server_key, &self.client);
+        }
+        deserialize::<T>(&data)
     }
 
 }

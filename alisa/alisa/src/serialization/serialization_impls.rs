@@ -150,7 +150,7 @@ impl Serializable for AnyPtr {
 
     fn deserialize(data: &ABFValue, _context: &mut DeserializationContext) -> Option<Self> {
         let (obj_type, key) = data.as_obj_ptr()?;
-        Some(Self::new(obj_type, key,))
+        Some(Self::new(obj_type, key))
     }
 
 }
