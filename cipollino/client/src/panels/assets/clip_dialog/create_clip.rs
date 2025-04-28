@@ -17,10 +17,10 @@ impl CreateClipDialog {
         }
     }
 
-    fn create_clip(&self, client: &Client, editor: &EditorState) -> Option<Ptr<Clip>> {
-        let clip_ptr = client.next_ptr()?;
-        let inner_ptr = client.next_ptr()?;
-        let layer_ptr = client.next_ptr()?;
+    fn create_clip(&self, client: &Client, editor: &EditorState) -> Ptr<Clip> {
+        let clip_ptr = client.next_ptr();
+        let inner_ptr = client.next_ptr();
+        let layer_ptr = client.next_ptr();
 
         let mut action = Action::new(editor.action_context("Create Clip"));
         action.push(CreateClip {
@@ -47,7 +47,7 @@ impl CreateClipDialog {
         });
 
         client.queue_action(action);
-        Some(clip_ptr)
+        clip_ptr
     }
 
 }
@@ -63,9 +63,8 @@ impl Window for CreateClipDialog {
         pierro::v_spacing(ui, 5.0);
         pierro::vertical_centered(ui, |ui| {
             if pierro::button(ui, "Create Clip").mouse_clicked() {
-                if let Some(clip) = self.create_clip(&state.project.client, &state.editor) {
-                    state.editor.open_clip(clip);
-                }
+                let clip = self.create_clip(&state.project.client, &state.editor);
+                state.editor.open_clip(clip);
                 *close = true;
             }
         });

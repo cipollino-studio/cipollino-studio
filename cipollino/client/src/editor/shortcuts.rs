@@ -51,17 +51,15 @@ impl Editor {
 
         if NewKeyframeShortcut::used_globally(ui, systems) {
             if !self.state.editor.locked_layers.contains(&self.state.editor.active_layer) {
-                if let Some(ptr) = self.state.project.client.next_ptr() {
-                    self.state.editor.playing = false;
-                    self.state.project.client.queue_action(Action::single(self.state.editor.action_context("New Frame"), CreateFrame {
-                        ptr,
-                        layer: self.state.editor.active_layer,
-                        data: FrameTreeData {
-                            time: clip.frame_idx(self.state.editor.time),
-                            ..Default::default()
-                        },
-                    }));
-                }
+                self.state.editor.playing = false;
+                self.state.project.client.queue_action(Action::single(self.state.editor.action_context("New Frame"), CreateFrame {
+                    ptr: self.state.project.client.next_ptr(),
+                    layer: self.state.editor.active_layer,
+                    data: FrameTreeData {
+                        time: clip.frame_idx(self.state.editor.time),
+                        ..Default::default()
+                    },
+                }));
             }
         }
     }

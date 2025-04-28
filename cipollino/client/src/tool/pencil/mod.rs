@@ -57,7 +57,7 @@ impl PencilTool {
 
     fn create_stroke(editor: &mut EditorState, ctx: &mut ToolContext, stroke: malvina::Stroke) {
         let mut action = Action::new(editor.action_context("New Stroke"));
-        let Some(ptr) = ctx.project.client.next_ptr() else { return; };
+        let ptr = ctx.project.client.next_ptr();
         let Some(frame) = ctx.active_frame(editor, &mut action) else { return; };
         let stroke_width = ctx.systems.prefs.get::<PencilStrokeWidthPref>();
         action.push(CreateStroke {

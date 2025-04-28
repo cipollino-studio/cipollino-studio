@@ -1,8 +1,7 @@
 
 use std::{collections::HashMap, path::PathBuf, sync::Arc};
 
-use project::{alisa, ClientId, Message, PresenceData, WelcomeMessage, PROTOCOL_VERSION};
-use alisa::Serializable;
+use project::{alisa::{self, ABFValue}, ClientId, Message, PresenceData, WelcomeMessage, PROTOCOL_VERSION};
 use warp::ws;
 use futures::SinkExt;
 use tokio::sync::Mutex;
@@ -19,9 +18,8 @@ pub struct Client {
 
 impl Client {
 
-    async fn send<T: alisa::Serializable>(&mut self, msg: T) -> bool {
-        let data = msg.shallow_serialize();
-        let data = alisa::encode_abf(&data);
+    async fn send(&mut self, msg: ABFValue) -> bool {
+        let data = alisa::encode_abf(&msg);
         self.sender.send(ws::Message::binary(data)).await.is_ok()
     }
 
@@ -46,7 +44,7 @@ impl Server {
                     if *other_client_id == client_id {
                         continue;
                     }
-                    other_client.send(Message::PresenceUpdate(client_id, presence_data.clone())).await;
+                    other_client.send(self.server.serialize(*other_client_id, &Message::PresenceUpdate(client_id, presence_data.clone()))).await;
                 }
                 if let Some(client) = self.clients.get_mut(&client_id) {
                     client.presence = presence_data.clone();
@@ -59,20 +57,22 @@ impl Server {
     async fn receive_message(&mut self, client_id: ClientId, msg: alisa::ABFValue) {
         if let Some(msgs) = msg.as_array() {
             for submsg in msgs {
-                let Some(submsg) = Message::data_deserialize(submsg) else { continue; };
+                let Some(submsg) = self.server.deserialize::<Message>(client_id, submsg.clone()) else { continue; };
                 self.process_message(client_id, &submsg).await;
             }
         } else {
-            let Some(msg) = Message::data_deserialize(&msg) else { return; };
+            let Some(msg) = self.server.deserialize::<Message>(client_id, msg) else { return; };
             self.process_message(client_id, &msg).await;
         }
+
+        // Send outgoing messages
         for (client_id, msgs) in self.server.take_all_msgs_to_send() {
             if let Some(client) = self.clients.get_mut(&client_id) {
                 if !msgs.is_empty() {
                     client.send(
                         alisa::ABFValue::Array(
                             msgs.into_iter()
-                                .map(|msg| Message::Collab(msg).shallow_serialize())
+                                .map(|msg| self.server.serialize(client_id, &Message::Collab(msg)))
                                 .collect()
                         )
                     ).await;
@@ -99,7 +99,7 @@ impl Server {
             presence: Default::default() 
         };
 
-        client.send(welcome_msg).await;
+        client.send(server.server.serialize(client_id, &welcome_msg)).await;
         server.clients.insert(client_id, client);
         drop(server);
 
@@ -112,11 +112,15 @@ impl Server {
 
         println!("Client disconnected.");
         let mut server = server_arc.lock().await;
+        let server = &mut *server;
         server.clients.remove(&client_id);
 
+        let clients = &mut server.clients;
+        let server = &mut server.server;
+
         // Tell the other clients this client disconnected
-        for (_other_client, client) in &mut server.clients {
-            client.send(Message::Disconnect(client_id)).await; 
+        for (other_client, client) in clients {
+            client.send(server.serialize(*other_client, &Message::Disconnect(client_id))).await; 
         }
     }
 

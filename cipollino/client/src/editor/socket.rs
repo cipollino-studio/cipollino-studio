@@ -2,7 +2,6 @@
 use std::sync::{Arc, Mutex};
 
 use project::Message;
-use project::alisa::Serializable;
 
 #[derive(PartialEq, Eq)]
 enum SocketState {
@@ -83,7 +82,7 @@ impl Socket {
     }
 
     pub fn send(&mut self, msg: Message) {
-        let data = msg.shallow_serialize();
+        let data = alisa::serialize(&msg);
         self.send_data(data);
     }
 

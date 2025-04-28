@@ -57,9 +57,9 @@ impl alisa::Project for Project {
     }
 
     fn create_default(client: &alisa::Client<Self>) {
-        let Some(default_clip_ptr) = client.next_ptr() else { return; };
-        let Some(default_clip_inner_ptr) = client.next_ptr() else { return; };
-        let Some(layer_ptr) = client.next_ptr() else { return; };
+        let default_clip_ptr = client.next_ptr();
+        let default_clip_inner_ptr = client.next_ptr();
+        let layer_ptr = client.next_ptr();
         client.queue_operation(CreateClip {
             ptr: default_clip_ptr,
             parent: alisa::Ptr::null(),

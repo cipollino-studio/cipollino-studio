@@ -52,7 +52,7 @@ impl ToolContext<'_> {
             return Some(frame);
         }
 
-        let new_frame_ptr = self.project.client.next_ptr()?;
+        let new_frame_ptr = self.project.client.next_ptr();
         action.push(CreateFrame {
             ptr: new_frame_ptr,
             layer: self.active_layer,

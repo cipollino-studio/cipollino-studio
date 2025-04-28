@@ -1,7 +1,7 @@
 
 use std::path::PathBuf;
 
-use alisa::{Children, Serializable};
+use alisa::Children;
 use project::{deep_load_clip, Client, Frame, Message, Ptr, Stroke, WelcomeMessage, PROTOCOL_VERSION};
 
 use crate::splash::SplashScreen;
@@ -73,7 +73,7 @@ impl Editor {
     }
 
     pub fn collab(socket: Socket, welcome_msg: &alisa::ABFValue, systems: &mut AppSystems) -> Result<Self, String> {
-        let welcome_msg = WelcomeMessage::data_deserialize(welcome_msg).ok_or("Invalid server protocol.".to_owned())?;
+        let welcome_msg = alisa::deserialize::<WelcomeMessage>(welcome_msg).ok_or("Invalid server protocol.".to_owned())?;
         let mut editor = Self::new(Client::collab(&welcome_msg.collab).ok_or("Invalid server protocol.".to_owned())?, Some(socket), systems);
         editor.state.editor.other_clients = welcome_msg.presence.into_iter().collect();
 
@@ -174,7 +174,7 @@ impl Editor {
                     socket.send_data(
                         alisa::ABFValue::Array(
                             to_send.into_iter()
-                                .map(|msg| Message::Collab(msg).shallow_serialize())
+                                .map(|msg| alisa::serialize(&Message::Collab(msg)))
                                 .collect()
                         )
                     );
@@ -189,13 +189,13 @@ impl Editor {
                 while let Some(msg) = socket.receive() {
                     if let Some(msgs) = msg.as_array() {
                         for submsg in msgs {
-                            let Some(submsg) = Message::data_deserialize(submsg) else {
+                            let Some(submsg) = alisa::deserialize::<Message>(submsg) else {
                                 continue;
                             };
                             Self::receive_message(&submsg, &mut self.state);
                         }
                     } else {
-                        if let Some(msg) = Message::data_deserialize(&msg) {
+                        if let Some(msg) = alisa::deserialize::<Message>(&msg) {
                             Self::receive_message(&msg, &mut self.state);
                         }
                     }
