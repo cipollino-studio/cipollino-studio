@@ -7,6 +7,7 @@ pub use loading_ptr::*;
 
 mod ptr_enum;
 
+use std::any::type_name;
 use std::fmt::Debug;
 use std::hash::Hash;
 use std::marker::PhantomData;
@@ -86,6 +87,6 @@ impl<Obj: Object> Default for Ptr<Obj> {
 impl<Obj: Object> Debug for Ptr<Obj> {
 
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_tuple(Obj::NAME).field(&self.key).finish()
+        f.debug_tuple(type_name::<Obj>()).field(&self.key).finish()
     }
 }

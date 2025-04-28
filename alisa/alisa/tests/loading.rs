@@ -21,7 +21,6 @@ pub struct Thing {
 impl alisa::Object for Thing {
 
     type Project = Project;
-    const NAME: &'static str = "Thing";
     const TYPE_ID: u16 = 0;
 
     fn list(objects: &Objects) -> &alisa::ObjList<Self> {

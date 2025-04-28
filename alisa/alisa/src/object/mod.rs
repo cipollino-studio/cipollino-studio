@@ -14,7 +14,6 @@ pub trait Object: Sized + Clone + Serializable + 'static + Send + Sync{
 
     type Project: Project;
 
-    const NAME: &'static str;
     const TYPE_ID: u16;
 
     fn list(objects: &<Self::Project as Project>::Objects) -> &ObjList<Self>;

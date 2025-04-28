@@ -302,14 +302,4 @@ fn verify_project_type<P: Project>() {
             }
         }
     }
-
-    for i in 0..P::OBJECTS.len() {
-        for j in (i + 1)..P::OBJECTS.len() {
-            let a = &P::OBJECTS[i];
-            let b = &P::OBJECTS[j];
-            if a.name == b.name {
-                panic!("duplicate object name '{}' in {}::OBJECTS. operations {} and {} have identical names.", a.name, type_name::<P>(), (a.type_name)(), (b.type_name)());
-            }
-        }
-    }
 }

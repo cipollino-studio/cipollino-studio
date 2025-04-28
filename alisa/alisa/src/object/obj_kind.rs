@@ -1,12 +1,11 @@
 
-use std::{any::{type_name, TypeId}, collections::HashSet};
+use std::{any::TypeId, collections::HashSet};
 
 use crate::{ABFValue, Collab, DeserializationContext, File, Message, Project, SerializationContext};
 
 use super::{ObjRef, Object, Ptr};
 
 pub struct ObjectKind<P: Project> {
-    pub(crate) name: &'static str,
     pub(crate) object_type_id: u16,
     pub(crate) clear_modifications: fn(&mut P::Objects),
     pub(crate) clear_user_modified: fn(&mut P::Objects),
@@ -20,8 +19,6 @@ pub struct ObjectKind<P: Project> {
 
     #[cfg(debug_assertions)]
     pub(crate) type_id: fn() -> TypeId,
-    #[cfg(debug_assertions)]
-    pub(crate) type_name: fn() -> &'static str
 }
 
 fn load_object<O: Object>(file: &mut File, objects: &mut <O::Project as Project>::Objects, key: u64) {
@@ -55,7 +52,6 @@ impl<P: Project> ObjectKind<P> {
 
     pub const fn from<O: Object<Project = P>>() -> Self {
         Self {
-            name: O::NAME,
             object_type_id: O::TYPE_ID,
             clear_modifications: |objects| {
                 O::list_mut(objects).modified.clear();
@@ -112,8 +108,6 @@ impl<P: Project> ObjectKind<P> {
             },
             #[cfg(debug_assertions)]
             type_id: || TypeId::of::<O>(),
-            #[cfg(debug_assertions)]
-            type_name: || type_name::<O>()
         }
     }
 

@@ -44,7 +44,6 @@ impl alisa::Operation for CreateNode {
 impl alisa::Object for Node {
     type Project = Project;
 
-    const NAME: &'static str = "Node";
     const TYPE_ID: u16 = 0;
 
     fn list(objects: &Objects) -> &alisa::ObjList<Self> {
