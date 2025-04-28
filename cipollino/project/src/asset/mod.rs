@@ -14,6 +14,8 @@ pub use clip::*;
 
 pub trait Asset: alisa::TreeObj<ParentPtr = alisa::Ptr<Folder>, Project = Project, ChildList = alisa::UnorderedChildList<alisa::LoadingPtr<Self>>> {
 
+    const NAME: &'static str;
+
     fn name(&self) -> &String;    
     fn name_mut(&mut self) -> &mut String;
 

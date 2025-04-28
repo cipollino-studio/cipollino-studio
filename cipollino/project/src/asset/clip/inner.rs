@@ -34,7 +34,6 @@ impl Default for ClipInner {
 impl alisa::Object for ClipInner {
     type Project = Project;
 
-    const NAME: &'static str = "ClipInner";
     const TYPE_ID: u16 = 4;
 
     fn list(objects: &Objects) -> &alisa::ObjList<Self> {

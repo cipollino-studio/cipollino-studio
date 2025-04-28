@@ -27,7 +27,6 @@ impl Default for Layer {
 impl alisa::Object for Layer {
     type Project = Project;
 
-    const NAME: &'static str = "Layer";
     const TYPE_ID: u16 = 2;
 
     fn list(objects: &Objects) -> &alisa::ObjList<Self> {

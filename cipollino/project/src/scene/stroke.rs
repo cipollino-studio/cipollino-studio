@@ -85,7 +85,6 @@ impl Default for Stroke {
 
 impl alisa::Object for Stroke {
     type Project = Project;
-    const NAME: &'static str = "Stroke";
     const TYPE_ID: u16 = 0;
 
     fn list(objects: &Objects) -> &alisa::ObjList<Self> {

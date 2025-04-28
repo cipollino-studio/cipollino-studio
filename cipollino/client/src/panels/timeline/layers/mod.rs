@@ -14,6 +14,7 @@ pub use list::*;
 pub trait LayerUI: Object<Project = Project> {
 
     const ICON: &'static str;
+    const NAME: &'static str;
 
     fn name(&self) -> &String;
     fn rename(action: &mut Action, ptr: Ptr<Self>, name: String);
@@ -26,6 +27,7 @@ pub trait LayerUI: Object<Project = Project> {
 impl LayerUI for Layer {
 
     const ICON: &'static str = pierro::icons::FILE;
+    const NAME: &'static str = "Layer";
 
     fn name(&self) -> &String {
         &self.name

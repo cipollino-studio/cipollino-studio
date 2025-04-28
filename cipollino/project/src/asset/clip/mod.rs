@@ -29,7 +29,6 @@ impl alisa::Object for Clip {
 
     type Project = Project;
 
-    const NAME: &'static str = "Clip";
     const TYPE_ID: u16 = 3;
 
     fn list(objects: &Objects) -> &alisa::ObjList<Self> {
@@ -154,6 +153,8 @@ impl alisa::TreeObj for Clip {
 }
 
 impl Asset for Clip {
+
+    const NAME: &'static str = "Clip";
 
     fn name(&self) -> &String {
         &self.name

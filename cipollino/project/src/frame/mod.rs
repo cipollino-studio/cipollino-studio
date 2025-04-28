@@ -27,7 +27,6 @@ impl Default for Frame {
 impl alisa::Object for Frame {
     type Project = Project;
 
-    const NAME: &'static str = "Frame";
     const TYPE_ID: u16 = 1;
 
     fn list(objects: &Objects) -> &alisa::ObjList<Self> {

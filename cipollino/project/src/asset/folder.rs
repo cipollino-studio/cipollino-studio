@@ -30,7 +30,6 @@ impl alisa::Object for Folder {
 
     type Project = Project;
 
-    const NAME: &'static str = "Folder";
     const TYPE_ID: u16 = 5;
 
     fn list(objects: &Objects) -> &alisa::ObjList<Folder> {
@@ -131,6 +130,8 @@ impl alisa::TreeObj for Folder {
 }
 
 impl Asset for Folder {
+
+    const NAME: &'static str = "Folder";
 
     fn name(&self) -> &String {
         &self.name
