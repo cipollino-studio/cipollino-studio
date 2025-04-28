@@ -1,5 +1,5 @@
 
-use project::{Action, Ptr, SetStrokeColor, Stroke};
+use project::{Action, SceneObjPtr, SetStrokeColor};
 
 use crate::{keyboard_shortcut, EditorState};
 
@@ -20,14 +20,17 @@ impl Tool for BucketTool {
 
     fn mouse_clicked(&mut self, editor: &mut EditorState, ctx: &mut ToolContext, _pos: malvina::Vec2) {
         if let Some((x, y)) = ctx.picking_mouse_pos {
-            let id = ctx.picking_buffer.read_pixel(ctx.device, ctx.queue, x, y);
-            let ptr = Ptr::<Stroke>::from_key(id as u64);
-            if ctx.project.client.get(ptr).is_some() {
-                ctx.project.client.queue_action(Action::single(editor.action_context("Set Stroke Color"), SetStrokeColor {
-                    ptr,
-                    color_value: editor.color.into(),
-                }));
-            } 
+            match ctx.pick(x, y) {
+                Some(SceneObjPtr::Stroke(ptr)) => {
+                    if ctx.modifiable_strokes.contains(&ptr) {
+                        ctx.project.client.queue_action(Action::single(editor.action_context("Set Stroke Color"), SetStrokeColor {
+                            ptr,
+                            color_value: editor.color.into(),
+                        }));
+                    }
+                },
+                None => {},
+            }
         }
     }
 

@@ -1,16 +1,16 @@
 
 use std::collections::HashSet;
 
-use project::{Client, ClipInner, Frame, Layer, LayerPtr, Ptr, SceneChildPtr, Stroke};
+use project::{Client, ClipInner, Frame, Layer, LayerPtr, Ptr, SceneObjPtr, Stroke};
 use crate::{EditorState, ScenePanel};
 
 impl ScenePanel {
 
-    fn get_frame_render_list(frame: &Frame, list: &mut Vec<SceneChildPtr>) {
+    fn get_frame_render_list(frame: &Frame, list: &mut Vec<SceneObjPtr>) {
         list.extend(frame.scene.iter().rev());
     }
 
-    fn get_layer_render_list(client: &Client, editor: &EditorState, layer: &Layer, layer_ptr: Ptr<Layer>, list: &mut Vec<SceneChildPtr>, time: i32) {
+    fn get_layer_render_list(client: &Client, editor: &EditorState, layer: &Layer, layer_ptr: Ptr<Layer>, list: &mut Vec<SceneObjPtr>, time: i32) {
         if editor.hidden_layers.contains(&layer_ptr) {
             return;
         }
@@ -21,7 +21,7 @@ impl ScenePanel {
         }
     }
 
-    fn get_layer_list_render_list(client: &Client, editor: &EditorState, layer_list: &alisa::ChildList<LayerPtr>, list: &mut Vec<SceneChildPtr>, time: i32) {
+    fn get_layer_list_render_list(client: &Client, editor: &EditorState, layer_list: &alisa::ChildList<LayerPtr>, list: &mut Vec<SceneObjPtr>, time: i32) {
         for layer in layer_list.iter().rev() {
             match layer {
                 LayerPtr::Layer(layer_ptr) => {
@@ -33,17 +33,17 @@ impl ScenePanel {
         }
     }
 
-    pub(super) fn render_list(client: &Client, editor: &EditorState, clip: &ClipInner, time: i32) -> Vec<SceneChildPtr> {
+    pub(super) fn render_list(client: &Client, editor: &EditorState, clip: &ClipInner, time: i32) -> Vec<SceneObjPtr> {
         let mut list = Vec::new();
         Self::get_layer_list_render_list(client, editor, &clip.layers, &mut list, time);
         list
     }
 
-    pub(super) fn rendered_strokes(render_list: &Vec<SceneChildPtr>) -> HashSet<Ptr<Stroke>> {
+    pub(super) fn rendered_strokes(render_list: &Vec<SceneObjPtr>) -> HashSet<Ptr<Stroke>> {
         let mut rendered_strokes = HashSet::new();
         for scene_obj in render_list {
             match scene_obj {
-                SceneChildPtr::Stroke(ptr) => rendered_strokes.insert(*ptr),
+                SceneObjPtr::Stroke(ptr) => rendered_strokes.insert(*ptr),
             };
         }
         rendered_strokes

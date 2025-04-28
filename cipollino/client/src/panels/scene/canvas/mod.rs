@@ -1,7 +1,7 @@
 
 use std::collections::HashSet;
 
-use project::{ClipInner, Ptr, SceneChildPtr, Stroke};
+use project::{ClipInner, Ptr, SceneObjPtr, Stroke};
 
 use crate::{presence_color, render_scene, AppSystems, EditorState, ProjectState, ToolContext};
 
@@ -40,7 +40,7 @@ impl ScenePanel {
         systems: &mut AppSystems,
         renderer: &mut malvina::Renderer,
         clip: &ClipInner,
-        render_list: &Vec<SceneChildPtr>,
+        render_list: &Vec<SceneObjPtr>,
         rendered_strokes: &HashSet<Ptr<Stroke>>,
         modifiable_strokes: &HashSet<Ptr<Stroke>>,
         canvas_width: u32,
@@ -107,6 +107,7 @@ impl ScenePanel {
             modifiable_strokes,
 
             picking_buffer: &mut picking_buffer,
+            picking_list: render_list,
             picking_mouse_pos: response.mouse_pos(ui)
                 .filter(|pos| pos.x > 0.0 && pos.y > 0.0)
                 .filter(|pos| pos.x < canvas_width as f32 - 1.0 && pos.y < canvas_height as f32 - 1.0 )

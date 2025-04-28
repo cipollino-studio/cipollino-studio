@@ -1,5 +1,5 @@
 
-use crate::{Layer, Objects, Project, SceneChildPtr};
+use crate::{Layer, Objects, Project, SceneObjPtr};
 
 mod creation;
 pub use creation::*;
@@ -11,7 +11,7 @@ pub use set_time::*;
 pub struct Frame {
     pub layer: alisa::Ptr<Layer>,
     pub time: i32,
-    pub scene: alisa::ChildList<SceneChildPtr> 
+    pub scene: alisa::ChildList<SceneObjPtr> 
 }
 
 impl Default for Frame {
@@ -43,7 +43,7 @@ impl alisa::Object for Frame {
 #[derive(alisa::Serializable)]
 pub struct FrameTreeData {
     pub time: i32,
-    pub scene: alisa::ChildListTreeData<SceneChildPtr>
+    pub scene: alisa::ChildListTreeData<SceneObjPtr>
 }
 
 impl Default for FrameTreeData {

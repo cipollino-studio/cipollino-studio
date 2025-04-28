@@ -1,5 +1,5 @@
 
-use project::{Ptr, Stroke};
+use project::SceneObjPtr;
 
 use crate::{keyboard_shortcut, EditorState};
 
@@ -20,11 +20,14 @@ impl Tool for ColorPicker {
 
     fn mouse_clicked(&mut self, editor: &mut EditorState, ctx: &mut ToolContext, _pos: elic::Vec2) {
         if let Some((x, y)) = ctx.picking_mouse_pos {
-            let id = ctx.picking_buffer.read_pixel(ctx.device, ctx.queue, x, y);
-            let ptr = Ptr::<Stroke>::from_key(id as u64);
-            if let Some(stroke) = ctx.project.client.get(ptr) {
-                editor.color = stroke.color.into();
-            } 
+            match ctx.pick(x, y) {
+                Some(SceneObjPtr::Stroke(ptr)) => {
+                    if let Some(stroke) = ctx.project.client.get(ptr) {
+                        editor.color = stroke.color.into();
+                    } 
+                },
+                None => {},
+            }
         }
     }
 

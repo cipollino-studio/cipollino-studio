@@ -1,6 +1,4 @@
 
-use project::{Ptr, Stroke};
-
 use crate::ToolContext;
 
 use super::{gizmos::PotentialDragState, DragState, SelectTool};
@@ -54,10 +52,11 @@ impl SelectTool {
         }
 
         if let Some((x, y)) = ctx.picking_mouse_pos {
-            let id = ctx.picking_buffer.read_pixel(ctx.device, ctx.queue, x, y);
-            let ptr = Ptr::<Stroke>::from_key(id as u64);
-            if !ptr.is_null() {
-                return pierro::CursorIcon::Move;
+            match ctx.pick(x, y) {
+                Some(_) => {
+                    return pierro::CursorIcon::Move;
+                },
+                None => {} 
             }
         }
 

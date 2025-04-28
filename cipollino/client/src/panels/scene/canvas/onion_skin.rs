@@ -9,7 +9,7 @@ impl ScenePanel {
         let render_list = Self::render_list(client, editor, clip, time);
         for scene_obj in render_list {
             match scene_obj {
-                project::SceneChildPtr::Stroke(stroke_ptr) => {
+                project::SceneObjPtr::Stroke(stroke_ptr) => {
                     if let Some(stroke) = client.get(stroke_ptr) {
                         let mut stroke_mesh_cache = editor.stroke_mesh_cache.borrow_mut();
                         if let Some(stroke) = stroke_mesh_cache.get(&stroke_ptr) {

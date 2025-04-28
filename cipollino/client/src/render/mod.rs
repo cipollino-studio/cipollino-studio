@@ -1,5 +1,5 @@
 
-use project::{Client, ClipInner, Frame, Layer, LayerPtr, Ptr, SceneChildPtr, Stroke};
+use project::{Client, ClipInner, Frame, Layer, LayerPtr, Ptr, SceneObjPtr, Stroke};
 use crate::EditorState;
 
 fn render_stroke(rndr: &mut malvina::LayerRenderer, editor: &EditorState, stroke: &Stroke, stroke_ptr: Ptr<Stroke>) {
@@ -16,7 +16,7 @@ fn render_stroke(rndr: &mut malvina::LayerRenderer, editor: &EditorState, stroke
 fn render_frame(rndr: &mut malvina::LayerRenderer, editor: &EditorState, client: &Client, frame: &Frame) {
     for scene_child in frame.scene.iter().rev() {
         match scene_child {
-            SceneChildPtr::Stroke(stroke_ptr) => {
+            SceneObjPtr::Stroke(stroke_ptr) => {
                 if let Some(stroke) = client.get(stroke_ptr) {
                     render_stroke(rndr, editor, stroke, stroke_ptr);
                 }

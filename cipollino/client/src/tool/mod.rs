@@ -14,7 +14,7 @@ pub use color_picker::*;
 mod bucket;
 pub use bucket::*;
 
-use project::{Action, ClipInner, CreateFrame, Frame, FrameTreeData, Layer, Ptr, Stroke};
+use project::{Action, ClipInner, CreateFrame, Frame, FrameTreeData, Layer, Ptr, SceneObjPtr, Stroke};
 use std::collections::HashSet;
 use crate::{AppSystems, EditorState, ProjectState, Shortcut};
 
@@ -33,6 +33,7 @@ pub struct ToolContext<'ctx> {
 
     // Picking
     pub picking_buffer: &'ctx mut malvina::PickingBuffer,
+    pub picking_list: &'ctx Vec<SceneObjPtr>,
     pub picking_mouse_pos: Option<(u32, u32)>, 
 
     pub pressure: f32,
@@ -63,6 +64,14 @@ impl ToolContext<'_> {
         });
 
         Some(new_frame_ptr)
+    }
+
+    pub fn pick(&mut self, x: u32, y: u32) -> Option<SceneObjPtr> {
+        let idx = self.picking_buffer.read_pixel(self.device, self.queue, x, y) as usize;
+        if idx == 0 || idx > self.picking_list.len() {
+            return None;
+        } 
+        Some(self.picking_list[idx - 1])
     }
 
 }

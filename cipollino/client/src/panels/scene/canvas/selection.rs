@@ -1,13 +1,13 @@
 
-use project::{Client, SceneChildPtr};
+use project::{Client, SceneObjPtr};
 use crate::{EditorState, ScenePanel};
 
 impl ScenePanel {
     
-    pub(super) fn render_selection(rndr: &mut malvina::LayerRenderer, editor: &EditorState, client: &Client, render_list: &Vec<SceneChildPtr>) {
+    pub(super) fn render_selection(rndr: &mut malvina::LayerRenderer, editor: &EditorState, client: &Client, render_list: &Vec<SceneObjPtr>) {
         for scene_obj in render_list {
             match scene_obj {
-                SceneChildPtr::Stroke(stroke_ptr) => {
+                SceneObjPtr::Stroke(stroke_ptr) => {
                     if !editor.selection.selected(*stroke_ptr) {
                         continue;
                     }

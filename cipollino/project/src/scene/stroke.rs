@@ -1,7 +1,7 @@
 
 use crate::{Frame, Objects, Project};
 
-use super::SceneChildPtr;
+use super::SceneObjPtr;
 
 #[derive(Clone, Default)]
 pub struct StrokeData(pub malvina::Stroke);
@@ -118,7 +118,7 @@ impl Default for StrokeTreeData {
 
 impl alisa::TreeObj for Stroke {
     type ParentPtr = alisa::Ptr<Frame>;
-    type ChildList = alisa::ChildList<SceneChildPtr>;
+    type ChildList = alisa::ChildList<SceneObjPtr>;
     type TreeData = StrokeTreeData;
 
     fn child_list<'a>(parent: alisa::Ptr<Frame>, context: &'a alisa::ProjectContext<Project>) -> Option<&'a Self::ChildList> {

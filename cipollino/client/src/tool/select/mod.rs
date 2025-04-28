@@ -1,6 +1,6 @@
 
 use gizmos::PotentialDragState;
-use project::{Action, Client, Ptr, SetStrokeStroke, Stroke, StrokeData};
+use project::{Action, Client, SceneObjPtr, SetStrokeStroke, Stroke, StrokeData};
 use crate::{keyboard_shortcut, EditorState, Selection};
 
 use super::{LassoState, Tool, ToolContext};
@@ -183,18 +183,21 @@ impl Tool for SelectTool {
         }
 
         if let Some((x, y)) = ctx.picking_mouse_pos {
-            let id = ctx.picking_buffer.read_pixel(ctx.device, ctx.queue, x, y);
-            let ptr = Ptr::<Stroke>::from_key(id as u64);
-            if !ptr.is_null() && ctx.modifiable_strokes.contains(&ptr) {
-                if !editor.selection.selected(ptr) {
-                    if !editor.selection.shift_down() {
-                        editor.selection.clear();
+            match ctx.pick(x, y) {
+                Some(SceneObjPtr::Stroke(stroke)) => {
+                    if ctx.modifiable_strokes.contains(&stroke) {
+                        if !editor.selection.selected(stroke) {
+                            if !editor.selection.shift_down() {
+                                editor.selection.clear();
+                            }
+                            editor.selection.select(stroke);
+                        }
+                        editor.selection.keep_selection();
+                        self.drag_state = DragState::Move(elic::Vec2::ZERO);
+                        return;
                     }
-                    editor.selection.select(ptr);
-                }
-                editor.selection.keep_selection();
-                self.drag_state = DragState::Move(elic::Vec2::ZERO);
-                return;
+                },
+                None => {}
             }
         }
 
@@ -258,10 +261,13 @@ impl Tool for SelectTool {
 
     fn mouse_clicked(&mut self, editor: &mut EditorState, ctx: &mut ToolContext, _pos: malvina::Vec2) {
         if let Some((x, y)) = ctx.picking_mouse_pos {
-            let id = ctx.picking_buffer.read_pixel(ctx.device, ctx.queue, x, y);
-            let ptr = Ptr::<Stroke>::from_key(id as u64);
-            if ctx.modifiable_strokes.contains(&ptr) {
-                editor.selection.extend_select(ptr);
+            match ctx.pick(x, y) {
+                Some(SceneObjPtr::Stroke(ptr)) => {
+                    if ctx.modifiable_strokes.contains(&ptr) {
+                        editor.selection.extend_select(ptr);
+                    }
+                },
+                None => {},
             }
         }
     }
