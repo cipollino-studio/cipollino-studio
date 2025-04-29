@@ -80,7 +80,7 @@ impl<C: ChildPtr + Hash, O: Object> Children<O> for UnorderedChildList<C> where 
 }
 
 pub struct UnorderedChildListTreeData<C: ChildPtr> {
-    children: Vec<(C, C::TreeData)>
+    pub children: Vec<(C, C::TreeData)>
 }
 
 impl<C: ChildPtr> Default for UnorderedChildListTreeData<C> {

@@ -73,7 +73,7 @@ impl<P: Project> Client<P> {
         }
     }
 
-    pub(crate) fn next_key(&self) -> u64 {
+    pub fn next_key(&self) -> u64 {
         self.kind.next_key()
     }
 

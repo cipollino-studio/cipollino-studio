@@ -99,7 +99,7 @@ impl<C: ChildPtr, O: Object> Children<O> for ChildList<C> where C: From<Ptr<O>> 
 }
 
 pub struct ChildListTreeData<C: ChildPtr> {
-    children: Vec<(C, C::TreeData)>
+    pub children: Vec<(C, C::TreeData)>
 }
 
 impl<C: ChildPtr> Default for ChildListTreeData<C> {
