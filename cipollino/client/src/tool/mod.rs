@@ -14,9 +14,9 @@ pub use color_picker::*;
 mod bucket;
 pub use bucket::*;
 
-use project::{Action, ClipInner, CreateFrame, Frame, FrameTreeData, Layer, Ptr, SceneObjPtr, Stroke};
+use project::{Action, Client, ClipInner, CreateFrame, Frame, FrameTreeData, Layer, Ptr, SceneObjPtr, Stroke};
 use std::collections::HashSet;
-use crate::{AppSystems, EditorState, ProjectState, Shortcut};
+use crate::{AppSystems, EditorState, ProjectState, SceneRenderList, Shortcut};
 
 pub struct ToolContext<'ctx> {
     pub device: &'ctx pierro::wgpu::Device,
@@ -33,7 +33,7 @@ pub struct ToolContext<'ctx> {
 
     // Picking
     pub picking_buffer: &'ctx mut malvina::PickingBuffer,
-    pub picking_list: &'ctx Vec<SceneObjPtr>,
+    pub picking_list: &'ctx SceneRenderList,
     pub picking_mouse_pos: Option<(u32, u32)>, 
 
     pub pressure: f32,
@@ -41,37 +41,44 @@ pub struct ToolContext<'ctx> {
     pub key_modifiers: pierro::KeyModifiers
 }
 
+pub fn get_active_frame(client: &Client, editor: &EditorState, action: &mut Action) -> Option<Ptr<Frame>> {
+    if !editor.can_modify_layer(editor.active_layer) {
+        return None;
+    }
+
+    let clip = client.get(client.get(editor.open_clip)?.inner)?;
+    let frame_time = clip.frame_idx(editor.time);
+
+    let layer = client.get(editor.active_layer)?;
+    if let Some(frame) = layer.frame_at(client, frame_time) {
+        return Some(frame);
+    }
+
+    let new_frame_ptr = client.next_ptr();
+    action.push(CreateFrame {
+        ptr: new_frame_ptr,
+        layer: editor.active_layer,
+        data: FrameTreeData {
+            time: frame_time,
+            ..Default::default()
+        },
+    });
+
+    Some(new_frame_ptr)
+}
+
 impl ToolContext<'_> {
 
     pub fn active_frame(&self, editor: &EditorState, action: &mut Action) -> Option<Ptr<Frame>> {
-        if !editor.can_modify_layer(self.active_layer) {
-            return None;
-        }
-
-        let layer = self.project.client.get(self.active_layer)?;
-        if let Some(frame) = layer.frame_at(&self.project.client, self.frame_time) {
-            return Some(frame);
-        }
-
-        let new_frame_ptr = self.project.client.next_ptr();
-        action.push(CreateFrame {
-            ptr: new_frame_ptr,
-            layer: self.active_layer,
-            data: FrameTreeData {
-                time: self.frame_time,
-                ..Default::default()
-            },
-        });
-
-        Some(new_frame_ptr)
+        get_active_frame(&self.project.client, editor, action)    
     }
 
     pub fn pick(&mut self, x: u32, y: u32) -> Option<SceneObjPtr> {
         let idx = self.picking_buffer.read_pixel(self.device, self.queue, x, y) as usize;
-        if idx == 0 || idx > self.picking_list.len() {
+        if idx == 0 || idx > self.picking_list.objs.len() {
             return None;
         } 
-        Some(self.picking_list[idx - 1])
+        Some(self.picking_list.objs[idx - 1])
     }
 
 }

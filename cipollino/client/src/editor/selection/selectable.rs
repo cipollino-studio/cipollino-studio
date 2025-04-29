@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use project::{Clip, Folder, Frame, Layer, Ptr, Stroke};
+use project::{Clip, Folder, Frame, Layer, Ptr, SceneObjPtr, Stroke};
 
 use super::{Selectable, Selection, SelectionKind};
 
@@ -63,4 +63,14 @@ impl Selectable for Stroke {
     fn selection_list_mut(selection: &mut Selection) -> &mut HashSet<Ptr<Self>> {
         &mut selection.strokes
     }
+}
+
+impl Selection {
+
+    pub fn is_scene_obj_selected(&self, obj: SceneObjPtr) -> bool {
+        match obj {
+            SceneObjPtr::Stroke(stroke) => self.selected(stroke),
+        }
+    } 
+
 }

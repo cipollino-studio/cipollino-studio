@@ -2,9 +2,9 @@
 use paint::PaintCommands;
 use project::{Action, ClipInner, DeleteFrame};
 
-use crate::{AppSystems, DeleteShortcut, EditorState, ProjectState, Shortcut};
+use crate::{AppSystems, DeleteShortcut, EditorState, LayerRenderList, ProjectState, RenderLayerKind, Shortcut};
 
-use super::{render_list::RenderLayerKind, RenderList, TimelinePanel};
+use super::TimelinePanel;
 
 mod paint;
 mod layer;
@@ -54,7 +54,7 @@ impl FrameArea {
         }
     }
 
-    fn render_layers(&mut self, ui: &mut pierro::UI, project: &ProjectState, editor: &mut EditorState, frame_area: &pierro::Response, paint_commands: &mut PaintCommands, clip: &ClipInner, render_list: &RenderList) {
+    fn render_layers(&mut self, ui: &mut pierro::UI, project: &ProjectState, editor: &mut EditorState, frame_area: &pierro::Response, paint_commands: &mut PaintCommands, clip: &ClipInner, render_list: &LayerRenderList) {
         for (idx, render_layer) in render_list.iter().enumerate() {
             match render_layer.kind {
                 RenderLayerKind::Layer(ptr, layer) => self.render_layer_contents(ui, project, editor, frame_area, paint_commands, clip, idx, layer, ptr),
@@ -62,7 +62,7 @@ impl FrameArea {
         }
     }
     
-    fn frame_area_contents(&mut self, ui: &mut pierro::UI, editor: &mut EditorState, project: &ProjectState, systems: &mut AppSystems, render_list: &RenderList, clip: &ClipInner, n_frames: u32) {
+    fn frame_area_contents(&mut self, ui: &mut pierro::UI, editor: &mut EditorState, project: &ProjectState, systems: &mut AppSystems, render_list: &LayerRenderList, clip: &ClipInner, n_frames: u32) {
         let bg_base_color = ui.style::<pierro::theme::BgDark>();
         let bg = bg_base_color.darken(0.2);
         let column_highlight = bg_base_color.darken(0.1);
@@ -159,7 +159,7 @@ impl TimelinePanel {
     
     pub const FRAME_SIZE: pierro::Vec2 = pierro::vec2(Self::FRAME_WIDTH, Self::LAYER_HEIGHT);
 
-    pub(super) fn frame_area(&mut self, ui: &mut pierro::UI, editor: &mut EditorState, project: &ProjectState, systems: &mut AppSystems, render_list: &RenderList, clip: &ClipInner, n_frames: u32) -> pierro::ScrollAreaResponse<()> {
+    pub(super) fn frame_area(&mut self, ui: &mut pierro::UI, editor: &mut EditorState, project: &ProjectState, systems: &mut AppSystems, render_list: &LayerRenderList, clip: &ClipInner, n_frames: u32) -> pierro::ScrollAreaResponse<()> {
         let mut scroll_state = self.scroll_state;
         let response = pierro::ScrollArea::default()
             .with_state(&mut scroll_state)

@@ -35,6 +35,15 @@ pub use settings::*;
 mod presence;
 pub use presence::*;
 
+mod clipboard;
+pub use clipboard::*;
+
+mod layer_render_list;
+pub use layer_render_list::*;
+
+mod scene_render_list;
+pub use scene_render_list::*;
+
 pub struct Editor {
     state: State,
     docking: pierro::DockingState<EditorPanel>,
@@ -118,7 +127,11 @@ impl Editor {
             }
         }
 
-        // Removed locked objects from the seletion 
+        if let Some(new_selection) = self.state.editor.next_selection.take() {
+            self.state.editor.selection.replace(new_selection);
+        }
+
+        // Removed locked objects from the selection 
         self.state.editor.selection.retain(|frame: Ptr<Frame>| {
             let Some(frame) = self.state.project.client.get(frame) else { return  false; };
             !self.state.editor.locked_layers.contains(&frame.layer)
@@ -130,7 +143,16 @@ impl Editor {
         });
 
         self.menu_bar(ui, next_app_state);
-        self.use_shortcuts(ui, systems);
+
+        // Calculate layer and scene render lists
+        let (layer_render_list, scene_render_list) = self.state.project.client.get(self.state.editor.open_clip).and_then(|clip| {
+            self.state.project.client.get(clip.inner)
+        }).map(|inner| (
+            LayerRenderList::make(&self.state.project.client, inner),
+            SceneRenderList::make(&self.state.project.client, &self.state.editor, inner, inner.frame_idx(self.state.editor.time)) 
+        )).unzip();
+
+        self.state.editor.use_shortcuts(&self.state.project, layer_render_list.as_ref(), scene_render_list.as_ref(), ui, systems);
 
         self.state.editor.selection.begin_frame(ui.input().key_modifiers.contains(pierro::KeyModifiers::SHIFT));
 
@@ -139,7 +161,9 @@ impl Editor {
             editor: &mut self.state.editor,
             project: &self.state.project,
             systems,
-            renderer: &mut self.state.renderer
+            renderer: &mut self.state.renderer,
+            layer_render_list: layer_render_list.as_ref(),
+            scene_render_list: scene_render_list.as_ref()
         };
         if self.docking.render(ui, &mut panel_context) {
             // Save the layout if it was modified
@@ -152,7 +176,9 @@ impl Editor {
             editor: &mut self.state.editor,
             project: &self.state.project,
             systems,
-            renderer: &mut self.state.renderer
+            renderer: &mut self.state.renderer,
+            layer_render_list: layer_render_list.as_ref(),
+            scene_render_list: scene_render_list.as_ref()
         };
         self.windows.render(ui, &mut panel_context);
 

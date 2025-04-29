@@ -1,0 +1,107 @@
+
+use alisa::Ptr;
+use project::{Action, Client, CreateStroke, SceneObjPtr, SceneObjPtrTreeData, StrokeData, StrokeTreeData};
+
+use crate::{get_active_frame, EditorState, SceneRenderList, Selection};
+
+pub struct StrokeClipboard {
+    pub stroke: malvina::Stroke,
+    pub color: elic::Color,
+    pub width: f32
+}
+
+impl StrokeClipboard {
+
+    fn to_tree_data(&self) -> StrokeTreeData {
+        StrokeTreeData {
+            stroke: StrokeData(self.stroke.clone()),
+            color: self.color.into(),
+            width: self.width,
+        }
+    } 
+
+}
+
+pub enum SceneClipboardObject {
+    Stroke(StrokeClipboard)
+}
+
+impl SceneClipboardObject {
+
+    pub(super) fn tree_data(&self, key: u64) -> (SceneObjPtr, SceneObjPtrTreeData) {
+        match self {
+            SceneClipboardObject::Stroke(stroke) => (
+                SceneObjPtr::Stroke(Ptr::from_key(key)),
+                SceneObjPtrTreeData::Stroke(Ptr::from_key(key), stroke.to_tree_data())
+            ),
+        }
+    }
+
+}
+
+pub struct SceneClipboard {
+    pub objects: Vec<SceneClipboardObject>
+}
+
+impl SceneClipboard {
+
+    pub fn new() -> Self {
+        Self {
+            objects: Vec::new(),
+        }
+    }
+
+    pub fn add_object(&mut self, obj: SceneObjPtr, client: &Client) {
+        match obj {
+            SceneObjPtr::Stroke(stroke_ptr) => {
+                let Some(stroke) = client.get(stroke_ptr) else { return; };
+                self.objects.push(SceneClipboardObject::Stroke(StrokeClipboard {
+                    stroke: stroke.stroke.0.clone(),
+                    color: stroke.color.into(),
+                    width: stroke.width 
+                }));
+            },
+        }
+    }
+
+}
+
+impl Selection {
+    
+    pub(super) fn collect_scene_clipboard(&self, client: &Client, render_list: &SceneRenderList) -> SceneClipboard {
+        let mut clipboard = SceneClipboard::new();
+        for obj in render_list.objs.iter() {
+            match obj {
+                SceneObjPtr::Stroke(stroke) => if self.selected(*stroke) { clipboard.add_object(*obj, client); },
+            }
+        }
+        clipboard
+    }
+
+}
+
+impl SceneClipboard {
+
+    pub fn paste(&self, client: &Client, editor: &EditorState) -> Option<Selection> {
+        let mut action = Action::new(editor.action_context("Paste Strokes"));
+        let frame = get_active_frame(client, editor, &mut action)?;
+        let mut selection = Selection::new();
+        for obj in &self.objects {
+            match obj {
+                SceneClipboardObject::Stroke(stroke) => {
+                    let ptr = client.next_ptr();
+                    action.push(CreateStroke {
+                        ptr,
+                        parent: frame,
+                        idx: 0,
+                        data: stroke.to_tree_data(),
+                    });
+                    selection.select(ptr);
+                },
+            } 
+        }
+        client.queue_action(action);
+        Some(selection)
+    }
+
+}

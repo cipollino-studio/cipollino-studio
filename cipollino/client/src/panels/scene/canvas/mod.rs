@@ -1,13 +1,12 @@
 
 use std::collections::HashSet;
 
-use project::{ClipInner, Ptr, SceneObjPtr, Stroke};
+use project::{ClipInner, Ptr, Stroke};
 
-use crate::{presence_color, render_scene, AppSystems, EditorState, ProjectState, ToolContext};
+use crate::{presence_color, render_scene, AppSystems, EditorState, ProjectState, SceneRenderList, ToolContext};
 
 use super::ScenePanel;
 
-mod util;
 mod picking;
 mod selection;
 mod onion_skin;
@@ -40,7 +39,7 @@ impl ScenePanel {
         systems: &mut AppSystems,
         renderer: &mut malvina::Renderer,
         clip: &ClipInner,
-        render_list: &Vec<SceneObjPtr>,
+        render_list: &SceneRenderList,
         rendered_strokes: &HashSet<Ptr<Stroke>>,
         modifiable_strokes: &HashSet<Ptr<Stroke>>,
         canvas_width: u32,
@@ -207,11 +206,10 @@ impl ScenePanel {
 
     }
 
-    pub(super) fn canvas(&mut self, ui: &mut pierro::UI, project: &ProjectState, editor: &mut EditorState, systems: &mut AppSystems, renderer: &mut malvina::Renderer, clip: &ClipInner) {
+    pub(super) fn canvas(&mut self, ui: &mut pierro::UI, project: &ProjectState, editor: &mut EditorState, systems: &mut AppSystems, renderer: &mut malvina::Renderer, clip: &ClipInner, render_list: &SceneRenderList) {
 
         // Get the list of things to render in the scene
-        let render_list = Self::render_list(&project.client, &editor, clip, clip.frame_idx(editor.time));
-        let rendered_strokes = Self::rendered_strokes(&render_list);
+        let rendered_strokes = render_list.rendered_strokes();
         let modifiable_strokes: HashSet<Ptr<Stroke>> = rendered_strokes.iter().filter(|stroke| {
             let Some(stroke) = project.client.get(**stroke) else { return false; };
             let Some(frame) = project.client.get(stroke.frame) else { return false; };

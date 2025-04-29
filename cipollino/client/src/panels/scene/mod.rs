@@ -84,11 +84,12 @@ impl Panel for ScenePanel {
             });
             return;
         };
+        let Some(scene_render_list) = context.scene_render_list else { return; }; 
 
         pierro::horizontal_fill(ui, |ui| {
             self.toolbar(ui, editor, context.systems);
             pierro::v_line(ui);
-            self.canvas(ui, project, editor, context.systems, renderer, clip_inner); 
+            self.canvas(ui, project, editor, context.systems, renderer, clip_inner, scene_render_list); 
         });
 
         // Delete scene selection

@@ -136,4 +136,9 @@ impl Selection {
         self.shift_down
     }
 
+    pub fn replace(&mut self, mut new_selection: Self) {
+        new_selection.version = self.version + 1; 
+        *self = new_selection;
+    }
+
 }

@@ -1,18 +1,27 @@
 
-use project::{Client, ClipInner, Layer, LayerParent, LayerPtr, Ptr};
+use project::{Client, ClipInner, Layer, LayerPtr, Ptr};
 
-use super::layers::LayerDropLocation;
-
-pub(super) enum RenderLayerKind<'proj> {
+pub enum RenderLayerKind<'proj> {
     Layer(Ptr<Layer>, &'proj Layer)
 }
 
-pub(super) struct RenderLayer<'proj> {
-    idx: usize,
+pub struct RenderLayer<'proj> {
+    pub idx: usize,
     pub kind: RenderLayerKind<'proj>
 }
 
-pub(super) struct RenderList<'proj> {
+impl RenderLayer<'_> {
+
+    pub fn any_ptr(&self) -> alisa::AnyPtr {
+        match self.kind {
+            RenderLayerKind::Layer(ptr, _) => ptr.any(),
+        }
+    }
+
+}
+
+/// List of all the layer-like things in a clip, ordered by how they appear in the timeline panel
+pub struct LayerRenderList<'proj> {
     pub layers: Vec<RenderLayer<'proj>>
 }
 
@@ -32,7 +41,7 @@ fn add_layers<'proj>(render_layers: &mut Vec<RenderLayer<'proj>>, layers: &'proj
     }
 }
 
-impl<'proj> RenderList<'proj> {
+impl<'proj> LayerRenderList<'proj> {
 
     pub fn make(client: &'proj Client, clip: &'proj ClipInner) -> Self {
         let mut layers = Vec::new();
@@ -50,15 +59,6 @@ impl<'proj> RenderList<'proj> {
 
     pub fn len(&self) -> usize {
         self.layers.len()
-    }
-
-    pub fn get_transfer_location(&self, drop_location: LayerDropLocation) -> (LayerParent, usize) {
-        let render_layer = &self.layers[drop_location.render_list_idx];
-        match &render_layer.kind {
-            RenderLayerKind::Layer(_ptr, layer) => {
-                (layer.parent, render_layer.idx + if drop_location.above { 0 } else { 1 }) 
-            }
-        }
     }
 
 }

@@ -1,4 +1,4 @@
-use crate::{AppSystems, EditorState, ProjectState};
+use crate::{AppSystems, EditorState, LayerRenderList, ProjectState, SceneRenderList};
 
 use super::PANEL_KINDS;
 
@@ -8,7 +8,9 @@ pub struct PanelContext<'ctx> {
     pub editor: &'ctx mut EditorState,
     pub project: &'ctx ProjectState,
     pub systems: &'ctx mut AppSystems,
-    pub renderer: &'ctx mut Option<malvina::Renderer>
+    pub renderer: &'ctx mut Option<malvina::Renderer>,
+    pub layer_render_list: Option<&'ctx LayerRenderList<'ctx>>,
+    pub scene_render_list: Option<&'ctx SceneRenderList> 
 }
 
 pub trait Panel {

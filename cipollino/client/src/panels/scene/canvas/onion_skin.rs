@@ -1,13 +1,13 @@
 
 use project::{Client, ClipInner};
 
-use crate::{AppSystems, EditorState, OnionSkinFutureColor, OnionSkinPastColor, ScenePanel};
+use crate::{AppSystems, EditorState, OnionSkinFutureColor, OnionSkinPastColor, ScenePanel, SceneRenderList};
 
 impl ScenePanel {
 
     fn render_onion_skin_frame(rndr: &mut malvina::LayerRenderer, client: &Client, editor: &EditorState, clip: &ClipInner, time: i32, color: elic::Color) {
-        let render_list = Self::render_list(client, editor, clip, time);
-        for scene_obj in render_list {
+        let render_list = SceneRenderList::make(client, editor, clip, time);
+        for scene_obj in render_list.objs {
             match scene_obj {
                 project::SceneObjPtr::Stroke(stroke_ptr) => {
                     if let Some(stroke) = client.get(stroke_ptr) {

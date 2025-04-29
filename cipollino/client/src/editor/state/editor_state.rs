@@ -4,7 +4,7 @@ use std::{cell::RefCell, collections::HashMap};
 use std::rc::Rc;
 use project::{Client, ClientId, Clip, ClipInner, Layer, PresenceData, Project, Ptr, Stroke};
 
-use crate::{Presence, SelectTool, ToolDyn, Window, WindowInstance};
+use crate::{Clipboard, Presence, SelectTool, ToolDyn, Window, WindowInstance};
 
 use crate::{Selection, SelectionKind};
 
@@ -20,6 +20,8 @@ pub struct EditorState {
     pub curr_tool: Rc<RefCell<Box<dyn ToolDyn>>>,
 
     pub selection: Selection,
+    pub next_selection: Option<Selection>, 
+    pub clipboard: Option<Clipboard>,
 
     pub will_undo: bool,
     pub will_redo: bool,
@@ -63,6 +65,8 @@ impl EditorState {
             curr_tool: Rc::new(RefCell::new(Box::new(SelectTool::default()))),
 
             selection: Selection::new(),
+            next_selection: None,
+            clipboard: None,
 
             will_undo: false,
             will_redo: false,

@@ -2,12 +2,12 @@
 use frame_area::FrameArea;
 use framebar::Framebar;
 use layers::{LayerDropLocation, LayerList};
-use project::{alisa::AnyPtr, Ptr};
-use render_list::RenderList;
+use project::{alisa::AnyPtr, LayerParent, Ptr};
+
+use crate::{LayerRenderList, RenderLayerKind};
 
 use super::{Panel, PanelContext};
 
-mod render_list;
 mod header;
 mod framebar;
 mod layers;
@@ -80,15 +80,14 @@ impl Panel for TimelinePanel {
             });
             return;
         };
-
-        let render_list = RenderList::make(&project.client, clip_inner);
+        let Some(render_list) = context.layer_render_list else { return; };
 
         // Update active layer
         let mut found_active_layer = false;
         let mut first_layer = None;
         for render_layer in render_list.iter() {
             match render_layer.kind {
-                render_list::RenderLayerKind::Layer(ptr, _) => {
+                RenderLayerKind::Layer(ptr, _) => {
                     if ptr == editor.active_layer {
                         found_active_layer = true;
                     }
@@ -138,6 +137,19 @@ impl Panel for TimelinePanel {
             frame_area_scroll_response.sync(ui, &mut self.scroll_state);
         });
 
+    }
+
+}
+
+impl LayerRenderList<'_> {
+
+    fn get_transfer_location(&self, drop_location: LayerDropLocation) -> (LayerParent, usize) {
+        let render_layer = &self.layers[drop_location.render_list_idx];
+        match &render_layer.kind {
+            RenderLayerKind::Layer(_ptr, layer) => {
+                (layer.parent, render_layer.idx + if drop_location.above { 0 } else { 1 }) 
+            }
+        }
     }
 
 }

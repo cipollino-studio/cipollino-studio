@@ -3,9 +3,9 @@ use std::collections::HashSet;
 
 use project::{alisa::Object, Action, Layer, Project, Ptr, SetLayerName};
 
-use crate::{EditorState, ProjectState};
+use crate::{EditorState, LayerRenderList, ProjectState, RenderLayerKind};
 
-use super::{render_list::RenderLayerKind, RenderList, TimelinePanel};
+use super::TimelinePanel;
 
 mod layer;
 mod list;
@@ -115,7 +115,7 @@ impl TimelinePanel {
         }
     }
 
-    pub(super) fn layers(&mut self, ui: &mut pierro::UI, project: &ProjectState, editor: &mut EditorState, render_list: &RenderList) -> pierro::ScrollAreaResponse<pierro::UIRef> {
+    pub(super) fn layers(&mut self, ui: &mut pierro::UI, project: &ProjectState, editor: &mut EditorState, render_list: &LayerRenderList) -> pierro::ScrollAreaResponse<pierro::UIRef> {
 
         self.layer_dnd_hover_pos = None;
 

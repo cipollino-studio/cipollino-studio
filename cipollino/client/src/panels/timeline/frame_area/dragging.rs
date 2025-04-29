@@ -1,6 +1,6 @@
 
 use super::{FrameArea, DragState};
-use crate::{panels::timeline::{render_list::RenderLayerKind, RenderList}, EditorState, ProjectState, TimelinePanel};
+use crate::{EditorState, LayerRenderList, ProjectState, RenderLayerKind, TimelinePanel};
 use project::{Action, Frame, Layer, SetFrameTime};
 
 impl FrameArea {
@@ -16,7 +16,7 @@ impl FrameArea {
         }
     }
 
-    fn box_select(&mut self, project: &ProjectState, editor: &mut EditorState, render_list: &RenderList, from: pierro::Vec2, to: pierro::Vec2) {
+    fn box_select(&mut self, project: &ProjectState, editor: &mut EditorState, render_list: &LayerRenderList, from: pierro::Vec2, to: pierro::Vec2) {
         let min = from.min(to);
         let max = from.max(to);
         
@@ -65,7 +65,7 @@ impl FrameArea {
 
     }
 
-    pub(super) fn drag_stopped(&mut self, project: &ProjectState, editor: &mut EditorState, render_list: &RenderList) {
+    pub(super) fn drag_stopped(&mut self, project: &ProjectState, editor: &mut EditorState, render_list: &LayerRenderList) {
         match std::mem::replace(&mut self.drag_state, DragState::None) {
             DragState::None => {},
             DragState::Move { offset } => {

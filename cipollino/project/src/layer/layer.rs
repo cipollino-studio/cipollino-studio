@@ -133,4 +133,15 @@ impl Layer {
         min_frame
     }
 
+    pub fn frame_exactly_at(&self, client: &Client, t: i32) -> Option<alisa::Ptr<Frame>> {
+        for frame_ptr in self.frames.iter() {
+            if let Some(frame) = client.get(frame_ptr.ptr()) {
+                if frame.time == t { 
+                    return Some(frame_ptr.ptr());
+                }
+            }
+        }
+        None
+    }
+
 }
