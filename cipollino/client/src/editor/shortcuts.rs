@@ -1,11 +1,12 @@
 
-use project::{Action, CreateFrame, FrameTreeData};
+use project::{Action, CreateFrame, DeleteFrame, DeleteStroke, Frame, FrameTreeData, Stroke};
 
 use crate::{keyboard_shortcut, AppSystems, Shortcut};
 use super::{EditorState, LayerRenderList, ProjectState, SceneRenderList};
 
 keyboard_shortcut!(CopyShortcut, C, pierro::KeyModifiers::CONTROL);
 keyboard_shortcut!(PasteShortcut, V, pierro::KeyModifiers::CONTROL);
+keyboard_shortcut!(CutShortcut, X, pierro::KeyModifiers::CONTROL);
 keyboard_shortcut!(UndoShortcut, Z, pierro::KeyModifiers::CONTROL);
 keyboard_shortcut!(RedoShortcut, Y, pierro::KeyModifiers::CONTROL);
 keyboard_shortcut!(DeleteShortcut, Backspace, pierro::KeyModifiers::empty());
@@ -66,6 +67,21 @@ impl EditorState {
         }
     }
 
+    fn delete(&mut self, project: &ProjectState) {
+        let mut action = Action::new(self.action_context("Delete"));
+        for frame in self.selection.iter::<Frame>() {
+            action.push(DeleteFrame {
+                ptr: frame,
+            });
+        }
+        for stroke in self.selection.iter::<Stroke>() {
+            action.push(DeleteStroke {
+                ptr: stroke,
+            });
+        }
+        project.client.queue_action(action);
+    }
+
     pub fn use_shortcuts(&mut self, project: &ProjectState, layer_render_list: Option<&LayerRenderList>, scene_render_list: Option<&SceneRenderList>, ui: &mut pierro::UI, systems: &mut AppSystems) {
 
         if CopyShortcut::used_globally(ui, systems) {
@@ -78,11 +94,20 @@ impl EditorState {
                 self.next_selection = clipboard.paste(&project.client, &self, layer_render_list);
             }
         }
+        if CutShortcut::used_globally(ui, systems) {
+            if let Some(clipboard) = self.selection.collect_clipboard(&project.client, self, layer_render_list, scene_render_list) {
+                self.clipboard = Some(clipboard);
+            }
+            self.delete(project);
+        }
         if UndoShortcut::used_globally(ui, systems) {
             self.will_undo = true; 
         }
         if RedoShortcut::used_globally(ui, systems) {
             self.will_redo = true; 
+        }
+        if DeleteShortcut::used_globally(ui, systems) {
+            self.delete(project);
         }
 
         self.playback_shortcuts(project, ui, systems);

@@ -40,7 +40,7 @@ impl Selection {
             }
         }
 
-        // Shift the layers vertically so the top one has index 0 
+        // Shift the layers vertically so the active layer has offset 0 
         let active_layer_idx = layer_render_list.iter().position(|layer| layer.any_ptr() == editor.active_layer.any()).unwrap_or(0) as i32;
         for (layer_idx, _) in &mut layers {
             *layer_idx -= active_layer_idx;

@@ -36,6 +36,7 @@ pub(super) fn shortcuts(ui: &mut pierro::UI, systems: &mut AppSystems) {
         });
         shortcut!(builder, shortcut_occurences, "Copy", CopyShortcut);
         shortcut!(builder, shortcut_occurences, "Paste", PasteShortcut);
+        shortcut!(builder, shortcut_occurences, "Cut", CutShortcut);
         shortcut!(builder, shortcut_occurences, "Undo", UndoShortcut);
         shortcut!(builder, shortcut_occurences, "Redo", RedoShortcut);
         shortcut!(builder, shortcut_occurences, "Delete", DeleteShortcut);

@@ -2,9 +2,7 @@
 mod toolbar;
 mod canvas;
 
-use project::{Action, DeleteStroke};
-
-use crate::{keyboard_shortcut, DeleteShortcut, EditorState, ProjectState, SelectionKind, Shortcut};
+use crate::{keyboard_shortcut, Shortcut};
 use super::{Panel, PanelContext};
 
 use std::cell::RefCell;
@@ -33,21 +31,6 @@ impl Default for ScenePanel {
             mirror: false,
             picking_buffer: Rc::new(RefCell::new(malvina::PickingBuffer::new())),
         }
-    }
-
-}
-
-impl ScenePanel {
-
-    fn delete_scene_selection(project: &ProjectState, editor: &mut EditorState) {
-        let mut action = Action::new(editor.action_context("Delete Strokes"));
-        for stroke in editor.selection.iter() {
-            action.push(DeleteStroke {
-                ptr: stroke
-            });
-        }
-        project.client.queue_action(action);
-        editor.selection.clear();
     }
 
 }
@@ -91,11 +74,6 @@ impl Panel for ScenePanel {
             pierro::v_line(ui);
             self.canvas(ui, project, editor, context.systems, renderer, clip_inner, scene_render_list); 
         });
-
-        // Delete scene selection
-        if DeleteShortcut::used_globally(ui, context.systems) && editor.selection.kind() == SelectionKind::Scene {
-            Self::delete_scene_selection(project, editor);
-        }
 
         if RecenterSceneShortcut::used_globally(ui, context.systems) {
             self.cam_pos = elic::Vec2::ZERO;
