@@ -20,6 +20,30 @@ const CONNECTION_ICONS: &[&'static str] = &[
     pierro::icons::CELL_SIGNAL_FULL,
 ];
 
+fn cleanup_connect_error_message(msg: String, url: &str) -> String {
+    if msg.contains("parse") {
+        return "Invalid URL".to_string();
+    }
+    if msg.contains("scheme not supported") {
+        let url = url.trim();
+        let ws = url.starts_with("ws:/");
+        let wss = url.starts_with("wss:/");
+        return match (ws, wss) {
+            (false, false) => "URL should use ws:// or wss:// scheme",
+            (true, false) => "ws:// not supported. Try wss://",
+            (false, true) => "wss:// not supported. Try ws://",
+            (true, true) => "Invalid server protocol"
+        }.to_owned();
+    }
+    if msg.contains("HTTP error") {
+        return "Invalid server protocol".to_owned();
+    }
+    if msg.contains("Unable to connect") {
+        return "Could not connect to server".to_owned();
+    }
+    msg
+}
+
 impl CollabScreen {
 
     pub fn new() -> Self {
@@ -47,10 +71,9 @@ impl CollabScreen {
                 builder.labeled("URL:", |ui| {
                     pierro::text_edit(ui, &mut self.url);
                 });
-                builder.labeled("", |ui| {
-                    pierro::error_label(ui, &self.error);
-                })
             });
+            pierro::v_spacing(ui, 10.0);
+            pierro::error_label(ui, &self.error);
             pierro::v_spacing(ui, 10.0);
         
             if let Some(socket) = &mut self.socket {
@@ -78,7 +101,7 @@ impl CollabScreen {
                         Err(msg) => self.error = msg,
                     }
                 } else if let Some(err) = socket.take_error() {
-                    self.error = err;
+                    self.error = cleanup_connect_error_message(err, &self.url);
                     self.socket = None;
                 } else if socket.closed() {
                     self.error = "Could not connect to server.".to_owned();
@@ -92,7 +115,7 @@ impl CollabScreen {
                             self.socket = Some(new_socket);
                         },
                         Err(msg) => {
-                            self.error = msg;
+                            self.error = cleanup_connect_error_message(msg, &self.url);
                         },
                     }
                 }

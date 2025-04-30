@@ -33,4 +33,4 @@ pub struct WelcomeMessage {
     pub presence: Vec<(ClientId, PresenceData)>
 }
 
-pub const PROTOCOL_VERSION: u64 = 0;
+pub const PROTOCOL_VERSION: u64 = 1;
