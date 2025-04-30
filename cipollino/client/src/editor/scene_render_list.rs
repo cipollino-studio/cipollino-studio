@@ -33,6 +33,11 @@ impl SceneRenderList {
                     if let Some(layer) = client.get(layer_ptr) {
                         self.get_layer_render_list(client, editor, layer, layer_ptr, time);
                     }
+                },
+                LayerPtr::LayerGroup(layer_group_ptr) => {
+                    if let Some(layer_group) = client.get(layer_group_ptr) {
+                        self.get_layer_list_render_list(client, editor, &layer_group.layers, time);
+                    }
                 }
             } 
         }

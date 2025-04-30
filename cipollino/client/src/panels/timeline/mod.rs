@@ -2,7 +2,7 @@
 use frame_area::FrameArea;
 use framebar::Framebar;
 use layers::{LayerDropLocation, LayerList};
-use project::{alisa::AnyPtr, LayerParent, Ptr};
+use project::{alisa::AnyPtr, Clip, ClipInner, LayerParent, Ptr};
 
 use crate::{LayerRenderList, RenderLayerKind};
 
@@ -35,7 +35,7 @@ impl Default for TimelinePanel {
 
     fn default() -> Self {
         Self {
-            layers_width: 100.0,
+            layers_width: 150.0,
             scroll_state: pierro::ScrollAreaState::default(),
 
             clip_length_preview: 0,
@@ -95,6 +95,7 @@ impl Panel for TimelinePanel {
                         first_layer = Some(ptr);
                     }
                 },
+                _ => {}
             }
         }
         if !found_active_layer {
@@ -112,7 +113,7 @@ impl Panel for TimelinePanel {
             let mut layers_width = self.layers_width;
             let layers_scroll_response = pierro::resizable_panel(ui, pierro::Axis::X, &mut layers_width, |ui| {
                 pierro::v_spacing(ui, Self::FRAMEBAR_HEIGHT);
-                self.layers(ui, project, editor, &render_list)
+                self.layers(ui, project, editor, &render_list, clip_inner)
             });
             let parent_id = ui.get_node_id(ui.curr_parent());
             let parent_width = ui.memory().get_opt::<pierro::LayoutInfo>(parent_id).map(|info| info.screen_rect.width()).unwrap_or(ui.window_size().x);
@@ -143,11 +144,22 @@ impl Panel for TimelinePanel {
 
 impl LayerRenderList<'_> {
 
-    fn get_transfer_location(&self, drop_location: LayerDropLocation) -> (LayerParent, usize) {
+    fn get_transfer_location(&self, drop_location: LayerDropLocation, clip_ptr: Ptr<Clip>, clip: &ClipInner) -> (LayerParent, usize) {
+        if drop_location.render_list_idx == self.len() {
+            return (clip_ptr.into(), clip.layers.as_slice().len()); 
+        } 
+
         let render_layer = &self.layers[drop_location.render_list_idx];
         match &render_layer.kind {
-            RenderLayerKind::Layer(_ptr, layer) => {
+            RenderLayerKind::Layer(_, layer) => {
                 (layer.parent, render_layer.idx + if drop_location.above { 0 } else { 1 }) 
+            },
+            RenderLayerKind::LayerGroup(layer_group_ptr, layer_group) => {
+                if drop_location.above {
+                    (layer_group.parent, render_layer.idx + 1)
+                } else {
+                    ((*layer_group_ptr).into(), 0)
+                }
             }
         }
     }

@@ -148,7 +148,7 @@ impl Editor {
         let (layer_render_list, scene_render_list) = self.state.project.client.get(self.state.editor.open_clip).and_then(|clip| {
             self.state.project.client.get(clip.inner)
         }).map(|inner| (
-            LayerRenderList::make(&self.state.project.client, inner),
+            LayerRenderList::make(&self.state.project.client, &self.state.editor, inner),
             SceneRenderList::make(&self.state.project.client, &self.state.editor, inner, inner.frame_idx(self.state.editor.time)) 
         )).unzip();
 

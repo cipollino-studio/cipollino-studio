@@ -50,6 +50,11 @@ fn render_layer_list(rndr: &mut malvina::LayerRenderer, client: &Client, editor:
                 if let Some(layer) = client.get(layer_ptr) {
                     render_layer(rndr, client, editor, layer, layer_ptr, time, editor_view);
                 }
+            },
+            LayerPtr::LayerGroup(layer_ptr) => {
+                if let Some(layer_group) = client.get(layer_ptr) {
+                    render_layer_list(rndr, client, editor, &layer_group.layers, time, editor_view);
+                }
             }
         } 
     }

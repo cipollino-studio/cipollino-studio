@@ -2,7 +2,7 @@
 use std::collections::HashSet;
 use std::{cell::RefCell, collections::HashMap};
 use std::rc::Rc;
-use project::{Client, ClientId, Clip, ClipInner, Layer, PresenceData, Project, Ptr, Stroke};
+use project::{Client, ClientId, Clip, ClipInner, Layer, LayerGroup, PresenceData, Project, Ptr, Stroke};
 
 use crate::{Clipboard, Presence, SelectTool, ToolDyn, Window, WindowInstance};
 
@@ -28,6 +28,7 @@ pub struct EditorState {
 
     pub hidden_layers: HashSet<Ptr<Layer>>,
     pub locked_layers: HashSet<Ptr<Layer>>,
+    pub open_layer_groups: HashSet<Ptr<LayerGroup>>,
 
     pub show_onion_skin: bool,
     pub onion_skin_prev_frames: u32,
@@ -73,6 +74,7 @@ impl EditorState {
 
             hidden_layers: HashSet::new(),
             locked_layers: HashSet::new(),
+            open_layer_groups: HashSet::new(),
 
             show_onion_skin: false,
             onion_skin_prev_frames: 2,

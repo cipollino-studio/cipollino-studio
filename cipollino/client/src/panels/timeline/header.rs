@@ -1,6 +1,5 @@
 
-use alisa::Children;
-use project::{Action, Clip, ClipInner, CreateFrame, CreateLayer, FrameTreeData, LayerParent, LayerTreeData, Ptr, SetClipInnerLength};
+use project::{Action, Clip, ClipInner, CreateFrame, CreateLayer, CreateLayerGroup, FrameTreeData, LayerGroupTreeData, LayerParent, LayerTreeData, Ptr, SetClipInnerLength};
 
 use crate::{EditorState, ProjectState};
 
@@ -37,19 +36,37 @@ impl TimelinePanel {
             pierro::v_line(ui);
 
             // Add layer
-            ui.with_style::<pierro::theme::WidgetRounding, _, _>(widget_rounding.right_side(), |ui| {
+            ui.with_style::<pierro::theme::WidgetRounding, _, _>(pierro::Rounding::ZERO, |ui| {
                 if pierro::icon_button(ui, pierro::icons::FILE_PLUS).mouse_clicked() {
                     let ptr = project.client.next_ptr();
                     project.client.queue_action(Action::single(editor.action_context("New Layer"), CreateLayer {
                         ptr,
                         parent: LayerParent::Clip(clip_ptr),
-                        idx: clip.layers.n_children(),
+                        idx: clip.layers.as_slice().len(),
                         data: LayerTreeData {
                             name: "Layer".to_owned(),
                             ..Default::default()
                         },
                     }));
                     editor.active_layer = ptr;
+                }
+            });
+            pierro::v_line(ui);
+
+            // Add layer group
+            ui.with_style::<pierro::theme::WidgetRounding, _, _>(widget_rounding.right_side(), |ui| {
+                if pierro::icon_button(ui, pierro::icons::FOLDER_PLUS).mouse_clicked() {
+                    let ptr = project.client.next_ptr();
+                    project.client.queue_action(Action::single(editor.action_context("New Layer Group"), CreateLayerGroup {
+                        ptr,
+                        parent: LayerParent::Clip(clip_ptr),
+                        idx: clip.layers.as_slice().len(),
+                        data: LayerGroupTreeData {
+                            name: "Layer Group".to_owned(),
+                            ..Default::default()
+                        },
+                    }));
+                    editor.open_layer_groups.insert(ptr);
                 }
             });
         });

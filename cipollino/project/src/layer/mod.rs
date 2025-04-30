@@ -4,7 +4,10 @@ use crate::{Clip, Project};
 mod layer;
 pub use layer::*;
 
-alisa::ptr_enum!(LayerParent [Clip]);
+mod group;
+pub use group::*;
+
+alisa::ptr_enum!(LayerParent [Clip, LayerGroup]);
 
 impl Default for LayerParent {
     fn default() -> Self {
@@ -20,6 +23,9 @@ impl LayerParent {
                 .get(*ptr)
                 .and_then(|clip| context.obj_list().get(clip.inner))
                 .map(|inner| &inner.layers),
+            LayerParent::LayerGroup(ptr) => context.obj_list()
+                .get(*ptr)
+                .map(|group| &group.layers),
         }
     }
 
@@ -29,9 +35,11 @@ impl LayerParent {
                 .map(|clip| clip.inner)
                 .and_then(|inner| recorder.get_obj_mut(inner))
                 .map(|inner| &mut inner.layers),
+            LayerParent::LayerGroup(ptr) => recorder.get_obj_mut(*ptr)
+                .map(|group| &mut group.layers)
         }
     }
 
 }
 
-alisa::ptr_enum!(LayerPtr loading [Layer] childof LayerParent, in Project);
+alisa::ptr_enum!(LayerPtr loading [Layer, LayerGroup] childof LayerParent, in Project);

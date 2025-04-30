@@ -33,7 +33,7 @@ impl TimelinePanel {
         }
     }
 
-    pub(super) fn render_layer(&mut self, ui: &mut pierro::UI, project: &ProjectState, editor: &mut EditorState, render_list_idx: usize, layer: &Layer, layer_ptr: Ptr<Layer>) {
+    pub(super) fn render_layer(&mut self, ui: &mut pierro::UI, project: &ProjectState, editor: &mut EditorState, render_list_idx: usize, depth: i32, layer: &Layer, layer_ptr: Ptr<Layer>) {
 
         let highlight = layer_ptr == editor.active_layer;
         if highlight {
@@ -52,6 +52,8 @@ impl TimelinePanel {
                     pierro::icon_gap(ui);
                 }
                 pierro::h_spacing(ui, 2.0);
+
+                self.layer_depth_spacing(ui, depth);
 
                 self.renameable_layer_label(ui, project, &editor, &layer.name, layer_ptr); 
             });

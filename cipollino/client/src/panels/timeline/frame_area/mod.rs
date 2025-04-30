@@ -58,6 +58,7 @@ impl FrameArea {
         for (idx, render_layer) in render_list.iter().enumerate() {
             match render_layer.kind {
                 RenderLayerKind::Layer(ptr, layer) => self.render_layer_contents(ui, project, editor, frame_area, paint_commands, clip, idx, layer, ptr),
+                RenderLayerKind::LayerGroup(_, _) => {} // Nothing to render for a layer group
             }
         }
     }
@@ -115,6 +116,7 @@ impl FrameArea {
         let text_color = ui.style::<pierro::theme::TextColor>();
         let active_layer_idx = render_list.iter().position(|layer| match layer.kind {
             RenderLayerKind::Layer(layer, _) => layer == editor.active_layer,
+            _ => false
         });
         let selection_rect = self.drag_state.selection_rect();
         ui.set_on_paint(frame_area.node_ref, move |painter, rect| {

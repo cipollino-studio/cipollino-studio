@@ -33,7 +33,8 @@ impl FrameArea {
                     if !editor.locked_layers.contains(layer_ptr) {
                         self.box_select_layer(project, editor, layer, x_range);
                     }
-                }
+                },
+                RenderLayerKind::LayerGroup(_, _) => {}
             }
         }
     }

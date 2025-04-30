@@ -112,7 +112,8 @@ impl TimelineClipboard {
                         let time = cursor_frame + *time_offset;
                         selection.select(paste_frame(client, &mut action, *layer_ptr, layer, time, frame_data));
                     }
-                }
+                },
+                _ => {}
             }
         } 
 

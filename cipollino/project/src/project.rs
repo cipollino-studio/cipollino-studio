@@ -1,5 +1,5 @@
 
-use crate::{Clip, ClipInner, ClipTreeData, CreateClip, CreateClipInner, CreateFolder, CreateFrame, CreateLayer, CreateStroke, DeleteClip, DeleteFolder, DeleteFrame, DeleteLayer, DeleteStroke, Folder, Frame, Layer, LayerParent, LayerTreeData, RenameClip, RenameFolder, SetClipInnerFramerate, SetClipInnerHeight, SetClipInnerLength, SetClipInnerWidth, SetFrameTime, SetLayerName, SetStrokeColor, SetStrokeStroke, Stroke, TransferClip, TransferFolder, TransferLayer};
+use crate::{Clip, ClipInner, ClipTreeData, CreateClip, CreateClipInner, CreateFolder, CreateFrame, CreateLayer, CreateLayerGroup, CreateStroke, DeleteClip, DeleteFolder, DeleteFrame, DeleteLayer, DeleteLayerGroup, DeleteStroke, Folder, Frame, Layer, LayerGroup, LayerParent, LayerTreeData, RenameClip, RenameFolder, SetClipInnerFramerate, SetClipInnerHeight, SetClipInnerLength, SetClipInnerWidth, SetFrameTime, SetLayerGroupName, SetLayerName, SetStrokeColor, SetStrokeStroke, Stroke, TransferClip, TransferFolder, TransferLayer, TransferLayerGroup};
 
 #[derive(alisa::Serializable, Clone)]
 pub struct Project {
@@ -25,7 +25,8 @@ pub struct Objects {
     pub clip_inners: alisa::ObjList<ClipInner>,
     pub layers: alisa::ObjList<Layer>,
     pub frames: alisa::ObjList<Frame>,
-    pub strokes: alisa::ObjList<Stroke>
+    pub strokes: alisa::ObjList<Stroke>,
+    pub layer_groups: alisa::ObjList<LayerGroup>
 }
 
 #[derive(Clone)]
@@ -90,6 +91,7 @@ impl alisa::Project for Project {
         alisa::ObjectKind::from::<Clip>(),
         alisa::ObjectKind::from::<ClipInner>(),
         alisa::ObjectKind::from::<Folder>(),
+        alisa::ObjectKind::from::<LayerGroup>(),
     ];
 
     const OPERATIONS: &'static [alisa::OperationKind<Self>] = &[
@@ -113,6 +115,11 @@ impl alisa::Project for Project {
         alisa::OperationKind::from::<DeleteLayer>(),
         alisa::OperationKind::from::<TransferLayer>(),
         alisa::OperationKind::from::<SetLayerName>(),
+
+        alisa::OperationKind::from::<CreateLayerGroup>(),
+        alisa::OperationKind::from::<DeleteLayerGroup>(),
+        alisa::OperationKind::from::<TransferLayerGroup>(),
+        alisa::OperationKind::from::<SetLayerGroupName>(),
 
         alisa::OperationKind::from::<CreateFrame>(),
         alisa::OperationKind::from::<DeleteFrame>(),
