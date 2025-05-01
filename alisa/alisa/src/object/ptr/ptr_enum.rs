@@ -110,7 +110,7 @@ macro_rules! ptr_enum_child_ptr_impl {
 #[macro_export]
 macro_rules! ptr_enum {
     ($typename: ident [$($obj: ident),*]) => {
-        #[derive(Clone, Copy, PartialEq, Eq)]
+        #[derive(Clone, Copy, PartialEq, Eq, Hash)]
         pub enum $typename {
             $($obj(::alisa::Ptr<($obj)>)),*
         } 
@@ -119,7 +119,7 @@ macro_rules! ptr_enum {
         ::alisa::ptr_enum_from_impls!($typename [$($obj),*]);
     };
     ($typename: ident loading [$($obj: ident),*]) => {
-        #[derive(Clone, Copy, PartialEq, Eq)]
+        #[derive(Clone, Copy, PartialEq, Eq, Hash)]
         pub enum $typename {
             $($obj(::alisa::Ptr<($obj)>)),*
         } 
