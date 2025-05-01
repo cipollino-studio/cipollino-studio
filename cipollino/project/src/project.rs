@@ -1,5 +1,5 @@
 
-use crate::{Clip, ClipInner, ClipTreeData, CreateClip, CreateClipInner, CreateFolder, CreateFrame, CreateLayer, CreateLayerGroup, CreateStroke, DeleteClip, DeleteFolder, DeleteFrame, DeleteLayer, DeleteLayerGroup, DeleteStroke, Folder, Frame, Layer, LayerGroup, LayerParent, LayerTreeData, RenameClip, RenameFolder, SetClipInnerFramerate, SetClipInnerHeight, SetClipInnerLength, SetClipInnerWidth, SetFrameTime, SetLayerGroupName, SetLayerName, SetStrokeColor, SetStrokeStroke, Stroke, TransferClip, TransferFolder, TransferLayer, TransferLayerGroup};
+use crate::{Clip, ClipInner, ClipTreeData, CreateClip, CreateClipInner, CreateFill, CreateFolder, CreateFrame, CreateLayer, CreateLayerGroup, CreateStroke, DeleteClip, DeleteFill, DeleteFolder, DeleteFrame, DeleteLayer, DeleteLayerGroup, DeleteStroke, Fill, Folder, Frame, Layer, LayerGroup, LayerParent, LayerTreeData, RenameClip, RenameFolder, SetClipInnerFramerate, SetClipInnerHeight, SetClipInnerLength, SetClipInnerWidth, SetFillColor, SetFillPaths, SetFrameTime, SetLayerGroupName, SetLayerName, SetStrokeColor, SetStrokeStroke, Stroke, TransferClip, TransferFolder, TransferLayer, TransferLayerGroup};
 
 #[derive(alisa::Serializable, Clone)]
 pub struct Project {
@@ -26,7 +26,8 @@ pub struct Objects {
     pub layers: alisa::ObjList<Layer>,
     pub frames: alisa::ObjList<Frame>,
     pub strokes: alisa::ObjList<Stroke>,
-    pub layer_groups: alisa::ObjList<LayerGroup>
+    pub layer_groups: alisa::ObjList<LayerGroup>,
+    pub fills: alisa::ObjList<Fill>
 }
 
 #[derive(Clone)]
@@ -92,6 +93,7 @@ impl alisa::Project for Project {
         alisa::ObjectKind::from::<ClipInner>(),
         alisa::ObjectKind::from::<Folder>(),
         alisa::ObjectKind::from::<LayerGroup>(),
+        alisa::ObjectKind::from::<Fill>(),
     ];
 
     const OPERATIONS: &'static [alisa::OperationKind<Self>] = &[
@@ -129,6 +131,11 @@ impl alisa::Project for Project {
         alisa::OperationKind::from::<DeleteStroke>(),
         alisa::OperationKind::from::<SetStrokeStroke>(),
         alisa::OperationKind::from::<SetStrokeColor>(),
+
+        alisa::OperationKind::from::<CreateFill>(),
+        alisa::OperationKind::from::<DeleteFill>(),
+        alisa::OperationKind::from::<SetFillPaths>(),
+        alisa::OperationKind::from::<SetFillColor>(),
     ];
 
 }

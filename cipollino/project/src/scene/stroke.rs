@@ -41,9 +41,9 @@ impl alisa::Serializable for StrokeData {
             if x.len() != 4 {
                 None
             } else {
-                Some(u32::from_le_bytes([x[0], x[1], x[2], x[3]]))
+                Some(f32::from_le_bytes([x[0], x[1], x[2], x[3]]))
             }
-        }).map(|bits| f32::from_bits(bits)).collect();
+        }).collect();
         let stroke_points: Box<[malvina::StrokePoint]> = floats.chunks(3).filter_map(|x| decode_stroke_point(x)).collect();
         let bezier_points = stroke_points.chunks(3).filter_map(|pts| {
             if pts.len() != 3 {
@@ -124,8 +124,8 @@ impl alisa::TreeObj for Stroke {
         context.obj_list().get(parent).map(|frame| &frame.scene)
     }
 
-    fn child_list_mut<'a>(parent: alisa::Ptr<Frame>, context: &'a mut alisa::Recorder<Project>) -> Option<&'a mut Self::ChildList> {
-        context.get_obj_mut(parent).map(|frame| &mut frame.scene)
+    fn child_list_mut<'a>(parent: alisa::Ptr<Frame>, recorder: &'a mut alisa::Recorder<Project>) -> Option<&'a mut Self::ChildList> {
+        recorder.get_obj_mut(parent).map(|frame| &mut frame.scene)
     }
 
     fn parent(&self) -> alisa::Ptr<Frame> {

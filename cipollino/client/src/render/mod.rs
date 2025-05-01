@@ -1,15 +1,26 @@
 
-use project::{Client, ClipInner, Frame, Layer, LayerPtr, Ptr, SceneObjPtr, Stroke};
+use project::{Client, ClipInner, Fill, Frame, Layer, LayerPtr, Ptr, SceneObjPtr, Stroke};
 use crate::EditorState;
 
 fn render_stroke(rndr: &mut malvina::LayerRenderer, editor: &EditorState, stroke: &Stroke, stroke_ptr: Ptr<Stroke>) {
     let mut stroke_mesh_cache = editor.stroke_mesh_cache.borrow_mut();
     if let Some(mesh) = stroke_mesh_cache.get(&stroke_ptr) {
-        rndr.render_stroke(mesh, stroke.color.into(), editor.stroke_transform(stroke_ptr));
+        rndr.render_stroke(mesh, stroke.color.into(), editor.scene_obj_transform(stroke_ptr));
     } else {
         let mesh = malvina::StrokeMesh::new(rndr.device(), &stroke.stroke.0, stroke.width);
-        rndr.render_stroke(&mesh, stroke.color.into(), editor.stroke_transform(stroke_ptr));
+        rndr.render_stroke(&mesh, stroke.color.into(), editor.scene_obj_transform(stroke_ptr));
         stroke_mesh_cache.insert(stroke_ptr, mesh);
+    }
+}
+
+fn render_fill(rndr: &mut malvina::LayerRenderer, editor: &EditorState, fill: &Fill, fill_ptr: Ptr<Fill>) {
+    let mut fill_mesh_cache = editor.fill_mesh_cache.borrow_mut();
+    if let Some(mesh) = fill_mesh_cache.get(&fill_ptr) {
+        rndr.render_fill(mesh, fill.color.into(), editor.scene_obj_transform(fill_ptr)); 
+    } else {
+        let mesh = malvina::FillMesh::new(rndr.device(), &fill.paths.0);
+        rndr.render_fill(&mesh, fill.color.into(), editor.scene_obj_transform(fill_ptr));
+        fill_mesh_cache.insert(fill_ptr, mesh);
     }
 }
 
@@ -19,6 +30,11 @@ fn render_frame(rndr: &mut malvina::LayerRenderer, editor: &EditorState, client:
             SceneObjPtr::Stroke(stroke_ptr) => {
                 if let Some(stroke) = client.get(stroke_ptr) {
                     render_stroke(rndr, editor, stroke, stroke_ptr);
+                }
+            },
+            SceneObjPtr::Fill(fill_ptr) => {
+                if let Some(fill) = client.get(fill_ptr) {
+                    render_fill(rndr, editor, fill, fill_ptr);
                 }
             }
         }
@@ -39,6 +55,9 @@ fn render_layer(rndr: &mut malvina::LayerRenderer, client: &Client, editor: &Edi
     if layer_ptr == editor.active_layer && editor_view {
         if let Some(stroke_preview) = &editor.preview.stroke_preview {
             rndr.render_stroke(stroke_preview, editor.color, elic::Mat4::IDENTITY);
+        }
+        if let Some(fill_preview) = &editor.preview.fill_preview {
+            rndr.render_fill(fill_preview, editor.color, elic::Mat4::IDENTITY);
         }
     } 
 }

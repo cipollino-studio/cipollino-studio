@@ -1,7 +1,6 @@
 use std::collections::HashSet;
 
-use project::{Client, Ptr, Stroke};
-
+use project::{Client, Fill, Ptr, SceneObjPtr, Stroke};
 
 #[derive(Default)]
 pub struct LassoState {
@@ -35,7 +34,7 @@ impl LassoState {
         self.pts.clear();
     }
 
-    pub fn find_inside(&self, client: &Client, strokes: &HashSet<Ptr<Stroke>>) -> Vec<Ptr<Stroke>> {
+    pub fn find_inside(&self, client: &Client, objs: &HashSet<SceneObjPtr>) -> Vec<SceneObjPtr> {
         if self.pts.len() < 2 {
             return Vec::new();
         } 
@@ -58,8 +57,8 @@ impl LassoState {
         };
         let segments = segments_2;
 
-        strokes.iter().copied().filter(|stroke_ptr| {
-            let stroke = client.get(*stroke_ptr);
+        let stroke_inside = |stroke_ptr: Ptr<Stroke>| {
+            let stroke = client.get(stroke_ptr);
             if stroke.is_none() {
                 return false;
             } 
@@ -81,9 +80,48 @@ impl LassoState {
                         return true;
                     }
                 }
-            } 
+            }
 
             false
+        };
+
+        let fill_inside = |fill_ptr: Ptr<Fill>| {
+            let Some(fill) = client.get(fill_ptr) else { return false; };
+
+            for path in fill.paths.0.paths.iter() {
+                for path_segment in path.iter_segments() {
+                    for lasso_segment in segments.clone() {
+                        let ts = lasso_segment.intersect_bezier_ts(&path_segment);
+                        if !ts.is_empty() {
+                            return true;
+                        }
+                    }
+                }
+
+                for pt in path.pts.iter() {
+                    if inside_lasso(pt.pt) {
+                        return true;
+                    }
+                }
+                
+                let start = path.sample(0.0);
+                let end = path.sample((path.pts.len() - 1) as f32);
+                let start_to_end = elic::Segment::new(start, end);
+                for lasso_segment in segments.clone() {
+                    if lasso_segment.intersect(start_to_end).is_some() {
+                        return true;
+                    } 
+                }
+            }
+
+            false
+        };
+
+        objs.iter().copied().filter(|obj_ptr| {
+            match obj_ptr {
+                SceneObjPtr::Stroke(ptr) => stroke_inside(*ptr),
+                SceneObjPtr::Fill(ptr) => fill_inside(*ptr),
+            } 
         }).collect()
     } 
 

@@ -14,9 +14,15 @@ impl ScenePanel {
                 SceneObjPtr::Stroke(stroke_ptr) => {
                     let stroke_mesh_cache = editor.stroke_mesh_cache.borrow();
                     if let Some(stroke) = stroke_mesh_cache.get(&stroke_ptr) {
-                        rndr.render_stroke(stroke, idx as u32 + 1, editor.stroke_transform(*stroke_ptr));
+                        rndr.render_stroke(stroke, idx as u32 + 1, editor.scene_obj_transform(*stroke_ptr));
                     }
                 },
+                SceneObjPtr::Fill(fill_ptr) => {
+                    let fill_mesh_cache = editor.fill_mesh_cache.borrow();
+                    if let Some(fill) = fill_mesh_cache.get(fill_ptr) {
+                        rndr.render_fill(fill, idx as u32 + 1, editor.scene_obj_transform(*fill_ptr));
+                    }
+                }
             }
         }
     }

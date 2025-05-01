@@ -2,9 +2,10 @@
 use std::collections::HashSet;
 use std::{cell::RefCell, collections::HashMap};
 use std::rc::Rc;
-use project::{Client, ClientId, Clip, ClipInner, Layer, LayerGroup, PresenceData, Project, Ptr, Stroke};
+use alisa::Object;
+use project::{Client, ClientId, Clip, ClipInner, Fill, Layer, LayerGroup, PresenceData, Project, Ptr, SceneObjPtr, Stroke};
 
-use crate::{Clipboard, Presence, SelectTool, ToolDyn, Window, WindowInstance};
+use crate::{Clipboard, Presence, SelectTool, Selectable, ToolDyn, Window, WindowInstance};
 
 use crate::{Selection, SelectionKind};
 
@@ -35,6 +36,7 @@ pub struct EditorState {
     pub onion_skin_next_frames: u32,
 
     pub stroke_mesh_cache: RefCell<HashMap<Ptr<Stroke>, malvina::StrokeMesh>>,
+    pub fill_mesh_cache: RefCell<HashMap<Ptr<Fill>, malvina::FillMesh>>,
 
     pub preview: ScenePreview,
 
@@ -81,6 +83,7 @@ impl EditorState {
             onion_skin_next_frames: 2,
 
             stroke_mesh_cache: RefCell::new(HashMap::new()),
+            fill_mesh_cache: RefCell::new(HashMap::new()),
 
             preview: ScenePreview::new(),
 
@@ -184,7 +187,7 @@ impl EditorState {
         self.on_load_callbacks.append(&mut callbacks);
     }
 
-    pub fn stroke_transform(&self, stroke: Ptr<Stroke>) -> elic::Mat4 {
+    pub fn scene_obj_transform<O: Object>(&self, stroke: Ptr<O>) -> elic::Mat4 where O: Selectable, SceneObjPtr: From<Ptr<O>> {
         if self.selection.selected(stroke) {
             self.preview.selection_transform
         } else {

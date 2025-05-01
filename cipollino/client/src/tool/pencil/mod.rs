@@ -3,9 +3,7 @@ use project::{Action, CreateStroke, StrokeData, StrokeTreeData};
 
 use crate::{keyboard_shortcut, AppSystems, EditorState};
 
-use super::{Tool, ToolContext};
-
-mod curve_fit;
+use super::{curve_fit, Tool, ToolContext};
 
 mod prefs;
 use prefs::*;
@@ -98,7 +96,7 @@ impl Tool for PencilTool {
     type Shortcut = PencilToolShortcut;
 
     fn tick(&mut self, editor: &mut EditorState, _ctx: &mut ToolContext) {
-        // If the user undo/redoes while drawing as stroke, reset the pencil tool
+        // If the user undo/redoes while drawing a stroke, reset the pencil tool
         if (editor.will_undo || editor.will_redo) && !self.pts.is_empty() {
             editor.will_undo = false;
             self.pts.clear();

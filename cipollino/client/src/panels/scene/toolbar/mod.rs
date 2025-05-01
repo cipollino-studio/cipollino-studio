@@ -1,5 +1,5 @@
 
-use crate::{color_picker, AppSystems, BucketTool, ColorPicker, EditorState, PencilTool, SelectTool, Tool};
+use crate::{color_picker, AppSystems, BucketTool, ColorPicker, EditorState, PaintBrushTool, PencilTool, SelectTool, Tool};
 
 use super::ScenePanel;
 use crate::Shortcut;
@@ -59,6 +59,7 @@ impl ScenePanel {
                         |ui| {
                             self.tool_button::<SelectTool>(ui, editor, systems);
                             self.tool_button::<PencilTool>(ui, editor, systems);
+                            self.tool_button::<PaintBrushTool>(ui, editor, systems);
                             self.tool_button::<BucketTool>(ui, editor, systems);
                             self.tool_button::<ColorPicker>(ui, editor, systems);
                             color_picker(ui, &mut editor.color);

@@ -55,7 +55,10 @@ impl SceneRenderList {
         let mut rendered_strokes = HashSet::new();
         for scene_obj in &self.objs {
             match scene_obj {
-                SceneObjPtr::Stroke(ptr) => rendered_strokes.insert(*ptr),
+                SceneObjPtr::Stroke(ptr) => {
+                    rendered_strokes.insert(*ptr);
+                },
+                _ => {}
             };
         }
         rendered_strokes

@@ -1,6 +1,6 @@
 
 use gizmos::PotentialDragState;
-use project::{Action, Client, SceneObjPtr, SetStrokeStroke, Stroke, StrokeData};
+use project::{Action, Client, Fill, FillPaths, SetFillPaths, SetStrokeStroke, Stroke, StrokeData};
 use crate::{keyboard_shortcut, EditorState, Selection};
 
 use super::{LassoState, Tool, ToolContext};
@@ -63,6 +63,15 @@ impl SelectTool {
                 bounds = Some(bounds.map(|bounds: elic::Rect| bounds.merge(pt_rect)).unwrap_or(pt_rect));
             }
         }
+        for fill in selection.iter::<Fill>() {
+            let Some(fill) = client.get(fill) else { continue; };
+            for path in &fill.paths.0.paths {
+                for segment in path.iter_segments() {
+                    let segment_bounds = segment.bounds();
+                    bounds = Some(bounds.map(|bounds: elic::Rect| bounds.merge(segment_bounds)).unwrap_or(segment_bounds));
+                }
+            }
+        }
         self.select_bounding_box = bounds;
         self.select_bounding_box_version = selection.version();
         self.select_bounding_box_transform = elic::Mat4::IDENTITY;
@@ -108,6 +117,18 @@ impl SelectTool {
             action.push(SetStrokeStroke {
                 ptr: stroke_ptr,
                 stroke_value: StrokeData(malvina::Stroke { path: new_stroke_path }),
+            });
+        }
+        for fill_ptr in editor.selection.iter::<Fill>() {
+            let Some(fill) = client.get(fill_ptr) else { continue; };
+            let new_fill_paths = FillPaths(malvina::FillPaths {
+                paths: fill.paths.0.paths.iter().map(|path| {
+                    path.map(|pt| transform.transform(*pt))
+                }).collect()
+            });
+            action.push(SetFillPaths {
+                ptr: fill_ptr,
+                paths_value: new_fill_paths,
             });
         }
         client.queue_action(action);
@@ -184,13 +205,13 @@ impl Tool for SelectTool {
 
         if let Some((x, y)) = ctx.picking_mouse_pos {
             match ctx.pick(x, y) {
-                Some(SceneObjPtr::Stroke(stroke)) => {
-                    if ctx.modifiable_strokes.contains(&stroke) {
-                        if !editor.selection.selected(stroke) {
+                Some(obj) => {
+                    if ctx.modifiable_objs.contains(&obj) {
+                        if !editor.selection.is_scene_obj_selected(obj) {
                             if !editor.selection.shift_down() {
                                 editor.selection.clear();
                             }
-                            editor.selection.select(stroke);
+                            editor.selection.select_scene_obj(obj);
                         }
                         editor.selection.keep_selection();
                         self.drag_state = DragState::Move(elic::Vec2::ZERO);
@@ -232,8 +253,8 @@ impl Tool for SelectTool {
             DragState::Lasso(mut lasso) => {
                 lasso.add_point(pos);
 
-                for stroke in lasso.find_inside(&ctx.project.client, ctx.modifiable_strokes) {
-                    editor.selection.select(stroke);
+                for obj in lasso.find_inside(&ctx.project.client, ctx.modifiable_objs) {
+                    editor.selection.select_scene_obj(obj);
                 }
             },
             DragState::Move(drag) => {
@@ -262,11 +283,11 @@ impl Tool for SelectTool {
     fn mouse_clicked(&mut self, editor: &mut EditorState, ctx: &mut ToolContext, _pos: malvina::Vec2) {
         if let Some((x, y)) = ctx.picking_mouse_pos {
             match ctx.pick(x, y) {
-                Some(SceneObjPtr::Stroke(ptr)) => {
-                    if ctx.modifiable_strokes.contains(&ptr) {
-                        editor.selection.extend_select(ptr);
+                Some(obj) => {
+                    if ctx.modifiable_objs.contains(&obj) {
+                        editor.selection.extend_select_scene_obj(obj);
                     }
-                },
+                }
                 None => {},
             }
         }

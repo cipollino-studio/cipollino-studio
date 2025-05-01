@@ -2,7 +2,7 @@
 use std::path::PathBuf;
 
 use alisa::Children;
-use project::{deep_load_clip, Client, Frame, Message, Ptr, Stroke, WelcomeMessage, PROTOCOL_VERSION};
+use project::{deep_load_clip, Client, Fill, Frame, Message, Ptr, Stroke, WelcomeMessage, PROTOCOL_VERSION};
 
 use crate::splash::SplashScreen;
 use crate::{AppState, AppSystems, DockingLayoutPref, EditorPanel, PanelContext};
@@ -266,11 +266,15 @@ impl Editor {
         self.state.project.tick(&self.state.editor);
         self.state.project.client.tick();
 
-        // Invalidate cached meshes for updated strokes
+        // Invalidate cached meshes
         for updated_stroke in self.state.project.client.modified() {
             self.state.editor.stroke_mesh_cache.borrow_mut().remove(&updated_stroke);
         }
+        for updated_fill in self.state.project.client.modified() {
+            self.state.editor.fill_mesh_cache.borrow_mut().remove(&updated_fill);
+        }
         self.state.project.client.clear_modified::<Stroke>();
+        self.state.project.client.clear_modified::<Fill>();
 
         // On load callbacks
         self.state.editor.process_on_load_callbacks(&self.state.project);

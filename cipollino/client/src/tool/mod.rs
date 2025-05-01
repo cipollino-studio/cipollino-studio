@@ -11,10 +11,13 @@ pub use pencil::*;
 mod color_picker;
 pub use color_picker::*;
 
+mod paint_brush;
+pub use paint_brush::*;
+
 mod bucket;
 pub use bucket::*;
 
-use project::{Action, Client, ClipInner, CreateFrame, Frame, FrameTreeData, Layer, Ptr, SceneObjPtr, Stroke};
+use project::{Action, Client, ClipInner, CreateFrame, Frame, FrameTreeData, Layer, Ptr, SceneObjPtr};
 use std::collections::HashSet;
 use crate::{AppSystems, EditorState, ProjectState, SceneRenderList, Shortcut};
 
@@ -28,8 +31,7 @@ pub struct ToolContext<'ctx> {
     pub active_layer: Ptr<Layer>,
     pub frame_time: i32,
 
-    pub rendered_strokes: &'ctx HashSet<Ptr<Stroke>>,
-    pub modifiable_strokes: &'ctx HashSet<Ptr<Stroke>>,
+    pub modifiable_objs: &'ctx HashSet<SceneObjPtr>,
 
     // Picking
     pub picking_buffer: &'ctx mut malvina::PickingBuffer,

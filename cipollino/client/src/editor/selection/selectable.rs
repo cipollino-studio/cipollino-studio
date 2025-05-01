@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use project::{Clip, Folder, Frame, Layer, Ptr, SceneObjPtr, Stroke};
+use project::{Clip, Fill, Folder, Frame, Layer, Ptr, SceneObjPtr, Stroke};
 
 use super::{Selectable, Selection, SelectionKind};
 
@@ -65,12 +65,39 @@ impl Selectable for Stroke {
     }
 }
 
+impl Selectable for Fill {
+    const KIND: SelectionKind = SelectionKind::Scene;
+
+    fn selection_list(selection: &Selection) -> &HashSet<Ptr<Self>> {
+        &selection.fills
+    }
+
+    fn selection_list_mut(selection: &mut Selection) -> &mut HashSet<Ptr<Self>> {
+        &mut selection.fills
+    }
+}
+
 impl Selection {
 
     pub fn is_scene_obj_selected(&self, obj: SceneObjPtr) -> bool {
         match obj {
             SceneObjPtr::Stroke(stroke) => self.selected(stroke),
+            SceneObjPtr::Fill(fill) => self.selected(fill),
         }
     } 
+
+    pub fn select_scene_obj(&mut self, obj: SceneObjPtr) {
+        match obj {
+            SceneObjPtr::Stroke(ptr) => self.select(ptr),
+            SceneObjPtr::Fill(ptr) => self.select(ptr),
+        }
+    }
+
+    pub fn extend_select_scene_obj(&mut self, obj: SceneObjPtr) {
+        match obj {
+            SceneObjPtr::Stroke(ptr) => self.extend_select(ptr),
+            SceneObjPtr::Fill(ptr) => self.extend_select(ptr),
+        }
+    }
 
 }

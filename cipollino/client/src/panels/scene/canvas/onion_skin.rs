@@ -1,5 +1,5 @@
 
-use project::{Client, ClipInner};
+use project::{Client, ClipInner, SceneObjPtr};
 
 use crate::{AppSystems, EditorState, OnionSkinFutureColor, OnionSkinPastColor, ScenePanel, SceneRenderList};
 
@@ -9,7 +9,7 @@ impl ScenePanel {
         let render_list = SceneRenderList::make(client, editor, clip, time);
         for scene_obj in render_list.objs {
             match scene_obj {
-                project::SceneObjPtr::Stroke(stroke_ptr) => {
+                SceneObjPtr::Stroke(stroke_ptr) => {
                     if let Some(stroke) = client.get(stroke_ptr) {
                         let mut stroke_mesh_cache = editor.stroke_mesh_cache.borrow_mut();
                         if let Some(stroke) = stroke_mesh_cache.get(&stroke_ptr) {
@@ -21,6 +21,7 @@ impl ScenePanel {
                         }
                     }
                 },
+                SceneObjPtr::Fill(_fill_ptr) => {} // Fills shouldn't be rendered in the onion skin
             }
         }
     }

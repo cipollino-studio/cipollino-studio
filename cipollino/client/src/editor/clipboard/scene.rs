@@ -1,6 +1,6 @@
 
 use alisa::Ptr;
-use project::{Action, Client, CreateStroke, SceneObjPtr, SceneObjPtrTreeData, StrokeData, StrokeTreeData};
+use project::{Action, Client, CreateFill, CreateStroke, FillPaths, FillTreeData, SceneObjPtr, SceneObjPtrTreeData, StrokeData, StrokeTreeData};
 
 use crate::{get_active_frame, EditorState, SceneRenderList, Selection};
 
@@ -22,8 +22,25 @@ impl StrokeClipboard {
 
 }
 
+pub struct FillClipboard {
+    pub paths: malvina::FillPaths,
+    pub color: elic::Color
+}
+
+impl FillClipboard {
+    
+    fn to_tree_data(&self) -> FillTreeData {
+        FillTreeData {
+            paths: FillPaths(self.paths.clone()),
+            color: self.color.into()
+        }
+    }
+
+}
+
 pub enum SceneClipboardObject {
-    Stroke(StrokeClipboard)
+    Stroke(StrokeClipboard),
+    Fill(FillClipboard)
 }
 
 impl SceneClipboardObject {
@@ -34,6 +51,10 @@ impl SceneClipboardObject {
                 SceneObjPtr::Stroke(Ptr::from_key(key)),
                 SceneObjPtrTreeData::Stroke(Ptr::from_key(key), stroke.to_tree_data())
             ),
+            SceneClipboardObject::Fill(fill) => (
+                SceneObjPtr::Fill(Ptr::from_key(key)),
+                SceneObjPtrTreeData::Fill(Ptr::from_key(key), fill.to_tree_data())
+            ) 
         }
     }
 
@@ -61,6 +82,13 @@ impl SceneClipboard {
                     width: stroke.width 
                 }));
             },
+            SceneObjPtr::Fill(fill_ptr) => {
+                let Some(fill) = client.get(fill_ptr) else { return; };
+                self.objects.push(SceneClipboardObject::Fill(FillClipboard {
+                    paths: fill.paths.0.clone(),
+                    color: fill.color.into(),
+                }));
+            }
         }
     }
 
@@ -73,6 +101,7 @@ impl Selection {
         for obj in render_list.objs.iter() {
             match obj {
                 SceneObjPtr::Stroke(stroke) => if self.selected(*stroke) { clipboard.add_object(*obj, client); },
+                SceneObjPtr::Fill(fill) => if self.selected(*fill) { clipboard.add_object(*obj, client); },
             }
         }
         clipboard
@@ -98,6 +127,16 @@ impl SceneClipboard {
                     });
                     selection.select(ptr);
                 },
+                SceneClipboardObject::Fill(fill) => {
+                    let ptr = client.next_ptr();
+                    action.push(CreateFill {
+                        ptr,
+                        parent: frame,
+                        idx: 0,
+                        data: fill.to_tree_data(),
+                    });
+                    selection.select(ptr);
+                }
             } 
         }
         client.queue_action(action);

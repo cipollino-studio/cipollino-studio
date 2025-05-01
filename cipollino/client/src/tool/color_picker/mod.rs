@@ -26,6 +26,11 @@ impl Tool for ColorPicker {
                         editor.color = stroke.color.into();
                     } 
                 },
+                Some(SceneObjPtr::Fill(ptr)) => {
+                    if let Some(fill) = ctx.project.client.get(ptr) {
+                        editor.color = fill.color.into();
+                    }
+                }
                 None => {},
             }
         }

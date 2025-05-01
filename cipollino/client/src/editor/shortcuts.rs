@@ -1,5 +1,5 @@
 
-use project::{Action, CreateFrame, DeleteFrame, DeleteStroke, Frame, FrameTreeData, Stroke};
+use project::{Action, CreateFrame, DeleteFill, DeleteFrame, DeleteStroke, Fill, Frame, FrameTreeData, Stroke};
 
 use crate::{keyboard_shortcut, AppSystems, Shortcut};
 use super::{EditorState, LayerRenderList, ProjectState, SceneRenderList};
@@ -77,6 +77,11 @@ impl EditorState {
         for stroke in self.selection.iter::<Stroke>() {
             action.push(DeleteStroke {
                 ptr: stroke,
+            });
+        }
+        for fill in self.selection.iter::<Fill>() {
+            action.push(DeleteFill {
+                ptr: fill,
             });
         }
         project.client.queue_action(action);

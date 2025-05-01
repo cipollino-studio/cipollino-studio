@@ -1,7 +1,7 @@
 
 use std::collections::HashSet;
 
-use project::{ClipInner, Ptr, Stroke};
+use project::{ClipInner, Fill, SceneObjPtr, Stroke};
 
 use crate::{presence_color, render_scene, AppSystems, EditorState, ProjectState, SceneRenderList, ToolContext};
 
@@ -40,8 +40,7 @@ impl ScenePanel {
         renderer: &mut malvina::Renderer,
         clip: &ClipInner,
         render_list: &SceneRenderList,
-        rendered_strokes: &HashSet<Ptr<Stroke>>,
-        modifiable_strokes: &HashSet<Ptr<Stroke>>,
+        modifiable_objs: &HashSet<SceneObjPtr>,
         canvas_width: u32,
         canvas_height: u32,
         resize_margin: u32
@@ -102,8 +101,7 @@ impl ScenePanel {
             active_layer: editor.active_layer,
             frame_time: clip.frame_idx(editor.time),
 
-            rendered_strokes,
-            modifiable_strokes,
+            modifiable_objs,
 
             picking_buffer: &mut picking_buffer,
             picking_list: render_list,
@@ -209,14 +207,23 @@ impl ScenePanel {
     pub(super) fn canvas(&mut self, ui: &mut pierro::UI, project: &ProjectState, editor: &mut EditorState, systems: &mut AppSystems, renderer: &mut malvina::Renderer, clip: &ClipInner, render_list: &SceneRenderList) {
 
         // Get the list of things to render in the scene
-        let rendered_strokes = render_list.rendered_strokes();
-        let modifiable_strokes: HashSet<Ptr<Stroke>> = rendered_strokes.iter().filter(|stroke| {
-            let Some(stroke) = project.client.get(**stroke) else { return false; };
-            let Some(frame) = project.client.get(stroke.frame) else { return false; };
+        let modifiable_objs: HashSet<SceneObjPtr> = render_list.objs.iter().filter(|obj| {
+            let frame_ptr = match **obj {
+                project::SceneObjPtr::Stroke(ptr) => {
+                    let Some(stroke) = project.client.get(ptr) else { return false; };
+                    stroke.frame
+                },
+                project::SceneObjPtr::Fill(ptr) => {
+                    let Some(fill) = project.client.get(ptr) else { return false; };
+                    fill.frame
+                },
+            };
+            let Some(frame) = project.client.get(frame_ptr) else { return false };
             editor.can_modify_layer(frame.layer)
         }).copied().collect();
 
-        editor.selection.retain(|stroke| modifiable_strokes.contains(&stroke));
+        editor.selection.retain::<Stroke, _>(|stroke| modifiable_objs.contains(&stroke.into()));
+        editor.selection.retain::<Fill, _>(|fill| modifiable_objs.contains(&fill.into()));
 
         let canvas_container = ui.node(pierro::UINodeParams::new(pierro::Size::fr(1.0), pierro::Size::fr(1.0)));
 
@@ -233,7 +240,7 @@ impl ScenePanel {
         // Render the scene
         ui.with_parent(canvas_container.node_ref, |ui| {
             pierro::canvas(ui, (resize_margin as f32 * ui.scale_factor()) as u32, |ui, texture, response| {
-                self.canvas_contents(ui, texture, response, project, editor, systems, renderer, clip, &render_list, &rendered_strokes, &modifiable_strokes, canvas_width, canvas_height, resize_margin); 
+                self.canvas_contents(ui, texture, response, project, editor, systems, renderer, clip, &render_list, &modifiable_objs, canvas_width, canvas_height, resize_margin); 
             });
         });
         

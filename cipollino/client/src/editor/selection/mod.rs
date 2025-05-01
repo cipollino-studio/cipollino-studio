@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use project::{alisa::Object, Clip, Folder, Frame, Layer, Ptr, Stroke};
+use project::{alisa::Object, Clip, Fill, Folder, Frame, Layer, Ptr, Stroke};
 
 mod selectable;
 
@@ -29,6 +29,7 @@ pub struct Selection {
     layers: HashSet<Ptr<Layer>>,
     frames: HashSet<Ptr<Frame>>,
     strokes: HashSet<Ptr<Stroke>>,
+    fills: HashSet<Ptr<Fill>>,
 
     shift_down: bool,
     keep_selection: bool,
@@ -48,6 +49,7 @@ impl Selection {
             layers: HashSet::new(),
             frames: HashSet::new(),
             strokes: HashSet::new(),
+            fills: HashSet::new(),
             shift_down: false,
             keep_selection: false,
             version: 0,
@@ -72,6 +74,7 @@ impl Selection {
         self.layers.clear();
         self.frames.clear();
         self.strokes.clear();
+        self.fills.clear();
         self.version += 1;
     }
 

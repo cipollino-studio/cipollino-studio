@@ -11,6 +11,10 @@ pub struct ScenePreview {
     /// Gets rendered on the currently active layer
     pub stroke_preview: Option<malvina::StrokeMesh>,
 
+    /// Preview of a fill being drawn.
+    /// Gets rendered on the currently active layer
+    pub fill_preview: Option<malvina::FillMesh>,
+
     /// Transform the selected objects in the scene with some matrix
     pub selection_transform: malvina::Mat4,
 
@@ -25,6 +29,7 @@ impl ScenePreview {
         Self {
             selection_transform: malvina::Mat4::IDENTITY,
             stroke_preview: None,
+            fill_preview: None,
             keep_preview: false,
         }
     }
@@ -32,6 +37,7 @@ impl ScenePreview {
     pub fn end_frame(&mut self) {
         if !self.keep_preview {
             self.stroke_preview = None;
+            self.fill_preview = None;
             self.selection_transform = elic::Mat4::IDENTITY;
         }
         self.keep_preview = false;
