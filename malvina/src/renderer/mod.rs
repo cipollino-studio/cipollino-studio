@@ -2,6 +2,9 @@
 mod stroke;
 pub use stroke::*;
 
+mod fill;
+pub use fill::*;
+
 mod camera;
 pub use camera::*;
 
@@ -22,10 +25,26 @@ pub use brush::*;
 
 pub struct Renderer {
     stroke: StrokeRenderer,
+    fill: FillRenderer,
     canvas_border: CanvasBorderRenderer,
     line_renderer: OverlayLineRenderer,
     circle_renderer: OverlayCircleRenderer,
-    circle_brush: BrushTexture
+    circle_brush: BrushTexture,
+    
+    stencil_texture: wgpu::Texture
+}
+
+fn make_stencil_texture(device: &wgpu::Device, w: u32, h: u32) -> wgpu::Texture {
+    device.create_texture(&wgpu::TextureDescriptor {
+        label: Some("malvina_stencil_texture"),
+        size: wgpu::Extent3d { width: w, height: h, depth_or_array_layers: 1 },
+        mip_level_count: 1,
+        sample_count: 1,
+        dimension: wgpu::TextureDimension::D2,
+        format: wgpu::TextureFormat::Stencil8,
+        usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+        view_formats: &[],
+    })
 }
 
 impl Renderer {
@@ -33,16 +52,22 @@ impl Renderer {
     pub fn new(device: &wgpu::Device, queue: &wgpu::Queue) -> Self {
         let brush_texture_resources = BrushTextureResources::new(device);
         let stroke = StrokeRenderer::new(device, &brush_texture_resources);
+        let fill = FillRenderer::new(device);
         let canvas_border = CanvasBorderRenderer::new(device);
         let line_renderer = OverlayLineRenderer::new(device);
         let circle_renderer = OverlayCircleRenderer::new(device);
         let circle_brush = BrushTexture::circle(device, queue, &brush_texture_resources, 512);
+        
+        let stencil_texture = make_stencil_texture(device, 100, 100);
+
         Self {
             stroke,
+            fill,
             canvas_border,
             line_renderer,
             circle_renderer,
-            circle_brush
+            circle_brush,
+            stencil_texture
         }
     }
 
@@ -55,6 +80,11 @@ impl Renderer {
         dpi_factor: f32,
         contents: F
     ) {
+
+        // Resize the stencil texture if needed
+        if texture.width() != self.stencil_texture.width() || texture.height() != self.stencil_texture.height() {
+            self.stencil_texture = make_stencil_texture(device, texture.width(), texture.height());
+        }
 
         let texture_view = texture.create_view(&wgpu::TextureViewDescriptor::default());
         let resolution = elic::vec2(texture.width() as f32, texture.height() as f32);
@@ -81,7 +111,14 @@ impl Renderer {
                         store: wgpu::StoreOp::Store
                     }
                 })],
-                depth_stencil_attachment: None, 
+                depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
+                    view: &self.stencil_texture.create_view(&wgpu::TextureViewDescriptor::default()),
+                    depth_ops: None,
+                    stencil_ops: Some(wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(0),
+                        store: wgpu::StoreOp::Store
+                    }) 
+                }), 
                 timestamp_writes: None,
                 occlusion_query_set: None 
             });
@@ -95,6 +132,7 @@ impl Renderer {
                 dpi_factor,
                 zoom: camera.zoom,
                 stroke_renderer: &mut self.stroke,
+                fill_renderer: &mut self.fill,
                 canvas_border_renderer: &mut self.canvas_border,
                 overlay_line_renderer: &mut self.line_renderer,
                 overlay_circle_renderer: &mut self.circle_renderer,

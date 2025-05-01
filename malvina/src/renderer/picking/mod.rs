@@ -1,5 +1,5 @@
 
-use super::{Camera, LayerRenderer, Renderer, StrokeMesh};
+use super::{Camera, FillMesh, LayerRenderer, Renderer, StrokeMesh};
 
 mod buffer;
 pub use buffer::*;
@@ -24,6 +24,10 @@ impl PickingRenderer<'_, '_> {
 
     pub fn render_stroke(&mut self, stroke: &StrokeMesh, id: u32, trans: elic::Mat4) {
         self.renderer.render_stroke_picking(stroke, Self::id_to_color(id), trans);
+    }
+
+    pub fn render_fill(&mut self, fill: &FillMesh, id: u32, trans: elic::Mat4) {
+        self.renderer.render_fill(fill, Self::id_to_color(id), trans);
     }
 
 }

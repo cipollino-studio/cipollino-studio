@@ -1,5 +1,5 @@
 
-use super::{BrushTexture, CanvasBorderRenderer, OverlayCircleRenderer, OverlayLineRenderer, StrokeMesh, StrokeRenderer};
+use super::{BrushTexture, CanvasBorderRenderer, FillMesh, FillRenderer, OverlayCircleRenderer, OverlayLineRenderer, StrokeMesh, StrokeRenderer};
 
 pub struct LayerRenderer<'rndr> {
     pub(super) device: &'rndr wgpu::Device,
@@ -12,6 +12,7 @@ pub struct LayerRenderer<'rndr> {
     pub(super) zoom: f32,
 
     pub(super) stroke_renderer: &'rndr mut StrokeRenderer,
+    pub(super) fill_renderer: &'rndr mut FillRenderer,
     pub(super) canvas_border_renderer: &'rndr mut CanvasBorderRenderer,
     pub(super) overlay_line_renderer: &'rndr mut OverlayLineRenderer, 
     pub(super) overlay_circle_renderer: &'rndr mut OverlayCircleRenderer, 
@@ -39,6 +40,14 @@ impl LayerRenderer<'_> {
 
     pub fn render_stroke_selection(&mut self, stroke: &StrokeMesh, color: elic::Color, trans: elic::Mat4) {
         self.stroke_renderer.render_selection(self.render_pass, stroke, self.circle_brush, color, self.resolution / self.dpi_factor, self.view_proj, trans);
+    }
+
+    pub fn render_fill(&mut self, fill: &FillMesh, color: elic::Color, trans: elic::Mat4) {
+        self.fill_renderer.render(self.render_pass, fill, color, self.resolution / self.dpi_factor, self.view_proj, trans);
+    }
+
+    pub fn render_fill_selection(&mut self, fill: &FillMesh, color: elic::Color, trans: elic::Mat4) {
+        self.fill_renderer.render_selection(self.render_pass, fill, color, self.resolution / self.dpi_factor, self.view_proj, trans);
     }
 
     pub fn render_canvas_border(&mut self, canvas_size: elic::Vec2) {

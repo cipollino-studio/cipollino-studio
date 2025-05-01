@@ -52,7 +52,13 @@ impl StrokeRenderer {
                 polygon_mode: wgpu::PolygonMode::Fill,
                 conservative: false,
             },
-            depth_stencil: None,
+            depth_stencil: Some(wgpu::DepthStencilState {
+                format: wgpu::TextureFormat::Stencil8,
+                depth_write_enabled: false,
+                depth_compare: wgpu::CompareFunction::Always,
+                stencil: wgpu::StencilState::default(),
+                bias: wgpu::DepthBiasState::default() 
+            }),
             multisample: wgpu::MultisampleState {
                 count: 1,
                 mask: !0,
@@ -138,14 +144,12 @@ impl StrokeRenderer {
     }
 
     pub fn render_selection(&mut self, render_pass: &mut wgpu::RenderPass, stroke: &StrokeMesh, texture: &BrushTexture, color: elic::Color, resolution: elic::Vec2, view_proj: elic::Mat4, trans: elic::Mat4) {
-        let color = if (color.r + color.g + color.b) / 3.0 > 0.5 { 0.0 } else { 1.0 };
-        let color = elic::Color::rgba(color, color, color, 1.0);
         render_pass.set_pipeline(&self.selected_pipeline);
         render_pass.set_push_constants(wgpu::ShaderStages::VERTEX_FRAGMENT, 0, bytemuck::cast_slice(&[StrokeUniforms {
             trans: trans.into(),
             view_proj: view_proj.into(),
             resolution: resolution.into(),
-            color: color.into(),
+            color: color.contrasting_color().into(),
         }]));
         render_pass.set_bind_group(0, &texture.bind_group, &[]);
         render_pass.set_vertex_buffer(0, stroke.instance_buffer.slice(..));
