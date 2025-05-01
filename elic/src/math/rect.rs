@@ -191,6 +191,16 @@ impl Rect {
         Self::min_max(self.min.min(other.min), self.max.max(other.max))
     }
 
+    pub fn bounds_all<I: Iterator<Item = Vec2>>(pts: I) -> Self {
+        let mut min = Vec2::INFINITY;
+        let mut max = -Vec2::INFINITY;
+        for pt in pts {
+            min = min.min(pt);
+            max = max.max(pt);
+        }
+        Self::min_max(min, max)
+    }
+
 }
 
 impl Display for Rect {

@@ -79,6 +79,18 @@ impl Color {
         }
     }
 
+    pub fn brightness(&self) -> f32 {
+        (self.r + self.g + self.b) / 3.0
+    }
+
+    pub fn contrasting_color(&self) -> Color {
+        if self.brightness() > 0.5 {
+            Color::BLACK
+        } else {
+            Color::WHITE
+        }
+    }
+
 }
 
 impl From<Color> for [f32; 4] {
