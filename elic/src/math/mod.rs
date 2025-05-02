@@ -11,6 +11,9 @@ pub use range::*;
 mod vec2;
 pub use vec2::*;
 
+mod ivec2;
+pub use ivec2::*;
+
 mod vec4;
 pub use vec4::*;
 
