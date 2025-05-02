@@ -42,12 +42,20 @@ impl LayerRenderer<'_> {
         self.stroke_renderer.render_selection(self.render_pass, stroke, self.circle_brush, color, self.resolution / self.dpi_factor, self.view_proj, trans);
     }
 
+    pub fn render_stroke_bucket(&mut self, stroke: &StrokeMesh, color: elic::Color, trans: elic::Mat4) {
+        self.stroke_renderer.render_bucket(self.render_pass, stroke, self.circle_brush, color, self.resolution / self.dpi_factor, self.view_proj, trans);
+    }
+
     pub fn render_fill(&mut self, fill: &FillMesh, color: elic::Color, trans: elic::Mat4) {
         self.fill_renderer.render(self.render_pass, fill, color, self.resolution / self.dpi_factor, self.view_proj, trans);
     }
 
     pub fn render_fill_selection(&mut self, fill: &FillMesh, color: elic::Color, trans: elic::Mat4) {
         self.fill_renderer.render_selection(self.render_pass, fill, color, self.resolution / self.dpi_factor, self.view_proj, trans);
+    }
+
+    pub fn render_fill_bucket(&mut self, fill: &FillMesh, color: elic::Color, trans: elic::Mat4) {
+        self.fill_renderer.render_bucket(self.render_pass, fill, color, self.resolution / self.dpi_factor, self.view_proj, trans);
     }
 
     pub fn render_canvas_border(&mut self, canvas_size: elic::Vec2) {

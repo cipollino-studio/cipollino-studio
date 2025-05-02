@@ -16,7 +16,8 @@ var<push_constant> uniforms: StrokeUniforms;
 struct VertexOutput {
     @builtin(position) clip_position: vec4<f32>,
     @location(0) uv: vec2<f32>,
-    @location(1) coord: vec2<f32>
+    @location(1) coord: vec2<f32>,
+    @location(2) center_screen: vec2<f32>,
 };
 
 @group(0) @binding(0)
@@ -59,6 +60,7 @@ fn vs_main(
     out.uv = uv[in_vertex_index];
 
     out.coord = (out.clip_position.xy * 0.5 + 0.5) * uniforms.resolution;
+    out.center_screen = (uniforms.view_proj * vec4(stamp_pos, 0.0, 1.0)).xy * 0.5 + 0.5;
 
     return out;
 }
@@ -91,4 +93,12 @@ fn fs_selection(in: VertexOutput) -> @location(0) vec4<f32> {
         discard;
     }
     return uniforms.color;
+}
+
+@fragment
+fn fs_bucket(in: VertexOutput) -> @location(0) vec4<f32> {
+    if length(in.uv - vec2(0.5)) > 0.5 {
+        discard;
+    }
+    return vec4(in.center_screen, 1.0, 1.0);
 }

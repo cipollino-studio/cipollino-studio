@@ -16,7 +16,7 @@ fn meshgen_path(path: &elic::BezierPath<elic::Vec2>, verts: &mut Vec<FillVertex>
         t += 0.0025;
         let pt = path.sample(t);
         let distance = pt.distance(prev_pt);
-        let target_distance = 3.0;
+        let target_distance = 1.0;
         if distance >= target_distance {
             let scale_fac = target_distance / distance;
             t = (prev_t + scale_fac * (t - prev_t)).max(prev_t + 0.0005);

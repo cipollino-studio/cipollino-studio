@@ -14,7 +14,8 @@ struct FillUniforms {
 pub(super) struct FillRenderer {
     render_pipeline: wgpu::RenderPipeline,
     stencil_pipeline: wgpu::RenderPipeline,
-    selected_pipeline: wgpu::RenderPipeline
+    selected_pipeline: wgpu::RenderPipeline,
+    bucket_pipeline: wgpu::RenderPipeline
 }
 
 impl FillRenderer {
@@ -142,13 +143,29 @@ impl FillRenderer {
                     write_mask: wgpu::ColorWrites::ALL 
                 })],
             }),
+            ..render_pipeline_descriptor.clone()
+        });
+
+        let bucket_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("malvina_bucket_fill_render_pipeline"),
+            fragment: Some(wgpu::FragmentState {
+                module: &shader,
+                entry_point: "fs_bucket",
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
+                targets: &[Some(wgpu::ColorTargetState {
+                    format: wgpu::TextureFormat::Rgba8Unorm,
+                    blend: Some(wgpu::BlendState::ALPHA_BLENDING),
+                    write_mask: wgpu::ColorWrites::ALL 
+                })],
+            }),
             ..render_pipeline_descriptor
         });
 
         Self {
             render_pipeline,
             stencil_pipeline,
-            selected_pipeline
+            selected_pipeline,
+            bucket_pipeline
         }
     }
 
@@ -177,6 +194,20 @@ impl FillRenderer {
         render_pass.set_vertex_buffer(0, fill.vertex_buffer.slice(..));
         render_pass.draw(0..fill.n_verts, 0..1);
         render_pass.set_pipeline(&self.selected_pipeline);
+        render_pass.draw(0..fill.n_verts, 0..1);
+    }
+
+    pub fn render_bucket(&mut self, render_pass: &mut wgpu::RenderPass, fill: &FillMesh, color: elic::Color, resolution: elic::Vec2, view_proj: elic::Mat4, trans: elic::Mat4) {
+        render_pass.set_pipeline(&self.stencil_pipeline);
+        render_pass.set_push_constants(wgpu::ShaderStages::VERTEX_FRAGMENT, 0, bytemuck::cast_slice(&[FillUniforms {
+            trans: trans.into(),
+            view_proj: view_proj.into(),
+            color: color.contrasting_color().into(),
+            resolution: resolution.into(),
+        }]));
+        render_pass.set_vertex_buffer(0, fill.vertex_buffer.slice(..));
+        render_pass.draw(0..fill.n_verts, 0..1);
+        render_pass.set_pipeline(&self.bucket_pipeline);
         render_pass.draw(0..fill.n_verts, 0..1);
     }
 
