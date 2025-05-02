@@ -46,6 +46,12 @@ fn render_layer(rndr: &mut malvina::LayerRenderer, client: &Client, editor: &Edi
         return;
     } 
 
+    if layer_ptr == editor.active_layer && editor_view {
+        if let Some(fill_preview) = &editor.preview.fill_preview {
+            rndr.render_fill(fill_preview, editor.color, elic::Mat4::IDENTITY);
+        }
+    }
+
     if let Some(frame_ptr) = layer.frame_at(client, time) {
         if let Some(frame) = client.get(frame_ptr) {
             render_frame(rndr, editor, client, frame);
@@ -55,9 +61,6 @@ fn render_layer(rndr: &mut malvina::LayerRenderer, client: &Client, editor: &Edi
     if layer_ptr == editor.active_layer && editor_view {
         if let Some(stroke_preview) = &editor.preview.stroke_preview {
             rndr.render_stroke(stroke_preview, editor.color, elic::Mat4::IDENTITY);
-        }
-        if let Some(fill_preview) = &editor.preview.fill_preview {
-            rndr.render_fill(fill_preview, editor.color, elic::Mat4::IDENTITY);
         }
     } 
 }
