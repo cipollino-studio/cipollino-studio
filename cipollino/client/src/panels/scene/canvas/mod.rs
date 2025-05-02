@@ -95,6 +95,10 @@ impl ScenePanel {
         let mut tool = tool.borrow_mut();
         let mut picking_buffer = self.picking_buffer.borrow_mut();
         let accent_color = ui.style::<pierro::theme::AccentColor>();
+        let picking_mouse_pos = response.mouse_pos(ui)
+            .filter(|pos| pos.x > 0.0 && pos.y > 0.0)
+            .filter(|pos| pos.x < canvas_width as f32 - 1.0 && pos.y < canvas_height as f32 - 1.0 )
+            .map(|pos| (pos.x.floor() as u32 + resize_margin / 2, pos.y.floor() as u32 + resize_margin / 2));
         let mut tool_context = ToolContext {
             project,
             clip,
@@ -104,14 +108,12 @@ impl ScenePanel {
             modifiable_objs,
 
             picking_buffer: &mut picking_buffer,
-            picking_list: render_list,
-            picking_mouse_pos: response.mouse_pos(ui)
-                .filter(|pos| pos.x > 0.0 && pos.y > 0.0)
-                .filter(|pos| pos.x < canvas_width as f32 - 1.0 && pos.y < canvas_height as f32 - 1.0 )
-                .map(|pos| (pos.x.floor() as u32 + resize_margin / 2, pos.y.floor() as u32 + resize_margin / 2)),
+            render_list,
+            picking_mouse_pos,
 
             device: ui.wgpu_device(),
             queue: ui.wgpu_queue(),
+            renderer: Some(renderer),
 
             systems,
 
@@ -157,6 +159,28 @@ impl ScenePanel {
         let camera = self.calc_camera(ui.scale_factor());
 
         // Render the scene
+        let mut tool_context = ToolContext {
+            project,
+            clip,
+            active_layer: editor.active_layer,
+            frame_time: clip.frame_idx(editor.time),
+
+            modifiable_objs,
+
+            picking_buffer: &mut picking_buffer,
+            render_list,
+            picking_mouse_pos,
+
+            device: ui.wgpu_device(),
+            queue: ui.wgpu_queue(),
+            renderer: None,
+
+            systems,
+
+            pressure: ui.input().pressure,
+            cam_zoom: 1.0 / self.cam_size,
+            key_modifiers: ui.input().key_modifiers
+        };
         renderer.render(ui.wgpu_device(), ui.wgpu_queue(), texture.texture(), camera, elic::Color::WHITE, ui.scale_factor(), |rndr| {
             if editor.show_onion_skin {
                 Self::render_onion_skin(rndr, &project.client, &editor, tool_context.systems, clip);

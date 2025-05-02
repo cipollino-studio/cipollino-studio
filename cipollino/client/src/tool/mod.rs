@@ -24,6 +24,8 @@ use crate::{AppSystems, EditorState, ProjectState, SceneRenderList, Shortcut};
 pub struct ToolContext<'ctx> {
     pub device: &'ctx pierro::wgpu::Device,
     pub queue: &'ctx pierro::wgpu::Queue,
+    // None when rendering the scene overlay, since the renderer will be borrowed then
+    pub renderer: Option<&'ctx mut malvina::Renderer>,
 
     pub project: &'ctx ProjectState,
     pub systems: &'ctx mut AppSystems,
@@ -31,11 +33,11 @@ pub struct ToolContext<'ctx> {
     pub active_layer: Ptr<Layer>,
     pub frame_time: i32,
 
+    pub render_list: &'ctx SceneRenderList,
     pub modifiable_objs: &'ctx HashSet<SceneObjPtr>,
 
     // Picking
     pub picking_buffer: &'ctx mut malvina::PickingBuffer,
-    pub picking_list: &'ctx SceneRenderList,
     pub picking_mouse_pos: Option<(u32, u32)>, 
 
     pub pressure: f32,
@@ -77,10 +79,10 @@ impl ToolContext<'_> {
 
     pub fn pick(&mut self, x: u32, y: u32) -> Option<SceneObjPtr> {
         let idx = self.picking_buffer.read_pixel(self.device, self.queue, x, y) as usize;
-        if idx == 0 || idx > self.picking_list.objs.len() {
+        if idx == 0 || idx > self.render_list.objs.len() {
             return None;
         } 
-        Some(self.picking_list.objs[idx - 1])
+        Some(self.render_list.objs[idx - 1])
     }
 
 }

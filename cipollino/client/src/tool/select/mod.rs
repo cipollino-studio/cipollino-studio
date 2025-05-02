@@ -3,7 +3,7 @@ use gizmos::PotentialDragState;
 use project::{Action, Client, Fill, FillPaths, SetFillPaths, SetStrokeStroke, Stroke, StrokeData};
 use crate::{keyboard_shortcut, EditorState, Selection};
 
-use super::{LassoState, Tool, ToolContext};
+use super::{bounding_boxes, LassoState, Tool, ToolContext};
 
 mod gizmos;
 mod cursor_icon;
@@ -53,24 +53,13 @@ impl SelectTool {
         let mut bounds = None;
         for stroke in selection.iter::<Stroke>() {
             let Some(stroke) = client.get(stroke) else { continue; };
-            for segment in stroke.stroke.0.path.iter_segments() {
-                let segment = segment.map(|pt| pt.pt); 
-                let segment_bounds = segment.bounds(); 
-                bounds = Some(bounds.map(|bounds: elic::Rect| bounds.merge(segment_bounds)).unwrap_or(segment_bounds));
-            }
-            for pt in &stroke.stroke.0.path.pts {
-                let pt_rect = elic::Rect::min_max(pt.pt.pt, pt.pt.pt);
-                bounds = Some(bounds.map(|bounds: elic::Rect| bounds.merge(pt_rect)).unwrap_or(pt_rect));
-            }
+            let Some(stroke_bounds) = bounding_boxes::stroke(stroke) else { continue; };
+            bounds = Some(bounds.map(|bounds: elic::Rect| bounds.merge(stroke_bounds)).unwrap_or(stroke_bounds));
         }
         for fill in selection.iter::<Fill>() {
             let Some(fill) = client.get(fill) else { continue; };
-            for path in &fill.paths.0.paths {
-                for segment in path.iter_segments() {
-                    let segment_bounds = segment.bounds();
-                    bounds = Some(bounds.map(|bounds: elic::Rect| bounds.merge(segment_bounds)).unwrap_or(segment_bounds));
-                }
-            }
+            let Some(fill_bounds) = bounding_boxes::fill(fill) else { continue; };
+            bounds = Some(bounds.map(|bounds: elic::Rect| bounds.merge(fill_bounds)).unwrap_or(fill_bounds));
         }
         self.select_bounding_box = bounds;
         self.select_bounding_box_version = selection.version();

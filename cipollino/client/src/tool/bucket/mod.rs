@@ -5,10 +5,12 @@ use crate::{curve_fit, keyboard_shortcut, EditorState};
 
 use super::{Tool, ToolContext};
 
+mod floodfill;
+
 #[derive(Default)]
 pub struct BucketTool {
     pts: Vec<elic::Vec2>,
-    drawing_fill: bool
+    drawing_fill: bool,
 }
 
 fn calc_path(pts: &Vec<elic::Vec2>) -> elic::BezierPath<elic::Vec2> {
@@ -44,10 +46,11 @@ impl BucketTool {
         let mut action = Action::new(editor.action_context("New Fill"));
         let ptr = ctx.project.client.next_ptr();
         let Some(frame) = ctx.active_frame(editor, &mut action) else { return; };
+        let idx = ctx.project.client.get(frame).map(|frame| frame.scene.as_slice().len()).unwrap_or(0);
         action.push(CreateFill {
             ptr,
             parent: frame,
-            idx: 0,
+            idx,
             data: FillTreeData {
                 color: editor.color.into(),
                 paths: FillPaths(fill),
@@ -87,6 +90,10 @@ impl Tool for BucketTool {
         if self.drawing_fill {
             editor.preview.keep_preview = true;
         }
+    }
+
+    fn mouse_clicked(&mut self, editor: &mut EditorState, ctx: &mut ToolContext, pos: elic::Vec2) {
+        floodfill::floodfill(editor, ctx, pos); 
     }
 
     fn mouse_drag_started(&mut self, editor: &mut EditorState, _ctx: &mut ToolContext, pos: elic::Vec2) {
