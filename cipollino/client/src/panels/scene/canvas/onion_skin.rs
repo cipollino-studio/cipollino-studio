@@ -13,10 +13,10 @@ impl ScenePanel {
                     if let Some(stroke) = client.get(stroke_ptr) {
                         let mut stroke_mesh_cache = editor.stroke_mesh_cache.borrow_mut();
                         if let Some(stroke) = stroke_mesh_cache.get(&stroke_ptr) {
-                            rndr.render_stroke(stroke, color, elic::Mat4::IDENTITY);
+                            rndr.render_stroke(stroke, color, editor.scene_obj_transform(stroke_ptr));
                         } else {
                             let mesh = malvina::StrokeMesh::new(rndr.device(), &stroke.stroke.0, stroke.width);
-                            rndr.render_stroke(&mesh, color, elic::Mat4::IDENTITY);
+                            rndr.render_stroke(&mesh, color, editor.scene_obj_transform(stroke_ptr));
                             stroke_mesh_cache.insert(stroke_ptr, mesh);
                         }
                     }
