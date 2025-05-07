@@ -1,5 +1,5 @@
 
-use crate::{vec2, Vec2};
+use crate::{vec2, SmallArr, Vec2};
 
 use super::{BezierSegment, Line};
 
@@ -31,10 +31,10 @@ impl Segment {
         Some(p)
     }
 
-    pub fn intersect_bezier_ts(&self, segment: &BezierSegment<Vec2>) -> Vec<f32> {
+    pub fn intersect_bezier_ts(&self, segment: &BezierSegment<Vec2>) -> SmallArr<f32, 3> {
         let mut ts = self.line().intersect_bezier_ts(segment);
         ts.retain(|t| {
-            let pt = segment.sample(*t); 
+            let pt = segment.sample(t); 
             self.potentially_contains_point(pt)
         });
         ts
@@ -58,5 +58,9 @@ impl Segment {
             p.y >= min_y && p.y <= max_y
         }
     } 
+
+    pub fn center(&self) -> Vec2 {
+        (self.a + self.b) * 0.5
+    }
 
 }

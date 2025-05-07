@@ -31,3 +31,6 @@ pub use color::*;
 
 mod numeric;
 pub use numeric::*;
+
+mod roots;
+pub use roots::*;

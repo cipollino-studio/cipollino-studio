@@ -1,5 +1,5 @@
 
-use crate::{vec2, Vec2};
+use crate::{vec2, SmallArr, Vec2};
 
 use super::BezierSegment;
 
@@ -42,7 +42,7 @@ impl Line {
         Some(vec2(px, py))
     }
 
-    pub fn intersect_bezier_ts(&self, segment: &BezierSegment<Vec2>) -> Vec<f32> {
+    pub fn intersect_bezier_ts(&self, segment: &BezierSegment<Vec2>) -> SmallArr<f32, 3> {
         let c0 = segment.p0.dot(self.v); 
         let c1 = segment.b0.dot(self.v);
         let c2 = segment.a1.dot(self.v);
@@ -54,14 +54,14 @@ impl Line {
         let poly_d = c0 - self.x;
 
         let mut ts = match roots::find_roots_cubic(poly_a, poly_b, poly_c, poly_d) {
-            roots::Roots::No(_) => Vec::new(),
-            roots::Roots::One([x]) => vec![x],
-            roots::Roots::Two([x, y]) => vec![x, y],
-            roots::Roots::Three([x, y, z]) => vec![x, y, z],
+            roots::Roots::No(_) => SmallArr::empty(),
+            roots::Roots::One([x]) => SmallArr::from_slice(&[x]),
+            roots::Roots::Two([x, y]) => SmallArr::from_slice(&[x, y]),
+            roots::Roots::Three([x, y, z]) => SmallArr::from_slice(&[x, y, z]),
             roots::Roots::Four(_) => panic!("should be impossible"),
         };
 
-        ts.retain(|t| *t >= 0.0 && *t <= 1.0);
+        ts.retain(|t| t >= 0.0 && t <= 1.0);
 
         ts
     }
