@@ -113,6 +113,11 @@ impl StrokeRenderer {
 
         let bucket_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("malvina_bucket_stroke_render_pipeline"),
+            vertex: wgpu::VertexState {
+                module: &shader,
+                entry_point: "vs_bucket",
+                ..render_pipeline_descriptor.vertex
+            },
             fragment: Some(wgpu::FragmentState {
                 module: &shader,
                 entry_point: "fs_bucket",

@@ -1,9 +1,9 @@
 
 use gizmos::PotentialDragState;
 use project::{Action, Client, Fill, FillPaths, SetFillPaths, SetStrokeStroke, Stroke, StrokeData};
-use crate::{keyboard_shortcut, EditorState, Selection};
+use crate::{keyboard_shortcut, EditorState, Selection, bounding_boxes};
 
-use super::{bounding_boxes, LassoState, Tool, ToolContext};
+use super::{LassoState, Tool, ToolContext};
 
 mod gizmos;
 mod cursor_icon;

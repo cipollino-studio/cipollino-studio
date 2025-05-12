@@ -44,6 +44,9 @@ pub use layer_render_list::*;
 mod scene_render_list;
 pub use scene_render_list::*;
 
+mod mesh_cache;
+pub use mesh_cache::*;
+
 pub struct Editor {
     state: State,
     docking: pierro::DockingState<EditorPanel>,
@@ -152,6 +155,11 @@ impl Editor {
             SceneRenderList::make(&self.state.project.client, &self.state.editor, inner, inner.frame_idx(self.state.editor.time)) 
         )).unzip();
 
+        // Recalculate any necessary meshes
+        if let Some(render_list) = &scene_render_list {
+            self.state.editor.mesh_cache.calculate(&render_list, &self.state.project.client, ui.wgpu_device());
+        }
+
         self.state.editor.use_shortcuts(&self.state.project, layer_render_list.as_ref(), scene_render_list.as_ref(), ui, systems);
 
         self.state.editor.selection.begin_frame(ui.input().key_modifiers.contains(pierro::KeyModifiers::SHIFT));
@@ -235,23 +243,26 @@ impl Editor {
             }
 
             for updated_stroke in self.state.project.client.modified::<Stroke>() {
-                // Invalidate cached meshes for updated strokes
-                self.state.editor.stroke_mesh_cache.borrow_mut().remove(&updated_stroke);
-
                 // If someone else we're collabing with modifies a stroke we selected, clear the selection to be safe
                 if self.state.editor.selection.selected(updated_stroke) {
                     self.state.editor.selection.clear();
                 }
             }
-            self.state.project.client.clear_modified::<Stroke>();
-
+            for updated_fill in self.state.project.client.modified::<Fill>() {
+                // If someone else we're collabing with modifies a fill we selected, clear the selection to be safe
+                if self.state.editor.selection.selected(updated_fill) {
+                    self.state.editor.selection.clear();
+                }
+            }
             for updated_frame in self.state.project.client.modified::<Frame>() {
                 // If someone else we're collabing with modifies a frame we selected, clear the selection to be safe
                 if self.state.editor.selection.selected(updated_frame) {
                     self.state.editor.selection.clear();
                 }
             }
-            self.state.project.client.clear_modified::<Frame>();
+
+            // Invalidate the mesh cache of any modified objects
+            self.state.editor.mesh_cache.invalidate(&self.state.project.client);
 
             self.state.editor.presence.update(socket);
 
@@ -267,14 +278,7 @@ impl Editor {
         self.state.project.client.tick();
 
         // Invalidate cached meshes
-        for updated_stroke in self.state.project.client.modified() {
-            self.state.editor.stroke_mesh_cache.borrow_mut().remove(&updated_stroke);
-        }
-        for updated_fill in self.state.project.client.modified() {
-            self.state.editor.fill_mesh_cache.borrow_mut().remove(&updated_fill);
-        }
-        self.state.project.client.clear_modified::<Stroke>();
-        self.state.project.client.clear_modified::<Fill>();
+        self.state.editor.mesh_cache.invalidate(&self.state.project.client);
 
         // On load callbacks
         self.state.editor.process_on_load_callbacks(&self.state.project);

@@ -10,15 +10,8 @@ impl ScenePanel {
         for scene_obj in render_list.objs {
             match scene_obj {
                 SceneObjPtr::Stroke(stroke_ptr) => {
-                    if let Some(stroke) = client.get(stroke_ptr) {
-                        let mut stroke_mesh_cache = editor.stroke_mesh_cache.borrow_mut();
-                        if let Some(stroke) = stroke_mesh_cache.get(&stroke_ptr) {
-                            rndr.render_stroke(stroke, color, editor.scene_obj_transform(stroke_ptr));
-                        } else {
-                            let mesh = malvina::StrokeMesh::new(rndr.device(), &stroke.stroke.0, stroke.width);
-                            rndr.render_stroke(&mesh, color, editor.scene_obj_transform(stroke_ptr));
-                            stroke_mesh_cache.insert(stroke_ptr, mesh);
-                        }
+                    if let Some(stroke) = editor.mesh_cache.get_stroke(stroke_ptr) {
+                        rndr.render_stroke(&stroke.mesh, color, editor.scene_obj_transform(stroke_ptr));
                     }
                 },
                 SceneObjPtr::Fill(_fill_ptr) => {} // Fills shouldn't be rendered in the onion skin

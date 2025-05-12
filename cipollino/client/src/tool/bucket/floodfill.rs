@@ -9,8 +9,8 @@ use crate::{bounding_boxes, EditorState, ToolContext};
 
 use super::{calc_path, BucketTool};
 
-const STEP_SIZE: f32 = 1.0;
-const TILE_SIZE: usize = 128;
+const STEP_SIZE: f32 = 0.5;
+const TILE_SIZE: usize = 256;
 const TILE_SIZE_I32: i32 = TILE_SIZE as i32;
 const TILE_SIZE_U32: u32 = TILE_SIZE as u32;
 const TILE_SIZE_IVEC: elic::IVec2 = elic::IVec2::splat(TILE_SIZE_I32);
@@ -27,6 +27,20 @@ const DIRS8: &[elic::IVec2] = &[
     elic::ivec2(1, 1),
 ];
 
+
+const DILATION_DIRS8: &[elic::IVec2] = &[
+    elic::ivec2(0, 1),
+    elic::ivec2(-1, 0),
+    elic::ivec2(0, -1),
+    elic::ivec2(1, 0),
+
+    elic::ivec2(-1, 1),
+    elic::ivec2(-1, -1),
+    elic::ivec2(1, -1),
+    elic::ivec2(1, 1),
+];
+
+#[derive(Clone, Copy)]
 struct Tile {
     xs: [[u8; TILE_SIZE]; TILE_SIZE],
     ys: [[u8; TILE_SIZE]; TILE_SIZE],
@@ -49,6 +63,32 @@ impl Tile {
         Some(self.rect.tl() + elic::vec2(hit_x, hit_y) * self.rect.size())
     }
 
+    fn dilate(&self) -> Tile {
+        let mut new_tile = *self;
+        for x in 0..TILE_SIZE {
+            for y in 0..TILE_SIZE {
+                if self.hit[x][y] {
+                    continue;
+                }
+                for dir in DILATION_DIRS8 {
+                    let pt = elic::ivec2(x as i32, y as i32) + *dir;
+                    if pt.x < 0 || pt.x >= TILE_SIZE_I32 || pt.y < 0 || pt.y >= TILE_SIZE_I32 {
+                        continue;
+                    }
+                    let nx = pt.x as usize;
+                    let ny = pt.y as usize;
+                    if self.hit[nx][ny] {
+                        new_tile.xs[x][y] = self.xs[nx][ny];
+                        new_tile.ys[x][y] = self.ys[nx][ny];
+                        new_tile.hit[x][y] = true;
+                        break;
+                    } 
+                }
+            }
+        }
+        new_tile
+    }
+
 }
 
 fn render_tile(editor: &mut EditorState, ctx: &mut ToolContext, tile_coord: elic::IVec2, texture: &wgpu::Texture, texture_read_buffer: &wgpu::Buffer) -> Tile {
@@ -58,24 +98,38 @@ fn render_tile(editor: &mut EditorState, ctx: &mut ToolContext, tile_coord: elic
     );
     let camera = malvina::Camera::new(rect.center(), 1.0 / STEP_SIZE);
 
+    let mut rendered_something = false;
     ctx.renderer.as_mut().expect("renderer should be available").render(ctx.device, ctx.queue, texture, camera, elic::Color::BLACK, 1.0, |rndr| {
         for scene_obj in ctx.render_list.objs.iter() {
             match scene_obj {
                 SceneObjPtr::Stroke(stroke_ptr) => {
-                    let stroke_mesh_cache = editor.stroke_mesh_cache.borrow();
-                    if let Some(stroke) = stroke_mesh_cache.get(&stroke_ptr) {
-                        rndr.render_stroke_bucket(stroke, elic::Color::WHITE, editor.scene_obj_transform(*stroke_ptr));
+                    if let Some(stroke) = editor.mesh_cache.get_stroke(*stroke_ptr) {
+                        if stroke.bounds.map(|bounds| bounds.intersects(rect)).unwrap_or(false) {
+                            rndr.render_stroke_bucket(&stroke.mesh, elic::Color::WHITE, editor.scene_obj_transform(*stroke_ptr));
+                            rendered_something = true;
+                        }
                     }
                 },
                 SceneObjPtr::Fill(fill_ptr) => {
-                    let fill_mesh_cache = editor.fill_mesh_cache.borrow();
-                    if let Some(fill) = fill_mesh_cache.get(fill_ptr) {
-                        rndr.render_fill_bucket(fill, elic::Color::WHITE, editor.scene_obj_transform(*fill_ptr));
+                    if let Some(fill) = editor.mesh_cache.get_fill(*fill_ptr) {
+                        if fill.bounds.map(|bounds| bounds.intersects(rect)).unwrap_or(false) {
+                            rndr.render_fill_bucket(&fill.mesh, elic::Color::WHITE, editor.scene_obj_transform(*fill_ptr));
+                            rendered_something = true;
+                        }
                     }
                 }
             }
         }
     });
+
+    if !rendered_something {
+        return Tile {
+            xs: [[0; TILE_SIZE]; TILE_SIZE],
+            ys: [[0; TILE_SIZE]; TILE_SIZE],
+            hit: [[false; TILE_SIZE]; TILE_SIZE],
+            rect,
+        };
+    }
 
     let mut encoder = ctx.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
         label: Some("cipollino_fill_texture_copy_encoder"),
@@ -116,6 +170,8 @@ fn render_tile(editor: &mut EditorState, ctx: &mut ToolContext, tile_coord: elic
 
     drop(pixel_data);
     texture_read_buffer.unmap();
+
+    let tile = tile.dilate();
 
     tile
 }
@@ -299,7 +355,7 @@ pub(super) fn floodfill(editor: &mut EditorState, ctx: &mut ToolContext, mouse_p
 
         path_pts.push(path_pts[0]);
 
-        paths.push(calc_path(&path_pts));
+        paths.push(calc_path(&path_pts, 0.2));
 
         cleanup_boundary(&mut hits);
     }

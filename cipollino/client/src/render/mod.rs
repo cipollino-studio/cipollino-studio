@@ -2,40 +2,26 @@
 use project::{Client, ClipInner, Fill, Frame, Layer, LayerPtr, Ptr, SceneObjPtr, Stroke};
 use crate::EditorState;
 
-fn render_stroke(rndr: &mut malvina::LayerRenderer, editor: &EditorState, stroke: &Stroke, stroke_ptr: Ptr<Stroke>) {
-    let mut stroke_mesh_cache = editor.stroke_mesh_cache.borrow_mut();
-    if let Some(mesh) = stroke_mesh_cache.get(&stroke_ptr) {
-        rndr.render_stroke(mesh, stroke.color.into(), editor.scene_obj_transform(stroke_ptr));
-    } else {
-        let mesh = malvina::StrokeMesh::new(rndr.device(), &stroke.stroke.0, stroke.width);
-        rndr.render_stroke(&mesh, stroke.color.into(), editor.scene_obj_transform(stroke_ptr));
-        stroke_mesh_cache.insert(stroke_ptr, mesh);
+fn render_stroke(rndr: &mut malvina::LayerRenderer, editor: &EditorState, stroke_ptr: Ptr<Stroke>) {
+    if let Some(stroke) = editor.mesh_cache.get_stroke(stroke_ptr) {
+        rndr.render_stroke(&stroke.mesh, stroke.color.into(), editor.scene_obj_transform(stroke_ptr));
     }
 }
 
-fn render_fill(rndr: &mut malvina::LayerRenderer, editor: &EditorState, fill: &Fill, fill_ptr: Ptr<Fill>) {
-    let mut fill_mesh_cache = editor.fill_mesh_cache.borrow_mut();
-    if let Some(mesh) = fill_mesh_cache.get(&fill_ptr) {
-        rndr.render_fill(mesh, fill.color.into(), editor.scene_obj_transform(fill_ptr)); 
-    } else {
-        let mesh = malvina::FillMesh::new(rndr.device(), &fill.paths.0);
-        rndr.render_fill(&mesh, fill.color.into(), editor.scene_obj_transform(fill_ptr));
-        fill_mesh_cache.insert(fill_ptr, mesh);
+fn render_fill(rndr: &mut malvina::LayerRenderer, editor: &EditorState, fill_ptr: Ptr<Fill>) {
+    if let Some(fill) = editor.mesh_cache.get_fill(fill_ptr) {
+        rndr.render_fill(&fill.mesh, fill.color.into(), editor.scene_obj_transform(fill_ptr)); 
     }
 }
 
-fn render_frame(rndr: &mut malvina::LayerRenderer, editor: &EditorState, client: &Client, frame: &Frame) {
+fn render_frame(rndr: &mut malvina::LayerRenderer, editor: &EditorState, frame: &Frame) {
     for scene_child in frame.scene.iter().rev() {
         match scene_child {
             SceneObjPtr::Stroke(stroke_ptr) => {
-                if let Some(stroke) = client.get(stroke_ptr) {
-                    render_stroke(rndr, editor, stroke, stroke_ptr);
-                }
+                render_stroke(rndr, editor, stroke_ptr);
             },
             SceneObjPtr::Fill(fill_ptr) => {
-                if let Some(fill) = client.get(fill_ptr) {
-                    render_fill(rndr, editor, fill, fill_ptr);
-                }
+                render_fill(rndr, editor, fill_ptr);
             }
         }
     }
@@ -54,7 +40,7 @@ fn render_layer(rndr: &mut malvina::LayerRenderer, client: &Client, editor: &Edi
 
     if let Some(frame_ptr) = layer.frame_at(client, time) {
         if let Some(frame) = client.get(frame_ptr) {
-            render_frame(rndr, editor, client, frame);
+            render_frame(rndr, editor, frame);
         }
     } 
 

@@ -3,9 +3,9 @@ use std::collections::HashSet;
 use std::{cell::RefCell, collections::HashMap};
 use std::rc::Rc;
 use alisa::Object;
-use project::{Client, ClientId, Clip, ClipInner, Fill, Layer, LayerGroup, PresenceData, Project, Ptr, SceneObjPtr, Stroke};
+use project::{Client, ClientId, Clip, ClipInner, Layer, LayerGroup, PresenceData, Project, Ptr, SceneObjPtr};
 
-use crate::{Clipboard, Presence, SelectTool, Selectable, ToolDyn, Window, WindowInstance};
+use crate::{Clipboard, MeshCache, Presence, SelectTool, Selectable, ToolDyn, Window, WindowInstance};
 
 use crate::{Selection, SelectionKind};
 
@@ -35,8 +35,7 @@ pub struct EditorState {
     pub onion_skin_prev_frames: u32,
     pub onion_skin_next_frames: u32,
 
-    pub stroke_mesh_cache: RefCell<HashMap<Ptr<Stroke>, malvina::StrokeMesh>>,
-    pub fill_mesh_cache: RefCell<HashMap<Ptr<Fill>, malvina::FillMesh>>,
+    pub mesh_cache: MeshCache,
 
     pub preview: ScenePreview,
 
@@ -82,8 +81,7 @@ impl EditorState {
             onion_skin_prev_frames: 2,
             onion_skin_next_frames: 2,
 
-            stroke_mesh_cache: RefCell::new(HashMap::new()),
-            fill_mesh_cache: RefCell::new(HashMap::new()),
+            mesh_cache: MeshCache::new(),
 
             preview: ScenePreview::new(),
 

@@ -13,14 +13,14 @@ pub struct BucketTool {
     drawing_fill: bool,
 }
 
-fn calc_path(pts: &Vec<elic::Vec2>) -> elic::BezierPath<elic::Vec2> {
+fn calc_path(pts: &Vec<elic::Vec2>, error: f32) -> elic::BezierPath<elic::Vec2> {
     let mut vals = Vec::new();
     for pt in pts {
         vals.push(pt.x);
         vals.push(pt.y);
     }
 
-    let curve_pts = curve_fit::fit_curve(2, &vals, 1.0);
+    let curve_pts = curve_fit::fit_curve(2, &vals, error);
     let mut stroke_pts = Vec::new();
     for i in 0..(curve_pts.len() / (2 * 3)) {
         let prev = elic::vec2(curve_pts[i * 6 + 0], curve_pts[i * 6 + 1]);
@@ -38,7 +38,7 @@ impl BucketTool {
 
     fn calc_paths(&self) -> malvina::FillPaths {
         malvina::FillPaths {
-            paths: vec![calc_path(&self.pts)] 
+            paths: vec![calc_path(&self.pts, 1.0)] 
         }
     } 
 

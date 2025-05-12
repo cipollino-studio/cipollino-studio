@@ -25,9 +25,8 @@ var texture: texture_2d<f32>;
 @group(0) @binding(1)
 var texture_sampler: sampler;
 
-@vertex
-fn vs_main(
-    @builtin(vertex_index) in_vertex_index: u32,
+fn vs_common(
+    in_vertex_index: u32,
     stamp: StampInput
 ) -> VertexOutput {
     var out: VertexOutput;
@@ -63,6 +62,26 @@ fn vs_main(
     out.center_screen = (uniforms.view_proj * vec4(stamp_pos, 0.0, 1.0)).xy * 0.5 + 0.5;
 
     return out;
+}
+
+@vertex
+fn vs_main(
+    @builtin(vertex_index) in_vertex_index: u32,
+    stamp: StampInput
+) -> VertexOutput {
+    return vs_common(in_vertex_index, stamp); 
+}
+
+@vertex
+fn vs_bucket(
+    @builtin(vertex_index) in_vertex_index: u32,
+    in_stamp: StampInput
+) -> VertexOutput {
+    var stamp = in_stamp;
+    if length(stamp.right) < 1.0 {
+        stamp.right /= length(stamp.right);
+    }
+    return vs_common(in_vertex_index, stamp);
 }
 
 @fragment
