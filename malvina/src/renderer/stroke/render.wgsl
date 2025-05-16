@@ -113,11 +113,3 @@ fn fs_selection(in: VertexOutput) -> @location(0) vec4<f32> {
     }
     return uniforms.color;
 }
-
-@fragment
-fn fs_bucket(in: VertexOutput) -> @location(0) vec4<f32> {
-    if length(in.uv - vec2(0.5)) > 0.5 {
-        discard;
-    }
-    return vec4(in.center_screen, 1.0, 1.0);
-}

@@ -17,7 +17,6 @@ pub(super) struct StrokeRenderer {
     render_pipeline: wgpu::RenderPipeline,
     picking_pipeline: wgpu::RenderPipeline,
     selected_pipeline: wgpu::RenderPipeline,
-    bucket_pipeline: wgpu::RenderPipeline,
 }
 
 impl StrokeRenderer {
@@ -108,26 +107,6 @@ impl StrokeRenderer {
                     write_mask: wgpu::ColorWrites::ALL 
                 })],
             }),
-            ..render_pipeline_descriptor.clone()
-        });
-
-        let bucket_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("malvina_bucket_stroke_render_pipeline"),
-            vertex: wgpu::VertexState {
-                module: &shader,
-                entry_point: "vs_bucket",
-                ..render_pipeline_descriptor.vertex
-            },
-            fragment: Some(wgpu::FragmentState {
-                module: &shader,
-                entry_point: "fs_bucket",
-                compilation_options: wgpu::PipelineCompilationOptions::default(),
-                targets: &[Some(wgpu::ColorTargetState {
-                    format: wgpu::TextureFormat::Rgba8Unorm,
-                    blend: Some(wgpu::BlendState::ALPHA_BLENDING),
-                    write_mask: wgpu::ColorWrites::ALL 
-                })],
-            }),
             ..render_pipeline_descriptor
         });
 
@@ -135,7 +114,6 @@ impl StrokeRenderer {
             render_pipeline,
             picking_pipeline,
             selected_pipeline,
-            bucket_pipeline
         }
     }
 
@@ -172,19 +150,6 @@ impl StrokeRenderer {
             view_proj: view_proj.into(),
             resolution: resolution.into(),
             color: color.contrasting_color().into(),
-        }]));
-        render_pass.set_bind_group(0, &texture.bind_group, &[]);
-        render_pass.set_vertex_buffer(0, stroke.instance_buffer.slice(..));
-        render_pass.draw(0..6, 0..stroke.n_stamps);
-    }
-
-    pub fn render_bucket(&mut self, render_pass: &mut wgpu::RenderPass, stroke: &StrokeMesh, texture: &BrushTexture, color: elic::Color, resolution: elic::Vec2, view_proj: elic::Mat4, trans: elic::Mat4) {
-        render_pass.set_pipeline(&self.bucket_pipeline);
-        render_pass.set_push_constants(wgpu::ShaderStages::VERTEX_FRAGMENT, 0, bytemuck::cast_slice(&[StrokeUniforms {
-            trans: trans.into(),
-            view_proj: view_proj.into(),
-            resolution: resolution.into(),
-            color: color.into(),
         }]));
         render_pass.set_bind_group(0, &texture.bind_group, &[]);
         render_pass.set_vertex_buffer(0, stroke.instance_buffer.slice(..));

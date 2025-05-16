@@ -39,9 +39,3 @@ fn fs_selection(in: VertexOutput) -> @location(0) vec4<f32> {
     }
     return uniforms.color;
 }
-
-@fragment
-fn fs_bucket(in: VertexOutput) -> @location(0) vec4<f32> {
-    let screen = in.coord / uniforms.resolution;
-    return vec4(screen, 1.0, 1.0);
-}
