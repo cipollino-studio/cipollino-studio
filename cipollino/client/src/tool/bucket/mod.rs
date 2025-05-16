@@ -93,7 +93,12 @@ impl Tool for BucketTool {
     }
 
     fn mouse_clicked(&mut self, editor: &mut EditorState, ctx: &mut ToolContext, pos: elic::Vec2) {
-        floodfill::floodfill(editor, ctx, pos); 
+        if let Some((x, y)) = ctx.picking_mouse_pos {
+            if ctx.pick(x, y).is_some() {
+                return;
+            }
+        }
+        floodfill::floodfill(editor, ctx, pos);
     }
 
     fn mouse_drag_started(&mut self, editor: &mut EditorState, _ctx: &mut ToolContext, pos: elic::Vec2) {
