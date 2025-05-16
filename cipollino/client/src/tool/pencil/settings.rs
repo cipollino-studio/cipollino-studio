@@ -24,6 +24,9 @@ impl PencilTool {
                 systems.prefs.set::<PencilUsePressure>(&use_pen_pressure);
             }
         });
+        builder.labeled("Draw Fill:", |ui| {
+            pierro::checkbox(ui, &mut self.draw_fill);
+        });
     }
 
 }

@@ -1,16 +1,15 @@
 
-use project::{Action, CreateFill, FillPaths, FillTreeData};
+use project::{Action, CreateFill, FillPaths, FillTreeData, SceneObjPtr, SetFillColor, SetStrokeColor};
 
 use crate::{curve_fit, keyboard_shortcut, EditorState}; 
 
-use super::{Tool, ToolContext};
+use super::{LassoState, Tool, ToolContext};
 
 mod floodfill;
 
 #[derive(Default)]
 pub struct BucketTool {
-    pts: Vec<elic::Vec2>,
-    drawing_fill: bool,
+    lasso: Option<LassoState>
 }
 
 fn calc_path(pts: &Vec<elic::Vec2>, error: f32) -> elic::BezierPath<elic::Vec2> {
@@ -36,12 +35,6 @@ fn calc_path(pts: &Vec<elic::Vec2>, error: f32) -> elic::BezierPath<elic::Vec2> 
 
 impl BucketTool {
 
-    fn calc_paths(&self) -> malvina::FillPaths {
-        malvina::FillPaths {
-            paths: vec![calc_path(&self.pts, 1.0)] 
-        }
-    } 
-
     fn create_fill(editor: &mut EditorState, ctx: &mut ToolContext, fill: malvina::FillPaths) {
         let mut action = Action::new(editor.action_context("New Fill"));
         let ptr = ctx.project.client.next_ptr();
@@ -59,16 +52,6 @@ impl BucketTool {
         ctx.project.client.queue_action(action);
     }
 
-    fn add_point(&mut self, pt: elic::Vec2) {
-        let Some(last) = self.pts.last() else {
-            self.pts.push(pt);
-            return;
-        };
-        if last.distance(pt) > 0.5 {
-            self.pts.push(pt);
-        }
-    }  
-
 }
 
 keyboard_shortcut!(BucketToolShortcut, B, pierro::KeyModifiers::empty());
@@ -79,59 +62,68 @@ impl Tool for BucketTool {
 
     type Shortcut = BucketToolShortcut;
 
-    fn tick(&mut self, editor: &mut EditorState, _ctx: &mut ToolContext) {
-        // If the user undo/redoes while drawing a fill, reset the bukcet tool
-        if (editor.will_undo || editor.will_redo) && !self.pts.is_empty() {
-            editor.will_undo = false;
-            self.pts.clear();
-            self.drawing_fill = false;
-        }
-        
-        if self.drawing_fill {
-            editor.preview.keep_preview = true;
-        }
-    }
-
     fn mouse_clicked(&mut self, editor: &mut EditorState, ctx: &mut ToolContext, pos: elic::Vec2) {
         if let Some((x, y)) = ctx.picking_mouse_pos {
-            if ctx.pick(x, y).is_some() {
+            if let Some(obj) = ctx.pick(x, y) {
+                match obj {
+                    SceneObjPtr::Stroke(ptr) => {
+                        ctx.project.client.queue_action(Action::single(editor.action_context("Set stroke color"), SetStrokeColor {
+                            ptr,
+                            color_value: editor.color.into(),
+                        }));
+                    },
+                    SceneObjPtr::Fill(ptr) => {
+                        ctx.project.client.queue_action(Action::single(editor.action_context("Set fill color"), SetFillColor {
+                            ptr,
+                            color_value: editor.color.into(),
+                        }));
+                    },
+                }
                 return;
             }
         }
+
         floodfill::floodfill(editor, ctx, pos);
     }
 
-    fn mouse_drag_started(&mut self, editor: &mut EditorState, _ctx: &mut ToolContext, pos: elic::Vec2) {
-        if editor.can_modify_layer(editor.active_layer) {
-            self.pts.clear();
-            self.add_point(pos); 
-            self.drawing_fill = true;
+    fn mouse_drag_started(&mut self, _editor: &mut EditorState, _ctx: &mut ToolContext, pos: elic::Vec2) {
+        self.lasso = Some(LassoState::from_point(pos));
+    }
+
+    fn mouse_dragged(&mut self, _editor: &mut EditorState, _ctx: &mut ToolContext, pos: elic::Vec2) {
+        if let Some(lasso) = &mut self.lasso {
+            lasso.add_point(pos);
         }
     }
 
-    fn mouse_dragged(&mut self, editor: &mut EditorState, ctx: &mut ToolContext, pos: elic::Vec2) {
-        if !self.drawing_fill {
-            return;
-        } 
-
-        self.add_point(pos);
-
-        let paths = self.calc_paths();
-        editor.preview.fill_preview = Some(malvina::FillMesh::new(ctx.device, &paths));
+    fn mouse_released(&mut self, editor: &mut EditorState, ctx: &mut ToolContext, pos: elic::Vec2) {
+        if let Some(mut lasso) = self.lasso.take() {
+            lasso.add_point(pos);
+            let mut action = Action::new(editor.action_context("Set Color"));
+            for scene_obj in lasso.find_inside(&ctx.project.client, ctx.modifiable_objs) {
+                match scene_obj {
+                    SceneObjPtr::Stroke(stroke) => {
+                        action.push(SetStrokeColor {
+                            ptr: stroke,
+                            color_value: editor.color.into(),
+                        });
+                    },
+                    SceneObjPtr::Fill(fill) => {
+                        action.push(SetFillColor {
+                            ptr: fill,
+                            color_value: editor.color.into(),
+                        });
+                    },
+                }
+            }
+            ctx.project.client.queue_action(action);
+        }
     }
 
-    fn mouse_released(&mut self, editor: &mut EditorState, ctx: &mut ToolContext, pos: elic::Vec2) {
-        if self.pts.is_empty() || !self.drawing_fill {
-            return;
+    fn render_overlay(&self, _ctx: &mut ToolContext, rndr: &mut malvina::LayerRenderer, accent_color: elic::Color) {
+        if let Some(lasso) = &self.lasso {
+            lasso.render_overlay(rndr, accent_color);
         } 
-
-        self.add_point(pos);
-
-        let paths = self.calc_paths();
-        Self::create_fill(editor, ctx, paths);
-
-        self.pts.clear();
-        self.drawing_fill = false;
     }
 
     fn cursor_icon(&self, _editor: &mut EditorState, _ctx: &mut ToolContext, _pos: elic::Vec2) -> pierro::CursorIcon {

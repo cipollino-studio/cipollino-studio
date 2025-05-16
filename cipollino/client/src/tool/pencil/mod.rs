@@ -1,5 +1,5 @@
 
-use project::{Action, CreateStroke, StrokeData, StrokeTreeData};
+use project::{Action, CreateFill, CreateStroke, FillPaths, FillTreeData, StrokeData, StrokeTreeData};
 
 use crate::{keyboard_shortcut, AppSystems, EditorState};
 
@@ -13,6 +13,7 @@ mod settings;
 pub struct PencilTool {
     pts: Vec<malvina::StrokePoint>,
     drawing_stroke: bool,
+    draw_fill: bool
 }
 
 impl Default for PencilTool {
@@ -21,6 +22,7 @@ impl Default for PencilTool {
         Self {
             pts: Vec::new(),
             drawing_stroke: false,
+            draw_fill: false
         }
     }
 
@@ -53,6 +55,27 @@ impl PencilTool {
         }
     }
 
+    fn calc_fill(&self) -> malvina::FillPaths {
+        let mut pts = Vec::new();
+        for pt in &self.pts {
+            pts.push(pt.pt.x);
+            pts.push(pt.pt.y);
+        }
+
+        let curve_pts = curve_fit::fit_curve(2, &pts, 1.0);
+        let mut fill_pts = Vec::new();
+        for i in 0..(curve_pts.len() / (3 * 2)) {
+            let prev = malvina::vec2(curve_pts[i * 6 + 0], curve_pts[i * 6 + 1]);
+            let pt   = malvina::vec2(curve_pts[i * 6 + 2], curve_pts[i * 6 + 3]);
+            let next = malvina::vec2(curve_pts[i * 6 + 4], curve_pts[i * 6 + 5]);
+            fill_pts.push(elic::BezierPoint { prev, pt, next });
+        }
+
+        malvina::FillPaths {
+            paths: vec![elic::BezierPath { pts: fill_pts }]
+        }
+    } 
+
     fn create_stroke(editor: &mut EditorState, ctx: &mut ToolContext, stroke: malvina::Stroke) {
         let mut action = Action::new(editor.action_context("New Stroke"));
         let ptr = ctx.project.client.next_ptr();
@@ -67,6 +90,22 @@ impl PencilTool {
                 color: editor.color.into(),
                 width: stroke_width 
             },
+        });
+        ctx.project.client.queue_action(action);
+    }
+
+    fn create_fill(editor: &mut EditorState, ctx: &mut ToolContext, fill: malvina::FillPaths) {
+        let mut action = Action::new(editor.action_context("New Fill"));
+        let ptr = ctx.project.client.next_ptr();
+        let Some(frame) = ctx.active_frame(editor, &mut action) else { return; };
+        action.push(CreateFill {
+            ptr,
+            parent: frame,
+            idx: 0,
+            data: FillTreeData {
+                paths: FillPaths(fill),
+                color: editor.color.into(),
+            } 
         });
         ctx.project.client.queue_action(action);
     }
@@ -134,9 +173,14 @@ impl Tool for PencilTool {
             pressure: ctx.pressure,
         }, ctx.systems);
 
-        let stroke = self.calc_stroke();
-        let stroke_width = ctx.systems.prefs.get::<PencilStrokeWidthPref>();
-        editor.preview.stroke_preview = Some(malvina::StrokeMesh::new(ctx.device, &stroke, stroke_width));
+        if !self.draw_fill {
+            let stroke = self.calc_stroke();
+            let stroke_width = ctx.systems.prefs.get::<PencilStrokeWidthPref>();
+            editor.preview.stroke_preview = Some(malvina::StrokeMesh::new(ctx.device, &stroke, stroke_width));
+        } else {
+            let fill = self.calc_fill();
+            editor.preview.fill_preview = Some(malvina::FillMesh::new(ctx.device, &fill));
+        }
     }
 
     fn mouse_released(&mut self, editor: &mut EditorState, ctx: &mut ToolContext, pos: malvina::Vec2) {
@@ -149,10 +193,16 @@ impl Tool for PencilTool {
             pressure: ctx.pressure,
         }, ctx.systems);
 
-        let stroke = self.calc_stroke();
-        self.pts.clear();
+        if !self.draw_fill {
+            let stroke = self.calc_stroke();
+            Self::create_stroke(editor, ctx, stroke); 
+        } else {
+            let fill = self.calc_fill();
+            Self::create_fill(editor, ctx, fill); 
+        }
+
         self.drawing_stroke = false;
-        Self::create_stroke(editor, ctx, stroke); 
+        self.pts.clear();
     }
 
     fn settings(&mut self, ui: &mut pierro::UI, systems: &mut AppSystems) {

@@ -68,7 +68,6 @@ pub(super) fn shortcuts(ui: &mut pierro::UI, systems: &mut AppSystems) {
         });
         shortcut!(builder, shortcut_occurences, "Select", SelectToolShortcut);
         shortcut!(builder, shortcut_occurences, "Pencil", PencilToolShortcut);
-        shortcut!(builder, shortcut_occurences, "Paint Brush", PaintBrushToolShortcut);
         shortcut!(builder, shortcut_occurences, "Color Picker", ColorPickerShortcut);
     });
 }

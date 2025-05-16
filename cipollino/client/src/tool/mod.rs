@@ -11,9 +11,6 @@ pub use pencil::*;
 mod color_picker;
 pub use color_picker::*;
 
-mod paint_brush;
-pub use paint_brush::*;
-
 mod bucket;
 pub use bucket::*;
 
