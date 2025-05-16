@@ -4,6 +4,10 @@ use crate::FillVertex;
 use super::FillPaths;
 
 fn meshgen_path(path: &elic::BezierPath<elic::Vec2>, verts: &mut Vec<FillVertex>) {
+    if path.pts.len() == 0 {
+        return;
+    }
+
     let mut pts = Vec::new();
 
     let mut t = 0.0;
@@ -27,6 +31,7 @@ fn meshgen_path(path: &elic::BezierPath<elic::Vec2>, verts: &mut Vec<FillVertex>
             prev_pt = pt;
         }
     }
+    pts.push(path.sample((path.pts.len() - 1) as f32));
 
     // It doesn't matter where we put the triangle fan center, but putting it in the rough middle
     // will hopefully help avoid some overdraw

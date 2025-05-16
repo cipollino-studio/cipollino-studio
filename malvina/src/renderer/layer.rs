@@ -70,4 +70,11 @@ impl LayerRenderer<'_> {
         self.overlay_circle_renderer.render_circle(self.render_pass, pos, r * self.dpi_factor / self.zoom, color, self.view_proj);
     }
 
+    pub fn overlay_rect(&mut self, rect: elic::Rect, color: elic::Color) {
+        self.overlay_line(rect.tl(), rect.tr(), color);
+        self.overlay_line(rect.tr(), rect.br(), color);
+        self.overlay_line(rect.br(), rect.bl(), color);
+        self.overlay_line(rect.bl(), rect.tl(), color);
+    }
+
 }
