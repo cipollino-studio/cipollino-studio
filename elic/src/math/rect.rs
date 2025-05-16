@@ -2,6 +2,8 @@
 use core::f32;
 use std::fmt::Display;
 
+use crate::Segment;
+
 use super::{vec2, Axis, Range, Vec2};
 
 #[derive(Clone, Copy)]
@@ -199,6 +201,36 @@ impl Rect {
             max = max.max(pt);
         }
         Self::min_max(min, max)
+    }
+
+    pub fn left_side(&self) -> Segment {
+        Segment::new(self.tl(), self.bl())
+    }
+
+    pub fn top_side(&self) -> Segment {
+        Segment::new(self.tl(), self.tr())
+    }
+
+    pub fn right_side(&self) -> Segment {
+        Segment::new(self.tr(), self.br())
+    }
+
+    pub fn bottom_side(&self) -> Segment {
+        Segment::new(self.bl(), self.br())
+    }
+
+    pub fn h_split_line(&self) -> Segment {
+        Segment::new(
+            0.5 * (self.tl() + self.bl()),
+            0.5 * (self.tr() + self.br())
+        )
+    }
+    
+    pub fn v_split_line(&self) -> Segment {
+        Segment::new(
+            0.5 * (self.tl() + self.tr()),
+            0.5 * (self.bl() + self.br())
+        )
     }
 
 }
