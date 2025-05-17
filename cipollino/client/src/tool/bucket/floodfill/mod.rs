@@ -37,3 +37,15 @@ pub(super) fn floodfill(editor: &mut EditorState, ctx: &mut ToolContext, click_p
 
     BucketTool::create_fill(editor, ctx, malvina::FillPaths { paths });
 }
+
+pub(super) fn overlay_collision_segments(ctx: &mut ToolContext, rndr: &mut malvina::LayerRenderer) {
+    let segments = get_segments(&ctx);
+
+    for segment in segments {
+        for i in 0..20 {
+            let t0 = (i as f32) / 20.0;
+            let t1 = (i as f32 + 1.0) / 20.0;
+            rndr.overlay_line(segment.segment.sample(t0), segment.segment.sample(t1), elic::Color::RED);
+        }
+    }
+}

@@ -174,26 +174,26 @@ impl QuadTree {
             let rect = Tile::rect_of(tile);
             let hit = 'hit: {
                 if rect.contains(segment.segment.p0) {
-                    break 'hit segment.segment.p0;
+                    break 'hit segment.center_line_segment.p0;
                 }
                 if rect.contains(segment.segment.p1) {
-                    break 'hit segment.segment.p1;
+                    break 'hit segment.center_line_segment.p1;
                 }
                 let left_ts = rect.left_side().intersect_bezier_ts(&segment.segment);
                 if left_ts.len() > 0 {
-                    break 'hit segment.segment.sample(left_ts[0]);
+                    break 'hit segment.center_line_segment.sample(left_ts[0]);
                 }
                 let top_ts = rect.top_side().intersect_bezier_ts(&segment.segment);
                 if top_ts.len() > 0 {
-                    break 'hit segment.segment.sample(top_ts[0]);
+                    break 'hit segment.center_line_segment.sample(top_ts[0]);
                 }
                 let right_ts = rect.right_side().intersect_bezier_ts(&segment.segment);
                 if right_ts.len() > 0 {
-                    break 'hit segment.segment.sample(right_ts[0]);
+                    break 'hit segment.center_line_segment.sample(right_ts[0]);
                 }
                 let bottom_ts = rect.bottom_side().intersect_bezier_ts(&segment.segment);
                 if bottom_ts.len() > 0 {
-                    break 'hit segment.segment.sample(bottom_ts[0]);
+                    break 'hit segment.center_line_segment.sample(bottom_ts[0]);
                 }
                 rect.center()
             };

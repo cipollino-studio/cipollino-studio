@@ -6,10 +6,104 @@ use crate::ToolContext;
 
 use super::{Tile, ROOT_DEPTH};
 
-
 pub(super) struct Segment {
     pub segment: elic::BezierSegment<elic::Vec2>,
+    pub center_line_segment: elic::BezierSegment<elic::Vec2>,
     pub bounds: elic::Rect
+}
+
+fn scale_pt_about_pivot(pt: elic::Vec2, pivot: elic::Vec2, fac: f32) -> elic::Vec2 {
+    pivot + fac * (pt - pivot)
+}
+
+fn add_stroke_segment(segments: &mut Vec<Segment>, segment: elic::BezierSegment<malvina::StrokePoint>, r: f32) {
+    let pt_segment = segment.map(|pt| pt.pt);
+
+    const EPS: f32 = 0.0025;
+    let x_extrema = pt_segment.map(|pt| pt.x).extrema_ts().into_small_arr();
+    for t in x_extrema.iter() {
+        if t >= EPS && t <= 1.0 - EPS {
+            let (a, b) = segment.split(t);
+            add_stroke_segment(segments, a, r);
+            add_stroke_segment(segments, b, r);
+            return;
+        } 
+    }
+    let y_extrema = pt_segment.map(|pt| pt.x).extrema_ts().into_small_arr();
+    for t in y_extrema.iter() {
+        if t >= EPS && t <= 1.0 - EPS {
+            let (a, b) = segment.split(t);
+            add_stroke_segment(segments, a, r);
+            add_stroke_segment(segments, b, r);
+            return;
+        } 
+    }
+
+    let l0 = elic::Line::new(pt_segment.p0, pt_segment.p0 + (pt_segment.b0 - pt_segment.p0).turn_cw());
+    let l1 = elic::Line::new(pt_segment.p1, pt_segment.p1 + (pt_segment.p1 - pt_segment.a1).turn_cw());
+
+    let mut add_segment = |segment| {
+        segments.push(Segment {
+            segment,
+            center_line_segment: pt_segment,
+            bounds: segment.bounds() 
+        });
+    };
+
+    match l0.intersect(l1) {
+        None => { // Normals are parallel, segment is a straight line
+            let normal = pt_segment.sample_normal(0.0); 
+
+            let p0 = pt_segment.p0 + normal * segment.p0.pressure * r; 
+            let p1 = pt_segment.p1 + normal * segment.p1.pressure * r; 
+            add_segment(elic::BezierSegment::straight(p0, p1));
+
+            let p0 = pt_segment.p0 - normal * segment.p0.pressure * r; 
+            let p1 = pt_segment.p1 - normal * segment.p1.pressure * r; 
+            add_segment(elic::BezierSegment::straight(p0, p1));
+        },
+        Some(scale_pt) => {
+            let dist_p0 = scale_pt.distance(pt_segment.p0);
+            let dist_p1 = scale_pt.distance(pt_segment.p1);
+
+            let offset_p0 = segment.p0.pressure * r;
+            let offset_p1 = segment.p1.pressure * r;
+
+            let scale_fac_p0 = (dist_p0 + offset_p0) / dist_p0;
+            let scale_fac_p1 = (dist_p1 + offset_p1) / dist_p1;
+            add_segment(elic::BezierSegment {
+                p0: scale_pt_about_pivot(pt_segment.p0, scale_pt, scale_fac_p0),
+                b0: scale_pt_about_pivot(pt_segment.b0, scale_pt, scale_fac_p0),
+                a1: scale_pt_about_pivot(pt_segment.a1, scale_pt,scale_fac_p1),
+                p1: scale_pt_about_pivot(pt_segment.p1, scale_pt,scale_fac_p1)
+            });
+
+            let scale_fac_p0 = (dist_p0 - offset_p0) / dist_p0;
+            let scale_fac_p1 = (dist_p1 - offset_p1) / dist_p1;
+            add_segment(elic::BezierSegment {
+                p0: scale_pt_about_pivot(pt_segment.p0, scale_pt, scale_fac_p0),
+                b0: scale_pt_about_pivot(pt_segment.b0, scale_pt, scale_fac_p0),
+                a1: scale_pt_about_pivot(pt_segment.a1, scale_pt,scale_fac_p1),
+                p1: scale_pt_about_pivot(pt_segment.p1, scale_pt,scale_fac_p1)
+            });
+        },
+    }
+
+}
+
+fn add_stroke_cap(segments: &mut Vec<Segment>, center: elic::Vec2, r: f32, dir: elic::Vec2) {
+    let dir = dir.normalize() * r;
+    let segment = elic::BezierSegment {
+        p0: center + dir.turn_cw(),
+        b0: center + dir.turn_cw() + dir * 1.5,
+        a1: center + dir.turn_ccw() + dir * 1.5,
+        p1: center + dir.turn_ccw(),
+    };
+    segments.push(Segment {
+        segment,
+        center_line_segment: elic::BezierSegment::straight(center, center),
+        bounds: segment.bounds(),
+    });
 }
 
 pub(super) fn get_segments(ctx: &ToolContext) -> Vec<Segment> {
@@ -18,13 +112,18 @@ pub(super) fn get_segments(ctx: &ToolContext) -> Vec<Segment> {
         match *obj {
             SceneObjPtr::Stroke(ptr) => {
                 let Some(stroke) = ctx.project.client.get(ptr) else { continue; };
-                for segment in stroke.stroke.0.path.iter_segments() {
-                    let segment = segment.map(|pt| pt.pt);
-                    segments.push(Segment {
-                        segment,
-                        bounds: segment.bounds(),
-                    });
+                let path = &stroke.stroke.0.path;
+                let r = stroke.width / 2.0;
+                if path.pts.len() < 2 {
+                    continue;
                 }
+                for segment in path.iter_segments() {
+                    add_stroke_segment(&mut segments, segment, r);
+                }
+                let pt0 = path.pts.first().unwrap();
+                add_stroke_cap(&mut segments, pt0.pt.pt, r * pt0.pt.pressure, pt0.pt.pt - pt0.next.pt);
+                let pt1 = path.pts.last().unwrap();
+                add_stroke_cap(&mut segments, pt1.pt.pt, r * pt1.pt.pressure, pt1.pt.pt - pt1.prev.pt);
             },
             SceneObjPtr::Fill(ptr) => {
                 let Some(fill) = ctx.project.client.get(ptr) else { continue; };
@@ -32,20 +131,17 @@ pub(super) fn get_segments(ctx: &ToolContext) -> Vec<Segment> {
                     for segment in path.iter_segments() {
                         segments.push(Segment {
                             segment,
+                            center_line_segment: segment,
                             bounds: segment.bounds(),
                         });
                     }
                     if path.pts.len() > 0 {
                         let p0 = path.pts[0].pt;
                         let p1 = path.pts[path.pts.len() - 1].pt;
-                        let segment = elic::BezierSegment {
-                            p0,
-                            b0: (2.0 * p0 + p1) / 3.0,
-                            a1: (p0 + 2.0 * p1) / 3.0,
-                            p1,
-                        };
+                        let segment = elic::BezierSegment::straight(p0, p1);
                         segments.push(Segment {
-                            segment: segment,
+                            segment,
+                            center_line_segment: segment,
                             bounds: segment.bounds() 
                         });
                     }

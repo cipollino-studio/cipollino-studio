@@ -9,7 +9,9 @@ mod floodfill;
 
 #[derive(Default)]
 pub struct BucketTool {
-    lasso: Option<LassoState>
+    lasso: Option<LassoState>,
+    #[cfg(debug_assertions)]
+    show_collision_segments: bool
 }
 
 fn calc_path(pts: &Vec<elic::Vec2>, error: f32) -> elic::BezierPath<elic::Vec2> {
@@ -120,14 +122,28 @@ impl Tool for BucketTool {
         }
     }
 
-    fn render_overlay(&self, _ctx: &mut ToolContext, rndr: &mut malvina::LayerRenderer, accent_color: elic::Color) {
+    fn render_overlay(&self, ctx: &mut ToolContext, rndr: &mut malvina::LayerRenderer, accent_color: elic::Color) {
         if let Some(lasso) = &self.lasso {
             lasso.render_overlay(rndr, accent_color);
         } 
+
+        #[cfg(debug_assertions)]
+        if self.show_collision_segments {
+            floodfill::overlay_collision_segments(ctx, rndr);
+        }
     }
 
     fn cursor_icon(&self, _editor: &mut EditorState, _ctx: &mut ToolContext, _pos: elic::Vec2) -> pierro::CursorIcon {
         pierro::CursorIcon::Crosshair
+    }
+
+    fn settings(&mut self, ui: &mut pierro::UI, _systems: &mut crate::AppSystems) {
+        pierro::key_value_layout(ui, |builder| {
+            #[cfg(debug_assertions)]
+            builder.labeled("DEBUG: Show collision beziers", |ui| {
+                pierro::checkbox(ui, &mut self.show_collision_segments);
+            });
+        }) 
     }
 
 }
