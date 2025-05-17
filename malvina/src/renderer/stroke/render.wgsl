@@ -73,14 +73,16 @@ fn vs_main(
 }
 
 @vertex
-fn vs_bucket(
+fn vs_picking(
     @builtin(vertex_index) in_vertex_index: u32,
     in_stamp: StampInput
 ) -> VertexOutput {
     var stamp = in_stamp;
-    if length(stamp.right) < 1.0 {
-        stamp.right /= length(stamp.right);
+    let min_r = 4.0;
+    if length(stamp.right) < min_r {
+        stamp.right *= min_r / length(stamp.right);
     }
+    stamp.right *= 2.5;
     return vs_common(in_vertex_index, stamp);
 }
 

@@ -82,6 +82,12 @@ impl StrokeRenderer {
 
         let picking_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("malvina_stroke_picking_render_pipeline"),
+            vertex: wgpu::VertexState {
+                module: &shader,
+                entry_point: "vs_picking",
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
+                buffers: &[StrokeStampInstance::DESC]
+            },
             fragment: Some(wgpu::FragmentState {
                 module: &shader,
                 entry_point: "fs_picking",
