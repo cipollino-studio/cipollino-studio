@@ -98,10 +98,11 @@ impl PencilTool {
         let mut action = Action::new(editor.action_context("New Fill"));
         let ptr = ctx.project.client.next_ptr();
         let Some(frame) = ctx.active_frame(editor, &mut action) else { return; };
+        let idx = ctx.project.client.get(frame).map(|frame| frame.scene.as_slice().len()).unwrap_or(0);
         action.push(CreateFill {
             ptr,
             parent: frame,
-            idx: 0,
+            idx,
             data: FillTreeData {
                 paths: FillPaths(fill),
                 color: editor.color.into(),
