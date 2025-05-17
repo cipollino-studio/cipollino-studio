@@ -1,7 +1,7 @@
 
 use project::{Action, CreateFill, CreateStroke, FillPaths, FillTreeData, StrokeData, StrokeTreeData};
 
-use crate::{keyboard_shortcut, AppSystems, EditorState};
+use crate::{keyboard_shortcut, AppSystems, EditorState, UserPrefs};
 
 use super::{curve_fit, Tool, ToolContext};
 
@@ -13,7 +13,8 @@ mod settings;
 pub struct PencilTool {
     pts: Vec<malvina::StrokePoint>,
     drawing_stroke: bool,
-    draw_fill: bool
+    draw_fill: bool,
+    prev_mouse_pos: elic::Vec2
 }
 
 impl Default for PencilTool {
@@ -22,7 +23,8 @@ impl Default for PencilTool {
         Self {
             pts: Vec::new(),
             drawing_stroke: false,
-            draw_fill: false
+            draw_fill: false,
+            prev_mouse_pos: elic::Vec2::ZERO
         }
     }
 
@@ -125,6 +127,17 @@ impl PencilTool {
         }
     }
 
+    fn stabilize_point(&self, pos: elic::Vec2, prefs: &mut UserPrefs) -> elic::Vec2 {
+        let Some(prev_pt) = self.pts.last() else { return pos; };
+        let prev_pt = prev_pt.pt;
+        let stabilization_radius = prefs.get::<StabilizationRadius>() as f32;
+        if prev_pt.distance(pos) < stabilization_radius {
+            return prev_pt;
+        }
+
+        pos + (prev_pt - pos).normalize() * stabilization_radius
+    }
+
 }
 
 keyboard_shortcut!(PencilToolShortcut, D, pierro::KeyModifiers::empty());
@@ -154,6 +167,8 @@ impl Tool for PencilTool {
     }
 
     fn mouse_drag_started(&mut self, editor: &mut EditorState, ctx: &mut ToolContext, pos: malvina::Vec2) {
+        self.prev_mouse_pos = pos;
+        
         if editor.can_modify_layer(editor.active_layer) {
             self.pts.clear();
             self.add_point(malvina::StrokePoint {
@@ -165,15 +180,19 @@ impl Tool for PencilTool {
     }
 
     fn mouse_dragged(&mut self, editor: &mut EditorState, ctx: &mut ToolContext, pos: malvina::Vec2) {
+        self.prev_mouse_pos = pos;
+
         if !self.drawing_stroke {
             return;
         }
 
+        let stabilized_pos = self.stabilize_point(pos, &mut ctx.systems.prefs);
         self.add_point(malvina::StrokePoint {
-            pt: pos,
+            pt: stabilized_pos,
             pressure: ctx.pressure,
         }, ctx.systems);
 
+        // Update the preview
         if !self.draw_fill {
             let stroke = self.calc_stroke();
             let stroke_width = ctx.systems.prefs.get::<PencilStrokeWidthPref>();
@@ -189,8 +208,9 @@ impl Tool for PencilTool {
             return;
         }
 
+        let stabilized_pos = self.stabilize_point(pos, &mut ctx.systems.prefs);
         self.add_point(malvina::StrokePoint {
-            pt: pos,
+            pt: stabilized_pos,
             pressure: ctx.pressure,
         }, ctx.systems);
 
@@ -218,6 +238,25 @@ impl Tool for PencilTool {
 
     fn cursor_icon(&self, _editor: &mut EditorState, _ctx: &mut ToolContext, _pos: elic::Vec2) -> pierro::CursorIcon {
         pierro::CursorIcon::Crosshair
+    }
+
+    fn render_overlay(&self, ctx: &mut ToolContext, rndr: &mut malvina::LayerRenderer, accent_color: elic::Color) {
+        if let Some(prev_pt) = self.pts.last() {
+            let prev_pt = prev_pt.pt;
+            let stabilization_radius = ctx.systems.prefs.get::<StabilizationRadius>() as f32;
+
+            let slack = (stabilization_radius - prev_pt.distance(self.prev_mouse_pos)).max(0.0);
+            let droop = slack * 0.6 * elic::Vec2::NEG_Y;
+            let mut rope = elic::BezierSegment::straight(prev_pt, self.prev_mouse_pos);
+            rope.b0 += droop; 
+            rope.a1 += droop;
+
+            for i in 0..20 {
+                let t0 = (i as f32) / 20.0;
+                let t1 = (i as f32 + 1.0) / 20.0;
+                rndr.overlay_line(rope.sample(t0), rope.sample(t1), accent_color);
+            }
+        } 
     }
 
 }

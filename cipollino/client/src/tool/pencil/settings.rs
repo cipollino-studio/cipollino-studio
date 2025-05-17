@@ -1,6 +1,6 @@
 
 use crate::AppSystems;
-use super::{PencilStrokeWidthPref, PencilTool, PencilUsePressure};
+use super::{PencilStrokeWidthPref, PencilTool, PencilUsePressure, StabilizationRadius};
 
 impl PencilTool {
 
@@ -14,6 +14,16 @@ impl PencilTool {
                 .render(ui);
             if stroke_width != prev_stroke_width {
                 systems.prefs.set::<PencilStrokeWidthPref>(&stroke_width);
+            }
+        });
+        builder.labeled("Stabilization Radius:", |ui| {
+            let mut radius = systems.prefs.get::<StabilizationRadius>();
+            let prev_radius = radius;
+            pierro::DragValue::new(&mut radius) 
+                .with_max(200)
+                .render(ui);
+            if radius != prev_radius {
+                systems.prefs.set::<StabilizationRadius>(&radius);
             }
         });
         builder.labeled("Use Pen Pressure:", |ui| {

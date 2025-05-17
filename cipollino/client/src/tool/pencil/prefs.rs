@@ -28,3 +28,17 @@ impl UserPref for PencilUsePressure {
         "pencil_use_pressure"
     }
 }
+
+pub(super) enum StabilizationRadius {}
+
+impl UserPref for StabilizationRadius {
+    type Type = u32;
+
+    fn default() -> Self::Type {
+        0
+    }
+
+    fn name() -> &'static str {
+        "stabilization_radius"
+    }
+}
