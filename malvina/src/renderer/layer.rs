@@ -31,15 +31,15 @@ impl LayerRenderer<'_> {
     }
 
     pub fn render_stroke(&mut self, stroke: &StrokeMesh, color: elic::Color, trans: elic::Mat4) {
-        self.stroke_renderer.render(self.render_pass, stroke, self.circle_brush, color, self.resolution / self.dpi_factor, self.view_proj, trans);
+        self.stroke_renderer.render(self.render_pass, stroke, self.circle_brush, color, self.resolution / self.dpi_factor, self.view_proj, trans, self.zoom);
     }
 
     pub(crate) fn render_stroke_picking(&mut self, stroke: &StrokeMesh, color: elic::Color, trans: elic::Mat4) {
-        self.stroke_renderer.render_picking(self.render_pass, stroke, self.circle_brush, color, self.resolution / self.dpi_factor, self.view_proj, trans);
+        self.stroke_renderer.render_picking(self.render_pass, stroke, self.circle_brush, color, self.resolution / self.dpi_factor, self.view_proj, trans, self.zoom);
     }
 
     pub fn render_stroke_selection(&mut self, stroke: &StrokeMesh, color: elic::Color, trans: elic::Mat4) {
-        self.stroke_renderer.render_selection(self.render_pass, stroke, self.circle_brush, color, self.resolution / self.dpi_factor, self.view_proj, trans);
+        self.stroke_renderer.render_selection(self.render_pass, stroke, self.circle_brush, color, self.resolution / self.dpi_factor, self.view_proj, trans, self.zoom);
     }
 
     pub fn render_fill(&mut self, fill: &FillMesh, color: elic::Color, trans: elic::Mat4) {
