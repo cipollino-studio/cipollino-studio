@@ -11,6 +11,13 @@ pub struct Line {
 }
 
 impl Line {
+    
+    pub fn new(a: Vec2, b: Vec2) -> Self {
+        Self {
+            v: vec2(a.y - b.y, b.x - a.x),
+            x: a.y * (b.x - a.x) - a.x * (b.y - a.y)
+        }
+    }
 
     pub fn horizontal(y: f32) -> Line {
         Line {

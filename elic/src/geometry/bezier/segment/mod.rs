@@ -29,6 +29,17 @@ impl<T: Linear> BezierSegment<T> {
         }
     }
 
+    pub fn straight(p0: T, p1: T) -> Self {
+        let b0 = p0.scale(2.0 / 3.0).add(p1.scale(1.0 / 3.0));
+        let a1 = p0.scale(1.0 / 3.0).add(p1.scale(2.0 / 3.0));
+        Self {
+            p0,
+            b0,
+            a1,
+            p1,
+        }
+    }
+
     pub fn sample(&self, t: f32) -> T {
         let p0 = self.p0.scale((1.0 - t) * (1.0 - t) * (1.0 - t));
         let p1 = self.b0.scale(3.0 * (1.0 - t) * (1.0 - t) * t); 
@@ -88,7 +99,7 @@ impl BezierSegment<Vec2> {
         self.sample_derivative(t).normalize()
     }
 
-    pub fn sample_bezier_normal(&self, t: f32) -> Vec2 {
+    pub fn sample_normal(&self, t: f32) -> Vec2 {
         self.sample_tangent(t).turn_cw()
     }
     
