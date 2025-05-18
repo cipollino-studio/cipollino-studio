@@ -1,5 +1,7 @@
 
-use project::{ClipInner, Layer, Ptr};
+use std::f32;
+
+use project::{Action, ClipInner, CreateFrame, FrameTreeData, Layer, Ptr};
 
 use crate::{EditorState, ProjectState, TimelinePanel};
 
@@ -78,7 +80,7 @@ impl FrameArea {
         let layer_editable = !editor.locked_layers.contains(&layer_ptr);
 
         let mut frames_to_render = Vec::new();
-
+        let mut mouse_over_frame = false;
         for frame_ptr in layer.frames.iter() {
             if let Some(frame) = project.client.get(frame_ptr.ptr()) {
 
@@ -105,8 +107,8 @@ impl FrameArea {
                 frames_to_render.push((display_time, frame.scene.as_slice().is_empty(), layer_editable && (selected || in_selection_rect)));
 
                 if let Some(mouse_pos) = frame_area.mouse_pos(ui) {
-                    
                     if frame_interaction_rect.contains(mouse_pos) {
+                        mouse_over_frame = true;
                         if frame_area.mouse_clicked() {
                             editor.selection.extend_select(frame_ptr.ptr());
                             frame_area.request_focus(ui);
@@ -142,6 +144,29 @@ impl FrameArea {
                 selected,
                 empty
             });
+        }
+
+        let layer_rect = pierro::Rect::min_size(
+            pierro::Vec2::Y * TimelinePanel::LAYER_HEIGHT * (layer_idx as f32),
+            pierro::vec2(f32::INFINITY, TimelinePanel::LAYER_HEIGHT)
+        );
+        if let Some(mouse_pos) = frame_area.mouse_pos(ui) {
+            if layer_rect.contains(mouse_pos) && !mouse_over_frame {
+                if frame_area.mouse_clicked() {
+                    editor.active_layer = layer_ptr;
+                }
+                if frame_area.mouse_double_clicked() {
+                    let time = (mouse_pos.x / TimelinePanel::FRAME_WIDTH).floor() as i32;
+                    project.client.queue_action(Action::single(editor.action_context("Create Frame"), CreateFrame {
+                        ptr: project.client.next_ptr(),
+                        layer: layer_ptr,
+                        data: FrameTreeData {
+                            time,
+                            ..Default::default()
+                        },
+                    }));
+                }
+            }
         }
 
     }
