@@ -176,6 +176,12 @@ impl Tool for PencilTool {
                 pressure: ctx.pressure,
             }, ctx.systems);
             self.drawing_stroke = true;
+
+            if !self.draw_fill {
+                let stroke = self.calc_stroke();
+                let stroke_width = ctx.systems.prefs.get::<PencilStrokeWidthPref>();
+                editor.preview.stroke_preview = Some(malvina::StrokeMesh::new(ctx.device, &stroke, stroke_width));
+            }
         }
     }
 
