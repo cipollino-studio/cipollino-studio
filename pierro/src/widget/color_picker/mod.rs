@@ -15,9 +15,16 @@ use color_bar::*;
 const N_CELLS: i32 = 100;
 const TOLERANCE: f32 = 0.0001;
 
-pub fn color_picker<C: ColorSpace>(ui: &mut UI, color: &mut Color) {
+pub struct ColorPickerResponse {
+    pub editing: bool,
+    pub done_editing: bool
+}
+
+pub fn color_picker<C: ColorSpace>(ui: &mut UI, color: &mut Color) -> ColorPickerResponse {
+    let mut done_editing = false;
+
     let stroke = ui.style::<theme::WidgetStroke>();
-    horizontal_fit(ui, |ui| {
+    let (_, editing) = horizontal_fit(ui, |ui| {
         let size = 150.0;
         let color_area = ui.node(
             UINodeParams::new(Size::px(size), Size::px(size))
@@ -36,13 +43,17 @@ pub fn color_picker<C: ColorSpace>(ui: &mut UI, color: &mut Color) {
         }
         if color_area.mouse_released() {
             color_area.release_focus(ui);
+            done_editing = true;
         }
         if color_bar.drag_started() {
             color_bar.request_focus(ui);
         }
         if color_bar.mouse_released() {
             color_bar.release_focus(ui);
+            done_editing = true;
         }
+
+        let editing = color_area.is_focused(ui) || color_bar.is_focused(ui);
 
         let [mut c0, mut c1, mut c2] = C::from_rgb([color.r, color.g, color.b]);
         if color_area.mouse_clicked() || color_area.dragging() {
@@ -72,6 +83,12 @@ pub fn color_picker<C: ColorSpace>(ui: &mut UI, color: &mut Color) {
         ui.set_on_paint(color_bar.node_ref, move |painter, rect| {
             paint_color_bar::<C>(painter, rect, color);
         });
+
+        editing
     });
 
+    ColorPickerResponse {
+        editing,
+        done_editing
+    }
 }

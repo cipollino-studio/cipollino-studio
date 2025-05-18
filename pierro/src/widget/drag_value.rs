@@ -10,7 +10,8 @@ struct DragValueMemory {
 
 pub struct DragValueResponse {
     pub drag_value: Response,
-    pub done_editing: bool
+    pub done_editing: bool,
+    pub editing: bool
 }
 
 pub struct DragValue<'value, N: Numeric> {
@@ -120,7 +121,8 @@ impl<'value, N: Numeric> DragValue<'value, N> {
 
         DragValueResponse {
             drag_value,
-            done_editing
+            done_editing,
+            editing: editing_text(ui, &drag_value) || drag_value.dragging()
         }
 
     }
