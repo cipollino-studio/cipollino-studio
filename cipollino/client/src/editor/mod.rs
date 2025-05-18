@@ -67,7 +67,7 @@ impl Editor {
             docking: systems.prefs.get::<DockingLayoutPref>(),
             windows: pierro::WindowManager::new(),
             socket,
-            redraw_requests: 0
+            redraw_requests: 3
         };
 
         let client = &editor.state.project.client;
