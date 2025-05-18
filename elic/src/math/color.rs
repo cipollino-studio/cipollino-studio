@@ -93,6 +93,22 @@ impl Color {
 
 }
 
+impl From<Color> for [f32; 3] {
+
+    fn from(c: Color) -> Self {
+        [c.r, c.g, c.b]
+    }
+    
+}
+
+impl From<[f32; 3]> for Color {
+
+    fn from(c: [f32; 3]) -> Self {
+        Self::rgb(c[0], c[1], c[2])
+    }
+    
+}
+
 impl From<Color> for [f32; 4] {
 
     fn from(c: Color) -> Self {
