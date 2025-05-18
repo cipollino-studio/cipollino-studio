@@ -65,6 +65,16 @@ impl SplashScreen {
             let banner_width = banner_scale * texture.width() as f32;
             let banner_image = pierro::scaled_image(ui, banner_scale, texture);
             ui.set_rounding(banner_image.node_ref, pierro::Rounding::top(7.5 - 1.0));
+            ui.set_layout(banner_image.node_ref, pierro::Layout::vertical().justify_max());
+            ui.with_parent(banner_image.node_ref, |ui| {
+                pierro::margin(ui, pierro::Margin::same(4.0), |ui| {
+                    ui.with_style::<pierro::theme::TextColor, _, _>(pierro::Color::BLACK, |ui| {
+                        ui.with_style::<pierro::theme::LabelFontSize, _, _>(10.0, |ui| {
+                            pierro::label(ui, format!("v{}", version::version!()));
+                        });
+                    });
+                });
+            });
             pierro::h_line(ui);
 
             // Quote
