@@ -1,5 +1,6 @@
 
-use project::{Action, Clip, ClipInner, Ptr, RenameClip, SetClipInnerFramerate, SetClipInnerHeight, SetClipInnerLength, SetClipInnerWidth};
+use alisa::Action;
+use project::{Clip, ClipInner, Ptr, RenameClip, SetClipInnerBackgroundColor, SetClipInnerFramerate, SetClipInnerHeight, SetClipInnerLength, SetClipInnerWidth};
 
 use crate::{PanelContext, Window};
 
@@ -72,6 +73,15 @@ impl Window for ClipPropertiesDialog {
             }));
         } else {
             self.properties.framerate = clip_inner.framerate;
+        }
+
+        if response.background_color_response.done_editing {
+            ctx.project.client.queue_action(Action::single(ctx.editor.action_context("Set Clip Background Color"), SetClipInnerBackgroundColor {
+                ptr: self.clip_inner_ptr,
+                background_color_value: self.properties.background_color,
+            }));
+        } else if !response.background_color_response.editing {
+            self.properties.background_color = clip_inner.background_color;
         }
 
     }

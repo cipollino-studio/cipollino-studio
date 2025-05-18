@@ -1,5 +1,5 @@
 
-use crate::{Clip, ClipInner, ClipTreeData, CreateClip, CreateClipInner, CreateFill, CreateFolder, CreateFrame, CreateLayer, CreateLayerGroup, CreateStroke, DeleteClip, DeleteFill, DeleteFolder, DeleteFrame, DeleteLayer, DeleteLayerGroup, DeleteStroke, Fill, Folder, Frame, Layer, LayerGroup, LayerParent, LayerTreeData, RenameClip, RenameFolder, SetClipInnerFramerate, SetClipInnerHeight, SetClipInnerLength, SetClipInnerWidth, SetFillColor, SetFillPaths, SetFrameTime, SetLayerGroupName, SetLayerName, SetStrokeColor, SetStrokeStroke, Stroke, TransferClip, TransferFolder, TransferLayer, TransferLayerGroup};
+use crate::{Clip, ClipInner, ClipTreeData, CreateClip, CreateClipInner, CreateFill, CreateFolder, CreateFrame, CreateLayer, CreateLayerGroup, CreateStroke, DeleteClip, DeleteFill, DeleteFolder, DeleteFrame, DeleteLayer, DeleteLayerGroup, DeleteStroke, Fill, Folder, Frame, Layer, LayerGroup, LayerParent, LayerTreeData, RenameClip, RenameFolder, SetClipInnerBackgroundColor, SetClipInnerFramerate, SetClipInnerHeight, SetClipInnerLength, SetClipInnerWidth, SetFillColor, SetFillPaths, SetFrameTime, SetLayerGroupName, SetLayerName, SetStrokeColor, SetStrokeStroke, Stroke, TransferClip, TransferFolder, TransferLayer, TransferLayerGroup};
 
 #[derive(alisa::Serializable, Clone)]
 pub struct Project {
@@ -112,6 +112,7 @@ impl alisa::Project for Project {
         alisa::OperationKind::from::<SetClipInnerHeight>(),
         alisa::OperationKind::from::<SetClipInnerLength>(),
         alisa::OperationKind::from::<SetClipInnerFramerate>(),
+        alisa::OperationKind::from::<SetClipInnerBackgroundColor>(),
         
         alisa::OperationKind::from::<CreateLayer>(),
         alisa::OperationKind::from::<DeleteLayer>(),

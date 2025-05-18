@@ -1,5 +1,8 @@
 
-pub fn color_picker(ui: &mut pierro::UI, color: &mut elic::Color) {
+pub fn color_picker(ui: &mut pierro::UI, color: &mut elic::Color) -> pierro::ColorPickerResponse {
+    let mut editing = false;
+    let mut done_editing = false;
+
     let margin = ui.style::<pierro::theme::WidgetMargin>();
     let rounding = ui.style::<pierro::theme::WidgetRounding>();
     let stroke = ui.style::<pierro::theme::WidgetStroke>();
@@ -17,31 +20,44 @@ pub fn color_picker(ui: &mut pierro::UI, color: &mut elic::Color) {
 
     pierro::left_click_context_menu(ui, &picker_button, |ui| {
         pierro::horizontal_fit(ui, |ui| {
-            pierro::color_picker::<pierro::HSVColorSpace>(ui, color);
+            let color_response = pierro::color_picker::<pierro::HSVColorSpace>(ui, color);
+            editing |= color_response.editing;
+            done_editing |= color_response.done_editing;
             
             pierro::h_spacing(ui, 5.0);
             pierro::vertical_fit(ui, |ui| {
                 pierro::key_value_layout(ui, |builder| {
                     builder.labeled("R:", |ui| {
-                        pierro::DragValue::new(&mut color.r)
+                        let resp = pierro::DragValue::new(&mut color.r)
                             .with_min(0.0)
                             .with_max(1.0)
                             .render(ui);
+                        editing |= resp.editing;
+                        done_editing |= resp.done_editing;
                     });
                     builder.labeled("G:", |ui| {
-                        pierro::DragValue::new(&mut color.g)
+                        let resp = pierro::DragValue::new(&mut color.g)
                             .with_min(0.0)
                             .with_max(1.0)
                             .render(ui);
+                        editing |= resp.editing;
+                        done_editing |= resp.done_editing;
                     });
                     builder.labeled("B:", |ui| {
-                        pierro::DragValue::new(&mut color.b)
+                        let resp = pierro::DragValue::new(&mut color.b)
                             .with_min(0.0)
                             .with_max(1.0)
                             .render(ui);
+                        editing |= resp.editing;
+                        done_editing |= resp.done_editing;
                     });
                 });
             });
         }); 
     });
+
+    pierro::ColorPickerResponse {
+        editing,
+        done_editing
+    }
 }

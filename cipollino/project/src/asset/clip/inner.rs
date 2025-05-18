@@ -15,6 +15,7 @@ pub struct ClipInner {
     /// The length of the clip in frames
     pub length: u32,
     pub framerate: f32,
+    pub background_color: [f32; 3]
 }
 
 impl Default for ClipInner {
@@ -26,6 +27,7 @@ impl Default for ClipInner {
             height: 1080,
             length: 100,
             framerate: 24.0,
+            background_color: [1.0, 1.0, 1.0]
         }
     }
 
@@ -99,3 +101,4 @@ alisa::object_set_property_operation!(ClipInner, width, u32);
 alisa::object_set_property_operation!(ClipInner, height, u32);
 alisa::object_set_property_operation!(ClipInner, length, u32);
 alisa::object_set_property_operation!(ClipInner, framerate, f32);
+alisa::object_set_property_operation!(ClipInner, background_color, [f32; 3]);

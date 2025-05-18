@@ -93,6 +93,7 @@ impl AssetUI for Clip {
                         framerate: clip_inner.framerate,
                         width: clip_inner.width,
                         height: clip_inner.height,
+                        background_color: clip_inner.background_color,
                     };
 
                     editor.open_window(ClipPropertiesDialog {

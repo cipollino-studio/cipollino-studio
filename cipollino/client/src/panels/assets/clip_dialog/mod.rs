@@ -6,6 +6,8 @@ pub use create_clip::*;
 mod properties;
 pub use properties::*;
 
+use crate::color_picker;
+
 const FPS_OPTIONS: &[f32] = &[12.0, 18.0, 24.0, 30.0, 48.0, 60.0];
 
 pub struct ClipProperties {
@@ -13,7 +15,8 @@ pub struct ClipProperties {
     pub length: u32,
     pub framerate: f32,
     pub width: u32,
-    pub height: u32
+    pub height: u32,
+    pub background_color: [f32; 3]
 }
 
 pub struct ClipPropertiesResponse {
@@ -21,12 +24,13 @@ pub struct ClipPropertiesResponse {
     pub length_response: pierro::DragValueResponse,
     pub framerate_changed: bool,
     pub width_response: pierro::DragValueResponse,
-    pub height_response: pierro::DragValueResponse 
+    pub height_response: pierro::DragValueResponse,
+    pub background_color_response: pierro::ColorPickerResponse
 }
 
 fn labeled<R, F: FnOnce(&mut pierro::UI) -> R>(ui: &mut pierro::UI, label: &str, contents: F) -> R {
     let (_, result) = pierro::horizontal_fit_centered(ui, |ui| {
-        pierro::container(ui, pierro::Size::px(60.0), pierro::Size::fit(), pierro::Layout::horizontal().justify_max(), |ui| {
+        pierro::container(ui, pierro::Size::px(75.0), pierro::Size::fit(), pierro::Layout::horizontal().justify_max(), |ui| {
             pierro::label(ui, label);
         });
 
@@ -46,7 +50,8 @@ impl ClipProperties {
             length: 100,
             framerate: 24.0,
             width: 1920,
-            height: 1080
+            height: 1080,
+            background_color: [1.0; 3]
         }
     }
 
@@ -85,6 +90,12 @@ impl ClipProperties {
             });
             framerate_changed
         });
+        let background_color_response = labeled(ui, "Background:", |ui| {
+            let mut color = self.background_color.into();
+            let resp = color_picker(ui, &mut color);
+            self.background_color = color.into();
+            resp
+        });
 
         ClipPropertiesResponse {
             name_response,
@@ -92,6 +103,7 @@ impl ClipProperties {
             framerate_changed,
             width_response,
             height_response,
+            background_color_response
         }
     }
 

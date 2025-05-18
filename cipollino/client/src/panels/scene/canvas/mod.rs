@@ -181,7 +181,7 @@ impl ScenePanel {
             cam_zoom: 1.0 / self.cam_size,
             key_modifiers: ui.input().key_modifiers
         };
-        renderer.render(ui.wgpu_device(), ui.wgpu_queue(), texture.texture(), camera, elic::Color::WHITE, ui.scale_factor(), |rndr| {
+        renderer.render(ui.wgpu_device(), ui.wgpu_queue(), texture.texture(), camera, clip.background_color.into(), ui.scale_factor(), |rndr| {
             if editor.show_onion_skin {
                 Self::render_onion_skin(rndr, &project.client, &editor, tool_context.systems, clip);
             }
