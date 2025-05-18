@@ -218,6 +218,10 @@ impl<'a, 'b> UI<'a, 'b> {
         result
     }
 
+    pub fn set_layout(&mut self, node: UIRef, layout: Layout) {
+        self.tree.get_mut(node).params.layout = layout;
+    }
+
     pub fn set_size(&mut self, node: UIRef, width: Size, height: Size) {
         self.tree.get_mut(node).params.size = PerAxis::new(width, height);
     }
