@@ -15,7 +15,7 @@ impl Stroke {
             return vec![
                 StrokeStampInstance {
                     pos: self.path.pts[0].pt.pt.into(),
-                    right: (elic::Vec2::X * 3.0).into()
+                    right: (elic::Vec2::X * radius).into()
                 }
             ];
         }
