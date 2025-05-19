@@ -16,27 +16,29 @@ fn scale_pt_about_pivot(pt: elic::Vec2, pivot: elic::Vec2, fac: f32) -> elic::Ve
     pivot + fac * (pt - pivot)
 }
 
-fn add_stroke_segment(segments: &mut Vec<Segment>, segment: elic::BezierSegment<malvina::StrokePoint>, r: f32) {
+fn add_stroke_segment(segments: &mut Vec<Segment>, segment: elic::BezierSegment<malvina::StrokePoint>, r: f32, depth: u32) {
     let pt_segment = segment.map(|pt| pt.pt);
 
-    const EPS: f32 = 0.0025;
-    let x_extrema = pt_segment.map(|pt| pt.x).extrema_ts().into_small_arr();
-    for t in x_extrema.iter() {
-        if t >= EPS && t <= 1.0 - EPS {
-            let (a, b) = segment.split(t);
-            add_stroke_segment(segments, a, r);
-            add_stroke_segment(segments, b, r);
-            return;
-        } 
-    }
-    let y_extrema = pt_segment.map(|pt| pt.x).extrema_ts().into_small_arr();
-    for t in y_extrema.iter() {
-        if t >= EPS && t <= 1.0 - EPS {
-            let (a, b) = segment.split(t);
-            add_stroke_segment(segments, a, r);
-            add_stroke_segment(segments, b, r);
-            return;
-        } 
+    if depth > 0 {
+        const EPS: f32 = 0.0025;
+        let x_extrema = pt_segment.map(|pt| pt.x).extrema_ts().into_small_arr();
+        for t in x_extrema.iter() {
+            if t >= EPS && t <= 1.0 - EPS {
+                let (a, b) = segment.split(t);
+                add_stroke_segment(segments, a, r, depth - 1);
+                add_stroke_segment(segments, b, r, depth - 1);
+                return;
+            } 
+        }
+        let y_extrema = pt_segment.map(|pt| pt.x).extrema_ts().into_small_arr();
+        for t in y_extrema.iter() {
+            if t >= EPS && t <= 1.0 - EPS {
+                let (a, b) = segment.split(t);
+                add_stroke_segment(segments, a, r, depth - 1);
+                add_stroke_segment(segments, b, r, depth - 1);
+                return;
+            } 
+        }
     }
 
     let l0 = elic::Line::new(pt_segment.p0, pt_segment.p0 + (pt_segment.b0 - pt_segment.p0).turn_cw());
@@ -69,21 +71,23 @@ fn add_stroke_segment(segments: &mut Vec<Segment>, segment: elic::BezierSegment<
             let offset_p0 = segment.p0.pressure * r;
             let offset_p1 = segment.p1.pressure * r;
 
+            let cap = 5.0;
+
             let scale_fac_p0 = (dist_p0 + offset_p0) / dist_p0;
             let scale_fac_p1 = (dist_p1 + offset_p1) / dist_p1;
             add_segment(elic::BezierSegment {
                 p0: scale_pt_about_pivot(pt_segment.p0, scale_pt, scale_fac_p0),
-                b0: scale_pt_about_pivot(pt_segment.b0, scale_pt, scale_fac_p0),
-                a1: scale_pt_about_pivot(pt_segment.a1, scale_pt,scale_fac_p1),
+                b0: scale_pt_about_pivot(pt_segment.b0, scale_pt, scale_fac_p0.clamp(-cap, cap)),
+                a1: scale_pt_about_pivot(pt_segment.a1, scale_pt,scale_fac_p1.clamp(-cap, cap)),
                 p1: scale_pt_about_pivot(pt_segment.p1, scale_pt,scale_fac_p1)
             });
 
-            let scale_fac_p0 = (dist_p0 - offset_p0) / dist_p0;
-            let scale_fac_p1 = (dist_p1 - offset_p1) / dist_p1;
+            let scale_fac_p0 = ((dist_p0 - offset_p0) / dist_p0).clamp(-cap, cap);
+            let scale_fac_p1 = ((dist_p1 - offset_p1) / dist_p1).clamp(-cap, cap);
             add_segment(elic::BezierSegment {
                 p0: scale_pt_about_pivot(pt_segment.p0, scale_pt, scale_fac_p0),
-                b0: scale_pt_about_pivot(pt_segment.b0, scale_pt, scale_fac_p0),
-                a1: scale_pt_about_pivot(pt_segment.a1, scale_pt,scale_fac_p1),
+                b0: scale_pt_about_pivot(pt_segment.b0, scale_pt, scale_fac_p0.clamp(-cap, cap)),
+                a1: scale_pt_about_pivot(pt_segment.a1, scale_pt,scale_fac_p1.clamp(-cap, cap)),
                 p1: scale_pt_about_pivot(pt_segment.p1, scale_pt,scale_fac_p1)
             });
         },
@@ -118,7 +122,7 @@ pub(super) fn get_segments(ctx: &ToolContext) -> Vec<Segment> {
                     continue;
                 }
                 for segment in path.iter_segments() {
-                    add_stroke_segment(&mut segments, segment, r);
+                    add_stroke_segment(&mut segments, segment, r, 5);
                 }
                 let pt0 = path.pts.first().unwrap();
                 add_stroke_cap(&mut segments, pt0.pt.pt, r * pt0.pt.pressure, pt0.pt.pt - pt0.next.pt);

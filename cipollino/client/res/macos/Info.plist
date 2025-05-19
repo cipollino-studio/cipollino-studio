@@ -8,16 +8,8 @@
 	<string>Cipollino</string>
 	<key>CFBundleIconFile</key>
 	<string>icon.icns</string>
-	<key>CFBundleIdentifier</key>
-	<string>org.cipollino.Cipollino</string>
-	<key>CFBundleInfoDictionaryVersion</key>
-	<string>1.0</string>
 	<key>CFBundleName</key>
 	<string>Cipollino</string>
-	<key>CFBundlePackageType</key>
-	<string>APPL</string>
-	<key>CFBundleShortVersionString</key>
-	<string>1.0</string>
 	<key>NSHighResolutionCapable</key>
 	<true/>
 </dict>
