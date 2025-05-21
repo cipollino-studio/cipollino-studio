@@ -8,6 +8,7 @@ mod panels;
 pub use panels::*;
 
 mod tool;
+use pierro::include_icon;
 pub use tool::*;
 
 mod systems;
@@ -38,6 +39,7 @@ impl pierro::App for App {
     fn window_config() -> pierro::WindowConfig {
         pierro::WindowConfig::default()
             .maximize_window()
+            .with_icon(include_icon!("../res/icon.png"))
             .with_title("Cipollino Studio")
     }
     
