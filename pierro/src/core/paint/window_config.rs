@@ -18,6 +18,13 @@ impl WindowIcon {
         }
     }
 
+    pub fn from_bytes(bytes: &[u8]) -> Self {
+        let image = image::load_from_memory(bytes).unwrap().into_rgba8();
+        let (width, height) = image.dimensions();
+        let rgba = image.into_raw();
+        Self::new(width, height, rgba)
+    }
+
 }
 
 #[macro_export]
@@ -25,10 +32,7 @@ macro_rules! include_icon {
     ($path: expr) => {
         {
             let data = include_bytes!($path);
-            let image = image::load_from_memory(data).unwrap().into_rgba8();
-            let (width, height) = image.dimensions();
-            let rgba = image.into_raw();
-            crate::WindowIcon::new(width, height, rgba)
+            pierro::WindowIcon::from_bytes(data)
         } 
     };
 }
@@ -47,7 +51,7 @@ impl Default for WindowConfig {
             title: "Pierro Application".to_string(),
             min_size: vec2(400.0, 300.0),
             maximize: false,
-            icon: include_icon!("../../../res/default_icon.png")
+            icon: WindowIcon::from_bytes(include_bytes!("../../../res/default_icon.png"))
         }
     }
 
