@@ -23,12 +23,12 @@ impl Tool for ColorPicker {
             match ctx.pick(x, y) {
                 Some(SceneObjPtr::Stroke(ptr)) => {
                     if let Some(stroke) = ctx.project.client.get(ptr) {
-                        editor.color = stroke.color.into();
+                        editor.color = stroke.color;
                     } 
                 },
                 Some(SceneObjPtr::Fill(ptr)) => {
                     if let Some(fill) = ctx.project.client.get(ptr) {
-                        editor.color = fill.color.into();
+                        editor.color = fill.color;
                     }
                 }
                 None => {},

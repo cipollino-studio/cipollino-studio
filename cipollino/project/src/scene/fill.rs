@@ -1,5 +1,5 @@
 
-use crate::{Frame, Objects, Project};
+use crate::{Frame, Objects, Project, SceneObjectColor};
 
 use super::SceneObjPtr;
 
@@ -64,7 +64,7 @@ impl alisa::Serializable for FillPaths {
 pub struct Fill {
     pub frame: alisa::Ptr<Frame>,
     pub paths: FillPaths,
-    pub color: [f32; 4],
+    pub color: SceneObjectColor 
 }
 
 impl Default for Fill {
@@ -72,7 +72,7 @@ impl Default for Fill {
         Self {
             frame: Default::default(),
             paths: Default::default(),
-            color: [0.0, 0.0, 0.0, 1.0] 
+            color: Default::default() 
         }
     }
 }
@@ -95,7 +95,7 @@ impl alisa::Object for Fill {
 #[derive(alisa::Serializable)]
 pub struct FillTreeData {
     pub paths: FillPaths,
-    pub color: [f32; 4]
+    pub color: SceneObjectColor 
 }
 
 impl Default for FillTreeData {
@@ -103,7 +103,7 @@ impl Default for FillTreeData {
     fn default() -> Self {
         Self {
             paths: Default::default(),
-            color: [0.0, 0.0, 0.0, 1.0] 
+            color: Default::default()
         }
     }
 
@@ -154,4 +154,4 @@ impl alisa::TreeObj for Fill {
 
 alisa::tree_object_operations!(Fill);
 alisa::object_set_property_operation!(Fill, paths, FillPaths);
-alisa::object_set_property_operation!(Fill, color, [f32; 4]);
+alisa::object_set_property_operation!(Fill, color, SceneObjectColor);

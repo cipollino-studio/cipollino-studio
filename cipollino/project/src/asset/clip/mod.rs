@@ -1,5 +1,5 @@
 
-use crate::{asset_operations, Action, Asset, Client, Folder, LayerParent, LayerPtr, Objects, Project};
+use crate::{asset_operations, Action, Asset, Client, Color, ColorParent, Folder, LayerParent, LayerPtr, Objects, Project};
 
 mod inner;
 pub use inner::*;
@@ -50,7 +50,8 @@ pub struct ClipTreeData {
     pub background_color: [f32; 3],
     
     pub inner_ptr: alisa::Ptr<ClipInner>,
-    pub layers: alisa::ChildListTreeData<LayerPtr> 
+    pub layers: alisa::ChildListTreeData<LayerPtr>,
+    pub colors: alisa::UnorderedChildListTreeData<alisa::LoadingPtr<Color>> 
 }
 
 impl Default for ClipTreeData {
@@ -64,7 +65,8 @@ impl Default for ClipTreeData {
             height: 1080,
             background_color: [1.0; 3],
             inner_ptr: alisa::Ptr::null(),
-            layers: Default::default()
+            layers: Default::default(),
+            colors: Default::default()
         }
     }
 
@@ -82,11 +84,11 @@ impl alisa::TreeObj for Clip {
         context.obj_list().get(parent).map(|folder| &folder.clips)
     }
 
-    fn child_list_mut<'a>(parent: alisa::Ptr<Folder>, context: &'a mut alisa::Recorder<Project>) -> Option<&'a mut Self::ChildList> {
+    fn child_list_mut<'a>(parent: alisa::Ptr<Folder>, recorder: &'a mut alisa::Recorder<Project>) -> Option<&'a mut Self::ChildList> {
         if parent.is_null() {
-            return Some(&mut context.project_mut().clips);
+            return Some(&mut recorder.project_mut().clips);
         }
-        context.get_obj_mut(parent).map(|folder| &mut folder.clips)
+        recorder.get_obj_mut(parent).map(|folder| &mut folder.clips)
     }
 
     fn parent(&self) -> Self::ParentPtr {
@@ -100,6 +102,7 @@ impl alisa::TreeObj for Clip {
     fn instance(data: &Self::TreeData, ptr: alisa::Ptr<Self>, parent: alisa::Ptr<Folder>, recorder: &mut alisa::Recorder<Project>) {
         let clip_inner = ClipInner {
             layers: data.layers.instance(LayerParent::Clip(ptr), recorder),
+            colors: data.colors.instance(ColorParent::Clip(ptr), recorder),
             length: data.length,
             framerate: data.framerate,
             width: data.width,
@@ -118,7 +121,7 @@ impl alisa::TreeObj for Clip {
 
     fn destroy(&self, recorder: &mut alisa::Recorder<Project>) {
         if let Some(clip_inner) = recorder.delete_obj(self.inner) {
-            clip_inner.layers.clone().destroy(recorder);
+            clip_inner.layers.destroy(recorder);
         }
     }
 
@@ -132,6 +135,9 @@ impl alisa::TreeObj for Clip {
         let layers = clip_inner
             .map(|clip_inner| clip_inner.layers.collect_data(objects))
             .unwrap_or_default();
+        let colors = clip_inner
+            .map(|clip_inner| clip_inner.colors.collect_data(objects))
+            .unwrap_or_default();
 
         ClipTreeData {
             name: self.name.clone(),
@@ -139,6 +145,7 @@ impl alisa::TreeObj for Clip {
             framerate,
             inner_ptr: self.inner,
             layers,
+            colors,
             width,
             height, 
             background_color

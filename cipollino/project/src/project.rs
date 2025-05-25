@@ -1,10 +1,11 @@
 
-use crate::{Clip, ClipInner, ClipTreeData, CreateClip, CreateClipInner, CreateFill, CreateFolder, CreateFrame, CreateLayer, CreateLayerGroup, CreateStroke, DeleteClip, DeleteFill, DeleteFolder, DeleteFrame, DeleteLayer, DeleteLayerGroup, DeleteStroke, Fill, Folder, Frame, Layer, LayerGroup, LayerParent, LayerTreeData, RenameClip, RenameFolder, SetClipInnerBackgroundColor, SetClipInnerFramerate, SetClipInnerHeight, SetClipInnerLength, SetClipInnerWidth, SetFillColor, SetFillPaths, SetFrameTime, SetLayerGroupName, SetLayerName, SetStrokeColor, SetStrokeStroke, Stroke, TransferClip, TransferFolder, TransferLayer, TransferLayerGroup};
+use crate::{Clip, ClipInner, ClipTreeData, Color, CreateClip, CreateClipInner, CreateColor, CreateFill, CreateFolder, CreateFrame, CreateLayer, CreateLayerGroup, CreatePalette, CreatePaletteInner, CreateStroke, DeleteClip, DeleteColor, DeleteFill, DeleteFolder, DeleteFrame, DeleteLayer, DeleteLayerGroup, DeletePalette, DeleteStroke, Fill, Folder, Frame, Layer, LayerGroup, LayerParent, LayerTreeData, Palette, PaletteInner, RenameClip, RenameFolder, RenamePalette, SetClipInnerBackgroundColor, SetClipInnerFramerate, SetClipInnerHeight, SetClipInnerLength, SetClipInnerWidth, SetColorColor, SetColorName, SetFillColor, SetFillPaths, SetFrameTime, SetLayerGroupName, SetLayerName, SetStrokeColor, SetStrokeStroke, Stroke, TransferClip, TransferFolder, TransferLayer, TransferLayerGroup, TransferPalette};
 
 #[derive(alisa::Serializable, Clone)]
 pub struct Project {
     pub folders: alisa::UnorderedChildList<alisa::LoadingPtr<Folder>>,
     pub clips: alisa::UnorderedChildList<alisa::LoadingPtr<Clip>>,
+    pub palettes: alisa::UnorderedChildList<alisa::LoadingPtr<Palette>>,
 }
 
 impl Default for Project {
@@ -12,7 +13,8 @@ impl Default for Project {
     fn default() -> Self {
         Self {
             folders: Default::default(),
-            clips: Default::default()
+            clips: Default::default(),
+            palettes: Default::default()
         }
     }
 
@@ -27,7 +29,10 @@ pub struct Objects {
     pub frames: alisa::ObjList<Frame>,
     pub strokes: alisa::ObjList<Stroke>,
     pub layer_groups: alisa::ObjList<LayerGroup>,
-    pub fills: alisa::ObjList<Fill>
+    pub fills: alisa::ObjList<Fill>,
+    pub palettes: alisa::ObjList<Palette>,
+    pub palette_inners: alisa::ObjList<PaletteInner>,
+    pub colors: alisa::ObjList<Color>
 }
 
 #[derive(Clone)]
@@ -94,6 +99,9 @@ impl alisa::Project for Project {
         alisa::ObjectKind::from::<Folder>(),
         alisa::ObjectKind::from::<LayerGroup>(),
         alisa::ObjectKind::from::<Fill>(),
+        alisa::ObjectKind::from::<Palette>(),
+        alisa::ObjectKind::from::<PaletteInner>(),
+        alisa::ObjectKind::from::<Color>()
     ];
 
     const OPERATIONS: &'static [alisa::OperationKind<Self>] = &[
@@ -137,6 +145,18 @@ impl alisa::Project for Project {
         alisa::OperationKind::from::<DeleteFill>(),
         alisa::OperationKind::from::<SetFillPaths>(),
         alisa::OperationKind::from::<SetFillColor>(),
+
+        alisa::OperationKind::from::<CreatePalette>(),
+        alisa::OperationKind::from::<DeletePalette>(),
+        alisa::OperationKind::from::<RenamePalette>(),
+        alisa::OperationKind::from::<TransferPalette>(),
+
+        alisa::OperationKind::from::<CreatePaletteInner>(),
+
+        alisa::OperationKind::from::<CreateColor>(),
+        alisa::OperationKind::from::<DeleteColor>(),
+        alisa::OperationKind::from::<SetColorColor>(),
+        alisa::OperationKind::from::<SetColorName>(),
     ];
 
 }

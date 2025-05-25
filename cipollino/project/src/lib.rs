@@ -14,6 +14,9 @@ pub use frame::*;
 mod scene;
 pub use scene::*;
 
+mod color;
+pub use color::*;
+
 mod protocol;
 pub use protocol::*;
 

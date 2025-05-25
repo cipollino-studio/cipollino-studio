@@ -1,7 +1,7 @@
 
 use std::collections::HashSet;
 
-use project::{alisa::{self, TreeObj}, deep_load_clip, deep_load_folder, Action, Client, Clip, DeleteClip, DeleteFolder, Folder, Ptr, TransferClip, TransferFolder};
+use project::{alisa::{self, TreeObj}, deep_load_clip, deep_load_folder, deep_load_palette, Action, Client, Clip, DeleteClip, DeleteFolder, DeletePalette, Folder, Palette, Ptr, TransferClip, TransferFolder, TransferPalette};
 
 use crate::{EditorState, ProjectState};
 
@@ -10,7 +10,8 @@ use super::AssetUI;
 #[derive(Default, Clone)]
 pub struct AssetList {
     pub folders: HashSet<Ptr<Folder>>,
-    pub clips: HashSet<Ptr<Clip>>
+    pub clips: HashSet<Ptr<Clip>>,
+    pub palettes: HashSet<Ptr<Palette>>
 }
 
 impl AssetList {
@@ -21,6 +22,9 @@ impl AssetList {
         }
         for clip in self.clips.iter() {
             deep_load_clip(*clip, client);
+        }
+        for palette in self.palettes.iter() {
+            deep_load_palette(*palette, client);
         }
     }
 
@@ -36,6 +40,11 @@ impl AssetList {
                 return false;
             }
         }
+        for palette in self.palettes.iter() {
+            if !Palette::can_delete(*palette, &client.context(), alisa::OperationSource::Local) {
+                return false;
+            }
+        }
 
         let mut action = Action::new(editor.action_context("Delete Assets"));
         for folder in self.folders.iter() {
@@ -46,6 +55,11 @@ impl AssetList {
         for clip in self.clips.iter() {
             action.push(DeleteClip {
                 ptr: *clip,
+            });
+        }
+        for palette in self.palettes.iter() {
+            action.push(DeletePalette {
+                ptr: *palette,
             });
         }
 
@@ -65,6 +79,12 @@ impl AssetList {
         for moved_clip in self.clips {
             action.push(TransferClip {
                 ptr: moved_clip,
+                new_folder: new_parent,
+            });
+        }
+        for moved_palette in self.palettes {
+            action.push(TransferPalette {
+                ptr: moved_palette,
                 new_folder: new_parent,
             });
         }
@@ -94,6 +114,7 @@ impl AssetList {
     pub fn render_contents(&self, ui: &mut pierro::UI, client: &Client) {
         self.render_contents_of_asset::<Folder>(ui, client);
         self.render_contents_of_asset::<Clip>(ui, client);
+        self.render_contents_of_asset::<Palette>(ui, client);
     }
 
 }

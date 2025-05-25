@@ -1,5 +1,5 @@
 
-use crate::{LayerPtr, Objects, Project};
+use crate::{Color, LayerPtr, Objects, Project};
 
 use super::Clip;
 
@@ -9,6 +9,7 @@ use super::Clip;
 #[derive(alisa::Serializable, Clone)]
 pub struct ClipInner {
     pub layers: alisa::ChildList<LayerPtr>,
+    pub colors: alisa::UnorderedChildList<alisa::LoadingPtr<Color>>,
 
     pub width: u32,
     pub height: u32, 
@@ -23,6 +24,7 @@ impl Default for ClipInner {
     fn default() -> Self {
         Self {
             layers: Default::default(),
+            colors: Default::default(),
             width: 1920,
             height: 1080,
             length: 100,

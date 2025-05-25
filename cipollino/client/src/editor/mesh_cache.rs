@@ -1,6 +1,6 @@
 
 use std::collections::HashMap;
-use project::{Client, Fill, Ptr, SceneObjPtr, Stroke};
+use project::{Client, Fill, Ptr, SceneObjPtr, SceneObjectColor, Stroke};
 
 use crate::bounding_boxes;
 
@@ -9,13 +9,13 @@ use super::SceneRenderList;
 pub struct StrokeMesh {
     pub mesh: malvina::StrokeMesh,
     pub bounds: Option<elic::Rect>,
-    pub color: elic::Color
+    pub color: SceneObjectColor 
 }
 
 pub struct FillMesh {
     pub mesh: malvina::FillMesh,
     pub bounds: Option<elic::Rect>,
-    pub color: elic::Color
+    pub color: SceneObjectColor 
 }
 
 pub struct MeshCache {

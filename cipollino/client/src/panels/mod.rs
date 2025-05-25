@@ -14,6 +14,9 @@ pub use panel::*;
 mod tool_settings;
 pub use tool_settings::*;
 
+mod colors;
+pub use colors::*;
+
 #[cfg(debug_assertions)]
 mod debug;
 #[cfg(debug_assertions)]
@@ -24,6 +27,7 @@ pub const PANEL_KINDS: &'static [PanelKind] = &[
     PanelKind::of::<TimelinePanel>(),
     PanelKind::of::<ScenePanel>(),
     PanelKind::of::<ToolSettings>(),
+    PanelKind::of::<ColorsPanel>(),
 
     #[cfg(debug_assertions)]
     PanelKind::of::<DebugPanel>()
@@ -42,7 +46,10 @@ impl UserPref for DockingLayoutPref {
                 (0.8, pierro::DockingLayout::Tabs(vec![EditorPanel::new::<ScenePanel>()])),
                 (0.2, pierro::DockingLayout::Tabs(vec![EditorPanel::new::<ToolSettings>(), EditorPanel::new::<AssetsPanel>()]))
             ])),
-            (0.3, pierro::DockingLayout::Tabs(vec![EditorPanel::new::<TimelinePanel>()]))
+            (0.3, pierro::DockingLayout::Split(pierro::Axis::X, vec![
+                (0.8, pierro::DockingLayout::Tabs(vec![EditorPanel::new::<TimelinePanel>()])),
+                (0.2, pierro::DockingLayout::Tabs(vec![EditorPanel::new::<ColorsPanel>()]))
+            ]))
         ]).into_state()
     }
 

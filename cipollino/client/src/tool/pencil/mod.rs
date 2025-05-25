@@ -3,7 +3,7 @@ use project::{Action, CreateFill, CreateStroke, FillPaths, FillTreeData, StrokeD
 
 use crate::{keyboard_shortcut, AppSystems, EditorState, UserPrefs};
 
-use super::{curve_fit, Tool, ToolContext};
+use super::{curve_fit, get_active_color, Tool, ToolContext};
 
 mod prefs;
 use prefs::*;
@@ -83,13 +83,14 @@ impl PencilTool {
         let ptr = ctx.project.client.next_ptr();
         let Some(frame) = ctx.active_frame(editor, &mut action) else { return; };
         let stroke_width = ctx.systems.prefs.get::<PencilStrokeWidthPref>();
+        let color = get_active_color(&ctx.project.client, editor, &mut action);
         action.push(CreateStroke {
             ptr,
             parent: frame,
             idx: 0,
             data: StrokeTreeData {
                 stroke: StrokeData(stroke),
-                color: editor.color.into(),
+                color,
                 width: stroke_width 
             },
         });
@@ -101,13 +102,14 @@ impl PencilTool {
         let ptr = ctx.project.client.next_ptr();
         let Some(frame) = ctx.active_frame(editor, &mut action) else { return; };
         let idx = ctx.project.client.get(frame).map(|frame| frame.scene.as_slice().len()).unwrap_or(0);
+        let color = get_active_color(&ctx.project.client, editor, &mut action);
         action.push(CreateFill {
             ptr,
             parent: frame,
             idx,
             data: FillTreeData {
                 paths: FillPaths(fill),
-                color: editor.color.into(),
+                color
             } 
         });
         ctx.project.client.queue_action(action);

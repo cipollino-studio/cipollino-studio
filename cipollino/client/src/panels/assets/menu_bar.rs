@@ -1,5 +1,5 @@
 
-use project::{alisa::Action, Clip, Folder, Ptr};
+use project::{alisa::Action, Clip, Folder, Palette, Ptr};
 
 use crate::{EditorState, ProjectState};
 
@@ -29,6 +29,7 @@ impl AssetsPanel {
                     pierro::menu_bar(ui, |ui| {
                         self.asset_menu_bar_icon::<Folder>(ui, project, editor); 
                         self.clip_menu_bar_icon(ui, editor);
+                        self.asset_menu_bar_icon::<Palette>(ui, project, editor); 
                     });
                 });
             });

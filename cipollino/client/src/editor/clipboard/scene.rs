@@ -1,12 +1,12 @@
 
 use alisa::Ptr;
-use project::{Action, Client, CreateFill, CreateStroke, FillPaths, FillTreeData, SceneObjPtr, SceneObjPtrTreeData, StrokeData, StrokeTreeData};
+use project::{Action, Client, CreateFill, CreateStroke, FillPaths, FillTreeData, SceneObjPtr, SceneObjPtrTreeData, SceneObjectColor, StrokeData, StrokeTreeData};
 
 use crate::{get_active_frame, EditorState, SceneRenderList, Selection};
 
 pub struct StrokeClipboard {
     pub stroke: malvina::Stroke,
-    pub color: elic::Color,
+    pub color: SceneObjectColor,
     pub width: f32
 }
 
@@ -15,7 +15,7 @@ impl StrokeClipboard {
     fn to_tree_data(&self) -> StrokeTreeData {
         StrokeTreeData {
             stroke: StrokeData(self.stroke.clone()),
-            color: self.color.into(),
+            color: self.color,
             width: self.width,
         }
     } 
@@ -24,7 +24,7 @@ impl StrokeClipboard {
 
 pub struct FillClipboard {
     pub paths: malvina::FillPaths,
-    pub color: elic::Color
+    pub color: SceneObjectColor 
 }
 
 impl FillClipboard {
@@ -32,7 +32,7 @@ impl FillClipboard {
     fn to_tree_data(&self) -> FillTreeData {
         FillTreeData {
             paths: FillPaths(self.paths.clone()),
-            color: self.color.into()
+            color: self.color
         }
     }
 

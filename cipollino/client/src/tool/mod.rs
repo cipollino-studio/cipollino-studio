@@ -1,5 +1,6 @@
 
 mod util;
+use alisa::Children;
 pub use util::*;
 
 mod select;
@@ -14,7 +15,7 @@ pub use color_picker::*;
 mod bucket;
 pub use bucket::*;
 
-use project::{Action, Client, ClipInner, CreateFrame, Frame, FrameTreeData, Layer, Ptr, SceneObjPtr};
+use project::{Action, Client, ClipInner, ColorParent, ColorTreeData, CreateColor, CreateFrame, Frame, FrameTreeData, Layer, Ptr, SceneObjPtr, SceneObjectColor};
 use std::collections::HashSet;
 use crate::{AppSystems, EditorState, ProjectState, SceneRenderList, Shortcut};
 
@@ -67,6 +68,49 @@ pub fn get_active_frame(client: &Client, editor: &EditorState, action: &mut Acti
 
     Some(new_frame_ptr)
 }
+
+pub fn get_active_color(client: &Client, editor: &mut EditorState, action: &mut Action) -> SceneObjectColor {
+    if let Some(color) = client.get(editor.color.color.ptr()) {
+        editor.color.backup = color.color;
+        return editor.color;
+    }
+
+    let Some(clip) = client.get(editor.open_clip) else {
+        return editor.color;
+    };
+    // Make sure the clip exists
+    let Some(clip_inner) = client.get(clip.inner) else {
+        return editor.color;
+    };
+
+    for color_ptr in clip_inner.colors.iter() {
+        let Some(color) = client.get(color_ptr.ptr()) else { continue; }; 
+        let similar =
+            (color.color[0] - editor.color.backup[0]).abs() <= 1.0 / 255.0 &&
+            (color.color[1] - editor.color.backup[1]).abs() <= 1.0 / 255.0 &&
+            (color.color[2] - editor.color.backup[2]).abs() <= 1.0 / 255.0;
+        if similar {
+            editor.color = SceneObjectColor {
+                color: color_ptr,
+                backup: color.color,
+            };
+            return editor.color;
+        }
+    }
+
+    let color_ptr = client.next_ptr();
+    action.push(CreateColor {
+        ptr: color_ptr,
+        parent: ColorParent::Clip(editor.open_clip),
+        idx: (),
+        data: ColorTreeData {
+            color: editor.color.backup,
+            name: format!("Color {}", clip_inner.colors.n_children() + 1)
+        },
+    });
+    editor.color.color = color_ptr.into();
+    editor.color
+} 
 
 impl ToolContext<'_> {
 

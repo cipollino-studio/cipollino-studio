@@ -1,9 +1,9 @@
 
-use project::{Action, CreateFill, FillPaths, FillTreeData, SceneObjPtr, SetFillColor, SetStrokeColor};
+use project::{Action, CreateFill, FillPaths, FillTreeData, SceneObjPtr, SceneObjectColor, SetFillColor, SetStrokeColor};
 
 use crate::{curve_fit, keyboard_shortcut, EditorState}; 
 
-use super::{LassoState, Tool, ToolContext};
+use super::{get_active_color, LassoState, Tool, ToolContext};
 
 mod floodfill;
 
@@ -47,7 +47,8 @@ impl BucketTool {
             parent: frame,
             idx,
             data: FillTreeData {
-                color: editor.color.into(),
+                // color: editor.color,
+                color: SceneObjectColor::default(),
                 paths: FillPaths(fill),
             },
         });
@@ -67,20 +68,23 @@ impl Tool for BucketTool {
     fn mouse_clicked(&mut self, editor: &mut EditorState, ctx: &mut ToolContext, pos: elic::Vec2) {
         if let Some((x, y)) = ctx.picking_mouse_pos {
             if let Some(obj) = ctx.pick(x, y) {
+                let mut action = Action::new(editor.action_context("Set color"));
+                let color = get_active_color(&ctx.project.client, editor, &mut action);
                 match obj {
                     SceneObjPtr::Stroke(ptr) => {
-                        ctx.project.client.queue_action(Action::single(editor.action_context("Set stroke color"), SetStrokeColor {
+                        action.push(SetStrokeColor {
                             ptr,
-                            color_value: editor.color.into(),
-                        }));
+                            color_value: color
+                        });
                     },
                     SceneObjPtr::Fill(ptr) => {
-                        ctx.project.client.queue_action(Action::single(editor.action_context("Set fill color"), SetFillColor {
+                        action.push(SetFillColor {
                             ptr,
-                            color_value: editor.color.into(),
-                        }));
+                            color_value: color
+                        });
                     },
                 }
+                ctx.project.client.queue_action(action);
                 return;
             }
         }
@@ -102,18 +106,23 @@ impl Tool for BucketTool {
         if let Some(mut lasso) = self.lasso.take() {
             lasso.add_point(pos);
             let mut action = Action::new(editor.action_context("Set Color"));
-            for scene_obj in lasso.find_inside(&ctx.project.client, ctx.modifiable_objs) {
+            let lasso_objects = lasso.find_inside(&ctx.project.client, ctx.modifiable_objs);
+            if lasso_objects.is_empty() {
+                return;
+            }
+            let color = get_active_color(&ctx.project.client, editor, &mut action);
+            for scene_obj in lasso_objects {
                 match scene_obj {
                     SceneObjPtr::Stroke(stroke) => {
                         action.push(SetStrokeColor {
                             ptr: stroke,
-                            color_value: editor.color.into(),
+                            color_value: color
                         });
                     },
                     SceneObjPtr::Fill(fill) => {
                         action.push(SetFillColor {
                             ptr: fill,
-                            color_value: editor.color.into(),
+                            color_value: color
                         });
                     },
                 }

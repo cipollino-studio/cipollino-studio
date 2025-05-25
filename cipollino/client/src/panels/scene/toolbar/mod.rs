@@ -1,5 +1,8 @@
 
-use crate::{color_picker, AppSystems, BucketTool, ColorPicker, EditorState, PencilTool, SelectTool, Tool};
+use alisa::Ptr;
+use project::{Client, SceneObjectColor};
+
+use crate::{color_picker_with_icon, get_color_value, AppSystems, BucketTool, ColorPicker, EditorState, PencilTool, SelectTool, Tool};
 
 use super::ScenePanel;
 use crate::Shortcut;
@@ -45,7 +48,28 @@ impl ScenePanel {
 
     }
 
-    pub(super) fn toolbar(&mut self, ui: &mut pierro::UI, editor: &mut EditorState, systems: &mut AppSystems) {
+    fn color_button(&mut self, ui: &mut pierro::UI, client: &Client, editor: &mut EditorState) {
+        let mut color = get_color_value(&editor.color, client);
+        let original_color = color;
+        editor.color.backup = color.into();
+
+        let icon = if client.get(editor.color.color.ptr()).is_some() {
+            Some(pierro::icons::PALETTE)
+        } else {
+            None
+        };
+
+        color_picker_with_icon(ui, &mut color, icon);
+
+        if color != original_color {
+            editor.color = SceneObjectColor {
+                color: Ptr::null().into(),
+                backup: color.into(),
+            };
+        }
+    }
+
+    pub(super) fn toolbar(&mut self, ui: &mut pierro::UI, client: &Client, editor: &mut EditorState, systems: &mut AppSystems) {
         let bg = ui.style::<pierro::theme::BgLight>();
         let margin = pierro::Margin::same(Self::GAP);
         ui.with_style::<pierro::theme::WidgetMargin, _, _>(pierro::Margin::same(3.0), |ui| {
@@ -61,7 +85,8 @@ impl ScenePanel {
                             self.tool_button::<PencilTool>(ui, editor, systems);
                             self.tool_button::<BucketTool>(ui, editor, systems);
                             self.tool_button::<ColorPicker>(ui, editor, systems);
-                            color_picker(ui, &mut editor.color);
+
+                            self.color_button(ui, client, editor); 
 
                             // Spacer
                             ui.node(pierro::UINodeParams::new(pierro::Size::px(0.0), pierro::Size::px(0.0).with_grow(1.0)));

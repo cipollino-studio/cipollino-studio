@@ -186,7 +186,7 @@ impl ScenePanel {
                 Self::render_onion_skin(rndr, &project.client, &editor, tool_context.systems, clip);
             }
             render_scene(rndr, &project.client, editor, clip, clip.frame_idx(editor.time), true);
-            Self::render_selection(rndr, &editor, render_list);
+            Self::render_selection(rndr, &project.client, &editor, render_list);
 
             tool.render_overlay(&mut tool_context, rndr, accent_color);
 

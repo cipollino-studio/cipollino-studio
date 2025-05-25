@@ -1,5 +1,5 @@
 
-use crate::{Frame, Objects, Project};
+use crate::{Frame, Objects, Project, SceneObjectColor};
 
 use super::SceneObjPtr;
 
@@ -66,7 +66,7 @@ impl alisa::Serializable for StrokeData {
 pub struct Stroke {
     pub frame: alisa::Ptr<Frame>,
     pub stroke: StrokeData,
-    pub color: [f32; 4],
+    pub color: SceneObjectColor,
     pub width: f32
 } 
 
@@ -76,7 +76,7 @@ impl Default for Stroke {
         Self {
             frame: alisa::Ptr::null(),
             stroke: StrokeData(malvina::Stroke::empty()),
-            color: [0.0, 0.0, 0.0, 1.0],
+            color: Default::default(),
             width: 5.0,
         }
     }
@@ -99,7 +99,7 @@ impl alisa::Object for Stroke {
 #[derive(alisa::Serializable)]
 pub struct StrokeTreeData {
     pub stroke: StrokeData,
-    pub color: [f32; 4],
+    pub color: SceneObjectColor,
     pub width: f32
 }
 
@@ -108,7 +108,7 @@ impl Default for StrokeTreeData {
     fn default() -> Self {
         Self {
             stroke: StrokeData(malvina::Stroke::empty()),
-            color: [0.0, 0.0, 0.0, 1.0],
+            color: Default::default(), 
             width: 5.0
         }
     }
@@ -162,4 +162,4 @@ impl alisa::TreeObj for Stroke {
 
 alisa::tree_object_operations!(Stroke);
 alisa::object_set_property_operation!(Stroke, stroke, StrokeData);
-alisa::object_set_property_operation!(Stroke, color, [f32; 4]);
+alisa::object_set_property_operation!(Stroke, color, SceneObjectColor);

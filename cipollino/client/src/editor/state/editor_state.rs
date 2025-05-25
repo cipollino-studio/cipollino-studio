@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use std::{cell::RefCell, collections::HashMap};
 use std::rc::Rc;
 use alisa::Object;
-use project::{Client, ClientId, Clip, ClipInner, Layer, LayerGroup, PresenceData, Project, Ptr, SceneObjPtr};
+use project::{Client, ClientId, Clip, ClipInner, Layer, LayerGroup, PresenceData, Project, Ptr, SceneObjPtr, SceneObjectColor};
 
 use crate::{Clipboard, MeshCache, Presence, SelectTool, Selectable, ToolDyn, Window, WindowInstance};
 
@@ -39,7 +39,7 @@ pub struct EditorState {
 
     pub preview: ScenePreview,
 
-    pub color: pierro::Color,
+    pub color: SceneObjectColor,
 
     windows_to_open: Vec<WindowInstance>,
 
@@ -85,7 +85,7 @@ impl EditorState {
 
             preview: ScenePreview::new(),
 
-            color: pierro::Color::BLACK,
+            color: SceneObjectColor::default(), 
 
             windows_to_open: Vec::new(),
 

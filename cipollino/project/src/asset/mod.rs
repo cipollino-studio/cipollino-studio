@@ -12,6 +12,9 @@ pub use folder::*;
 mod clip;
 pub use clip::*;
 
+mod palette;
+pub use palette::*;
+
 pub trait Asset: alisa::TreeObj<ParentPtr = alisa::Ptr<Folder>, Project = Project, ChildList = alisa::UnorderedChildList<alisa::LoadingPtr<Self>>> {
 
     const NAME: &'static str;
