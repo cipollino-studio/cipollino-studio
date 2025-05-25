@@ -1,5 +1,5 @@
 
-use crate::{theme, Response, UI};
+use crate::{theme, Id, Response, UI};
 use crate::{LayoutInfo, PaintText, Rect};
 use cosmic_text::{Edit, FontSystem};
 
@@ -19,23 +19,23 @@ pub(super) fn font_system<'a>(ui: &'a mut UI) -> &'a mut FontSystem {
     ui.font_system(ui.text_font()).unwrap()
 }
 
-pub fn text_edit_begin_editing(ui: &mut UI, text_edit: &Response, text: &mut String) {
+pub fn text_edit_begin_editing(ui: &mut UI, text_edit: Id, text: &mut String) {
     let font_size = ui.style::<theme::LabelFontSize>();
 
-    text_edit.request_focus(ui);
+    ui.memory().request_focus(text_edit);
 
     let mut buffer = cosmic_text::Buffer::new(font_system(ui), cosmic_text::Metrics { font_size, line_height: font_size });
     buffer.set_text(font_system(ui), text, cosmic_text::Attrs::new().family(cosmic_text::Family::SansSerif), cosmic_text::Shaping::Advanced);
     let mut editor = cosmic_text::Editor::new(buffer);
     editor.action(font_system(ui), cosmic_text::Action::Motion(cosmic_text::Motion::End));
-    ui.memory().insert(text_edit.id, TextEditMemory {
+    ui.memory().insert(text_edit, TextEditMemory {
         editor,
         scroll: 0.0
     });
 }
 
-pub fn editing_text(ui: &mut UI, text_edit: &Response) -> bool {
-    ui.memory().has::<TextEditMemory>(text_edit.id)
+pub fn editing_text(ui: &mut UI, text_edit: Id) -> bool {
+    ui.memory().has::<TextEditMemory>(text_edit)
 }
 
 pub fn text_edit_interaction(ui: &mut UI, text_edit: Response, text: &mut String) -> TextEditResponse {
@@ -81,7 +81,7 @@ pub fn text_edit_interaction(ui: &mut UI, text_edit: Response, text: &mut String
         });
     }
 
-    if editing_text(ui, &text_edit) && text_edit.mouse_pressed_outside(ui) {
+    if editing_text(ui, text_edit.id) && text_edit.mouse_pressed_outside(ui) {
         done_editing = true;
     }
     if done_editing {

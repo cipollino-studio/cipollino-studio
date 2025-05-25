@@ -81,3 +81,6 @@ pub use key_value::*;
 
 mod error;
 pub use error::*;
+
+mod editable_label;
+pub use editable_label::*;

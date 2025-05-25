@@ -34,8 +34,8 @@ pub fn text_edit_base(ui: &mut UI, size: f32) -> Response {
 pub fn text_edit(ui: &mut UI, text: &mut String) -> TextEditResponse {
     let text_edit = text_edit_base(ui, 200.0);
 
-    if text_edit.mouse_pressed() && !editing_text(ui, &text_edit) {
-        text_edit_begin_editing(ui, &text_edit, text);
+    if text_edit.mouse_pressed() && !editing_text(ui, text_edit.id) {
+        text_edit_begin_editing(ui, text_edit.id, text);
     }
 
     if text_edit.hovered && text_edit.contains_mouse(ui) {

@@ -58,7 +58,7 @@ impl<'value, N: Numeric> DragValue<'value, N> {
         let mut done_editing = false;
 
         if drag_value.mouse_clicked() && !drag_value.is_focused(ui) {
-            text_edit_begin_editing(ui, &drag_value, &mut self.val.to_str());
+            text_edit_begin_editing(ui, drag_value.id, &mut self.val.to_str());
         }
 
         let drag_delta = drag_value.drag_delta(ui);
@@ -67,14 +67,14 @@ impl<'value, N: Numeric> DragValue<'value, N> {
             let memory = ui.memory().get::<DragValueMemory>(drag_value.id);
             memory.drag = 0.0;
         }
-        if !editing_text(ui, &drag_value) {
+        if !editing_text(ui, drag_value.id) {
             if drag_value.drag_stopped() {
                 drag_value.release_focus(ui);
                 done_editing = true;
             }
         }
 
-        if !editing_text(ui, &drag_value) {
+        if !editing_text(ui, drag_value.id) {
             let memory = ui.memory().get::<DragValueMemory>(drag_value.id);
             memory.drag += drag_delta.x;
             while memory.drag > self.pixels_per_step {
@@ -96,7 +96,7 @@ impl<'value, N: Numeric> DragValue<'value, N> {
         }
 
         if drag_value.hovered {
-            let editing_text = editing_text(ui, &drag_value);
+            let editing_text = editing_text(ui, drag_value.id);
             ui.set_cursor(if editing_text {
                 CursorIcon::Text
             } else {
@@ -122,7 +122,7 @@ impl<'value, N: Numeric> DragValue<'value, N> {
         DragValueResponse {
             drag_value,
             done_editing,
-            editing: editing_text(ui, &drag_value) || drag_value.dragging()
+            editing: editing_text(ui, drag_value.id) || drag_value.dragging()
         }
 
     }
