@@ -115,7 +115,7 @@ impl SceneClipboard {
         let mut action = Action::new(editor.action_context("Paste Strokes"));
         let frame = get_active_frame(client, editor, &mut action)?;
         let mut selection = Selection::new();
-        for obj in &self.objects {
+        for obj in self.objects.iter() {
             match obj {
                 SceneClipboardObject::Stroke(stroke) => {
                     let ptr = client.next_ptr();

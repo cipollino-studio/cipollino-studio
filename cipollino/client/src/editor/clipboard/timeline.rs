@@ -80,7 +80,7 @@ fn paste_frame(client: &Client, action: &mut Action, layer_ptr: Ptr<Layer>, laye
         data: FrameTreeData {
             time,
             scene: alisa::ChildListTreeData {
-                children: frame_data.objects.iter().map(|obj| obj.tree_data(client.next_key())).collect(),
+                children: frame_data.objects.iter().rev().map(|obj| obj.tree_data(client.next_key())).collect(),
             },
         },
     });
