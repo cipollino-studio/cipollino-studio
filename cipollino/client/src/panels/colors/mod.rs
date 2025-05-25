@@ -1,10 +1,10 @@
 
 use alisa::Children;
-use project::{Action, AddPaletteToClip, Client, ClipInner, Color, ColorParent, ColorTreeData, CreateColor, DeleteColor, Ptr, RemovePaletteFromClip, SceneObjectColor, SetColorColor, SetColorName};
+use project::{Action, Client, ClipInner, Color, ColorParent, ColorTreeData, CreateColor, DeleteColor, Ptr, RemovePaletteFromClip, SceneObjectColor, SetColorColor, SetColorName};
 
 use crate::{color_picker_context_menu, get_color_value, EditorState};
 
-use super::{AssetList, Panel, PanelContext};
+use super::{Panel, PanelContext};
  
 #[derive(Default)]
 pub struct ColorsPanel {
