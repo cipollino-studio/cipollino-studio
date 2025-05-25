@@ -1,5 +1,5 @@
 
-use crate::{Clip, ClipInner, ClipTreeData, Color, CreateClip, CreateClipInner, CreateColor, CreateFill, CreateFolder, CreateFrame, CreateLayer, CreateLayerGroup, CreatePalette, CreatePaletteInner, CreateStroke, DeleteClip, DeleteColor, DeleteFill, DeleteFolder, DeleteFrame, DeleteLayer, DeleteLayerGroup, DeletePalette, DeleteStroke, Fill, Folder, Frame, Layer, LayerGroup, LayerParent, LayerTreeData, Palette, PaletteInner, RenameClip, RenameFolder, RenamePalette, SetClipInnerBackgroundColor, SetClipInnerFramerate, SetClipInnerHeight, SetClipInnerLength, SetClipInnerWidth, SetColorColor, SetColorName, SetFillColor, SetFillPaths, SetFrameTime, SetLayerGroupName, SetLayerName, SetStrokeColor, SetStrokeStroke, Stroke, TransferClip, TransferFolder, TransferLayer, TransferLayerGroup, TransferPalette};
+use crate::{AddPaletteToClip, Clip, ClipInner, ClipTreeData, Color, CreateClip, CreateClipInner, CreateColor, CreateFill, CreateFolder, CreateFrame, CreateLayer, CreateLayerGroup, CreatePalette, CreatePaletteInner, CreateStroke, DeleteClip, DeleteColor, DeleteFill, DeleteFolder, DeleteFrame, DeleteLayer, DeleteLayerGroup, DeletePalette, DeleteStroke, Fill, Folder, Frame, Layer, LayerGroup, LayerParent, LayerTreeData, Palette, PaletteInner, RemovePaletteFromClip, RenameClip, RenameFolder, RenamePalette, SetClipInnerBackgroundColor, SetClipInnerFramerate, SetClipInnerHeight, SetClipInnerLength, SetClipInnerWidth, SetColorColor, SetColorName, SetFillColor, SetFillPaths, SetFrameTime, SetLayerGroupName, SetLayerName, SetStrokeColor, SetStrokeStroke, Stroke, TransferClip, TransferFolder, TransferLayer, TransferLayerGroup, TransferPalette};
 
 #[derive(alisa::Serializable, Clone)]
 pub struct Project {
@@ -121,6 +121,8 @@ impl alisa::Project for Project {
         alisa::OperationKind::from::<SetClipInnerLength>(),
         alisa::OperationKind::from::<SetClipInnerFramerate>(),
         alisa::OperationKind::from::<SetClipInnerBackgroundColor>(),
+        alisa::OperationKind::from::<AddPaletteToClip>(),
+        alisa::OperationKind::from::<RemovePaletteFromClip>(),
         
         alisa::OperationKind::from::<CreateLayer>(),
         alisa::OperationKind::from::<DeleteLayer>(),

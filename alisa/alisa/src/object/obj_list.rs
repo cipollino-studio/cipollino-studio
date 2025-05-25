@@ -145,6 +145,9 @@ impl<Obj: Object> ObjList<Obj> {
     }
 
     pub fn get_ref(&self, ptr: Ptr<Obj>) -> ObjRef<Obj> {
+        if ptr.is_null() {
+            return ObjRef::None;
+        }
         match self.objs.get(&ptr) {
             Some(ObjState::Loading) => ObjRef::Loading,
             Some(ObjState::Loaded(obj)) => ObjRef::Loaded(obj),

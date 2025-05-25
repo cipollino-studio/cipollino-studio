@@ -57,7 +57,7 @@ impl AssetUI for Clip {
         }
     }
 
-    fn label_ui(ui: &mut pierro::UI, ptr: Ptr<Self>, state: &mut EditorState) {
+    fn label_ui(ui: &mut pierro::UI, ptr: Ptr<Self>, _project: &ProjectState, state: &mut EditorState) {
         pierro::h_spacing(ui, 5.0);
         for (client_id, presence) in state.other_clients.iter() {
             if presence.open_clip == ptr {

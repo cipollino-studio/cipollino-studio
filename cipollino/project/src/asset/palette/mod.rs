@@ -90,6 +90,7 @@ impl alisa::TreeObj for Palette {
 
     fn instance(data: &Self::TreeData, ptr: alisa::Ptr<Self>, parent: Self::ParentPtr, recorder: &mut alisa::Recorder<Self::Project>) {
         let palette_inner = PaletteInner {
+            palette: ptr,
             colors: data.colors.instance(ColorParent::Palette(ptr), recorder)
         };
         recorder.add_obj(data.inner_ptr, palette_inner);

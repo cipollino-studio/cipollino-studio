@@ -4,6 +4,8 @@ use crate::{asset_operations, Action, Asset, Client, Color, ColorParent, Folder,
 mod inner;
 pub use inner::*;
 
+use super::PaletteInner;
+
 #[derive(alisa::Serializable, Clone)]
 pub struct Clip {
     pub folder: alisa::Ptr<Folder>,
@@ -48,10 +50,11 @@ pub struct ClipTreeData {
     pub width: u32,
     pub height: u32,
     pub background_color: [f32; 3],
+    pub palettes: Vec<alisa::LoadingPtr<PaletteInner>>,
     
     pub inner_ptr: alisa::Ptr<ClipInner>,
     pub layers: alisa::ChildListTreeData<LayerPtr>,
-    pub colors: alisa::UnorderedChildListTreeData<alisa::LoadingPtr<Color>> 
+    pub colors: alisa::UnorderedChildListTreeData<alisa::LoadingPtr<Color>>
 }
 
 impl Default for ClipTreeData {
@@ -64,6 +67,7 @@ impl Default for ClipTreeData {
             width: 1920,
             height: 1080,
             background_color: [1.0; 3],
+            palettes: Vec::new(),
             inner_ptr: alisa::Ptr::null(),
             layers: Default::default(),
             colors: Default::default()
@@ -107,7 +111,8 @@ impl alisa::TreeObj for Clip {
             framerate: data.framerate,
             width: data.width,
             height: data.height,
-            background_color: data.background_color
+            background_color: data.background_color,
+            palettes: data.palettes.clone()
         };
         recorder.add_obj(data.inner_ptr, clip_inner);
 
@@ -132,6 +137,7 @@ impl alisa::TreeObj for Clip {
         let width = clip_inner.map(|inner| inner.width).unwrap_or(1920);
         let height = clip_inner.map(|inner| inner.width).unwrap_or(1080);
         let background_color = clip_inner.map(|inner| inner.background_color).unwrap_or([1.0; 3]);
+        let palettes = clip_inner.map(|inner| inner.palettes.clone()).unwrap_or(Vec::new());
         let layers = clip_inner
             .map(|clip_inner| clip_inner.layers.collect_data(objects))
             .unwrap_or_default();
@@ -148,7 +154,8 @@ impl alisa::TreeObj for Clip {
             colors,
             width,
             height, 
-            background_color
+            background_color,
+            palettes
         }
     }
 

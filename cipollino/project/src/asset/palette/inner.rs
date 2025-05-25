@@ -1,3 +1,4 @@
+
 use crate::{Color, Objects, Project};
 
 use super::Palette;
@@ -5,6 +6,7 @@ use super::Palette;
 
 #[derive(alisa::Serializable, Clone)]
 pub struct PaletteInner {
+    pub palette: alisa::Ptr<Palette>,
     pub colors: alisa::UnorderedChildList<alisa::LoadingPtr<Color>>
 }
 
@@ -12,6 +14,7 @@ impl Default for PaletteInner {
 
     fn default() -> Self {
         Self {
+            palette: Default::default(),
             colors: Default::default()
         }
     }
@@ -47,11 +50,14 @@ impl alisa::Operation for CreatePaletteInner {
             return false;
         };
         let old_inner = palette.inner;
-        if recorder.get_obj(old_inner).is_some() {
+        if !old_inner.is_null() && recorder.get_obj(old_inner).is_some() {
             return false;
         }
 
-        recorder.add_obj(self.inner, PaletteInner::default());
+        recorder.add_obj(self.inner, PaletteInner {
+            palette: self.palette,
+            colors: Default::default(),
+        });
         let Some(palette) = recorder.get_obj_mut(self.palette) else {
             return false;
         };

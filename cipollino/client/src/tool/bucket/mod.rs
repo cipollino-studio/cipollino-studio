@@ -1,5 +1,5 @@
 
-use project::{Action, CreateFill, FillPaths, FillTreeData, SceneObjPtr, SceneObjectColor, SetFillColor, SetStrokeColor};
+use project::{Action, Client, CreateFill, FillPaths, FillTreeData, SceneObjPtr, SetFillColor, SetStrokeColor};
 
 use crate::{curve_fit, keyboard_shortcut, EditorState}; 
 
@@ -37,18 +37,18 @@ fn calc_path(pts: &Vec<elic::Vec2>, error: f32) -> elic::BezierPath<elic::Vec2> 
 
 impl BucketTool {
 
-    fn create_fill(editor: &mut EditorState, ctx: &mut ToolContext, fill: malvina::FillPaths) {
+    fn create_fill(client: &Client, editor: &mut EditorState, ctx: &mut ToolContext, fill: malvina::FillPaths) {
         let mut action = Action::new(editor.action_context("New Fill"));
         let ptr = ctx.project.client.next_ptr();
         let Some(frame) = ctx.active_frame(editor, &mut action) else { return; };
         let idx = ctx.project.client.get(frame).map(|frame| frame.scene.as_slice().len()).unwrap_or(0);
+        let color = get_active_color(client, editor, &mut action);
         action.push(CreateFill {
             ptr,
             parent: frame,
             idx,
             data: FillTreeData {
-                // color: editor.color,
-                color: SceneObjectColor::default(),
+                color,
                 paths: FillPaths(fill),
             },
         });

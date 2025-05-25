@@ -35,7 +35,7 @@ pub(super) fn floodfill(editor: &mut EditorState, ctx: &mut ToolContext, click_p
 
     let paths = calc_paths(hits);
 
-    BucketTool::create_fill(editor, ctx, malvina::FillPaths { paths });
+    BucketTool::create_fill(&ctx.project.client, editor, ctx, malvina::FillPaths { paths });
 }
 
 pub(super) fn overlay_collision_segments(ctx: &mut ToolContext, rndr: &mut malvina::LayerRenderer) {

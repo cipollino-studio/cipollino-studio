@@ -27,7 +27,7 @@ pub trait AssetUI: Asset {
 
     }
 
-    fn label_ui(_ui: &mut pierro::UI, _ptr: Ptr<Self>, _state: &mut EditorState) {
+    fn label_ui(_ui: &mut pierro::UI, _ptr: Ptr<Self>, _project: &ProjectState, _state: &mut EditorState) {
 
     }
 

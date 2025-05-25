@@ -1,10 +1,10 @@
 
 use alisa::Children;
-use project::{Action, Client, Color, ColorParent, ColorTreeData, CreateColor, DeleteColor, Ptr, SceneObjectColor, SetColorColor, SetColorName};
+use project::{Action, AddPaletteToClip, Client, ClipInner, Color, ColorParent, ColorTreeData, CreateColor, DeleteColor, Ptr, RemovePaletteFromClip, SceneObjectColor, SetColorColor, SetColorName};
 
 use crate::{color_picker_context_menu, get_color_value, EditorState};
 
-use super::{Panel, PanelContext};
+use super::{AssetList, Panel, PanelContext};
  
 #[derive(Default)]
 pub struct ColorsPanel {
@@ -91,7 +91,7 @@ impl ColorsPanel {
         });
     }
 
-    fn render_color_list(ui: &mut pierro::UI, client: &Client, editor: &mut EditorState, color_list: &alisa::UnorderedChildList<alisa::LoadingPtr<Color>>, label: &str, color_parent: ColorParent) {
+    fn render_color_list(ui: &mut pierro::UI, client: &Client, editor: &mut EditorState, color_list: &alisa::UnorderedChildList<alisa::LoadingPtr<Color>>, label: &str, color_parent: ColorParent, clip: Ptr<ClipInner>) {
         let mut colors = Vec::new();
         for color_ptr in color_list.iter() {
             let Some(color) = client.get(color_ptr.ptr()) else {
@@ -151,6 +151,19 @@ impl ColorsPanel {
             *ui.memory().get::<bool>(header.id) = !closed;
         }
 
+        if let ColorParent::Palette(palette) = color_parent {
+            if let Some(palette) = client.get(palette) {
+                pierro::context_menu(ui, &header, |ui| {
+                    if pierro::menu_button(ui, "Remove").mouse_clicked() {
+                        client.queue_action(Action::single(editor.action_context("Remove Palette From Clip"), RemovePaletteFromClip {
+                            clip,
+                            palette: palette.inner,
+                        }));
+                    }
+                });
+            }
+        } 
+
         // Colors
         if !closed {
             pierro::v_spacing(ui, 2.0);
@@ -187,8 +200,21 @@ impl Panel for ColorsPanel {
             return;
         };
 
+        let mut palettes = Vec::new();
+        for palette_ptr in &clip_inner.palettes {
+            let Some(palette) = project.client.get(palette_ptr.ptr()) else { continue; };
+            let Some(palette_asset) = project.client.get(palette.palette) else { continue; };
+            palettes.push((palette_asset.name.as_str(), palette, palette.palette));
+        }
+        palettes.sort_by_key(|(name, _, _)| *name);
+
         pierro::scroll_area(ui, |ui| {
-            Self::render_color_list(ui, &context.project.client, editor, &clip_inner.colors, "Clip Colors", ColorParent::Clip(editor.open_clip));
+            Self::render_color_list(ui, &context.project.client, editor, &clip_inner.colors, "Clip Colors", ColorParent::Clip(editor.open_clip), clip.inner);
+            for (name, palette, palette_ptr) in palettes {
+                Self::render_color_list(ui, &context.project.client, editor, &palette.colors, name, ColorParent::Palette(palette_ptr), clip.inner);
+            }
         });
+        
     }
+
 }
