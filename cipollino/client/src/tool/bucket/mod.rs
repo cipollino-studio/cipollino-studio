@@ -68,6 +68,9 @@ impl Tool for BucketTool {
     fn mouse_clicked(&mut self, editor: &mut EditorState, ctx: &mut ToolContext, pos: elic::Vec2) {
         if let Some((x, y)) = ctx.picking_mouse_pos {
             if let Some(obj) = ctx.pick(x, y) {
+                if !ctx.modifiable_objs.contains(&obj) {
+                    return;
+                }
                 let mut action = Action::new(editor.action_context("Set color"));
                 let color = get_active_color(&ctx.project.client, editor, &mut action);
                 match obj {
@@ -112,6 +115,9 @@ impl Tool for BucketTool {
             }
             let color = get_active_color(&ctx.project.client, editor, &mut action);
             for scene_obj in lasso_objects {
+                if !ctx.modifiable_objs.contains(&scene_obj) {
+                    continue;
+                }
                 match scene_obj {
                     SceneObjPtr::Stroke(stroke) => {
                         action.push(SetStrokeColor {

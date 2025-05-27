@@ -9,6 +9,9 @@ pub use select::*;
 mod pencil;
 pub use pencil::*;
 
+mod eraser;
+pub use eraser::*;
+
 mod color_picker;
 pub use color_picker::*;
 

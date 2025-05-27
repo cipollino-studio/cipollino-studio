@@ -2,7 +2,7 @@
 use alisa::Ptr;
 use project::{Client, SceneObjectColor};
 
-use crate::{color_picker_with_icon, get_color_value, AppSystems, BucketTool, ColorPicker, EditorState, PencilTool, SelectTool, Tool};
+use crate::{color_picker_with_icon, get_color_value, AppSystems, BucketTool, ColorPicker, EditorState, EraserTool, PencilTool, SelectTool, Tool};
 
 use super::ScenePanel;
 use crate::Shortcut;
@@ -83,6 +83,7 @@ impl ScenePanel {
                         |ui| {
                             self.tool_button::<SelectTool>(ui, editor, systems);
                             self.tool_button::<PencilTool>(ui, editor, systems);
+                            self.tool_button::<EraserTool>(ui, editor, systems);
                             self.tool_button::<BucketTool>(ui, editor, systems);
                             self.tool_button::<ColorPicker>(ui, editor, systems);
 

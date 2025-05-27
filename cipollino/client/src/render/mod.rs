@@ -14,8 +14,11 @@ fn render_fill(rndr: &mut malvina::LayerRenderer, client: &Client, editor: &Edit
     }
 }
 
-fn render_frame(rndr: &mut malvina::LayerRenderer, client: &Client, editor: &EditorState, frame: &Frame) {
+fn render_frame(rndr: &mut malvina::LayerRenderer, client: &Client, editor: &EditorState, frame: &Frame, editor_view: bool) {
     for scene_child in frame.scene.iter().rev() {
+        if editor_view && editor.preview.hide.contains(&scene_child) {
+            continue;
+        }
         match scene_child {
             SceneObjPtr::Stroke(stroke_ptr) => {
                 render_stroke(rndr, client, editor, stroke_ptr);
@@ -40,7 +43,7 @@ fn render_layer(rndr: &mut malvina::LayerRenderer, client: &Client, editor: &Edi
 
     if let Some(frame_ptr) = layer.frame_at(client, time) {
         if let Some(frame) = client.get(frame_ptr) {
-            render_frame(rndr, client, editor, frame);
+            render_frame(rndr, client, editor, frame, editor_view);
         }
     } 
 

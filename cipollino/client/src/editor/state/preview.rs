@@ -1,4 +1,9 @@
 
+use std::collections::HashSet;
+
+use project::SceneObjPtr;
+
+
 /// The state of the scene edit preview.
 /// When drawing/editing the scene, we only queue an operation in the project client
 /// when the user is done with their modification(eg they finished drawing a line).
@@ -18,6 +23,9 @@ pub struct ScenePreview {
     /// Transform the selected objects in the scene with some matrix
     pub selection_transform: malvina::Mat4,
 
+    /// Hide some objects in the scene
+    pub hide: HashSet<SceneObjPtr>,
+
     /// By default, previews should dissapear unless they are explicitly requested.
     /// At the end of the frame, if this flag is false, all previews will be removed.
     pub keep_preview: bool
@@ -30,6 +38,7 @@ impl ScenePreview {
             selection_transform: malvina::Mat4::IDENTITY,
             stroke_preview: None,
             fill_preview: None,
+            hide: HashSet::new(),
             keep_preview: false,
         }
     }
@@ -38,6 +47,7 @@ impl ScenePreview {
         if !self.keep_preview {
             self.stroke_preview = None;
             self.fill_preview = None;
+            self.hide.clear();
             self.selection_transform = elic::Mat4::IDENTITY;
         }
         self.keep_preview = false;
