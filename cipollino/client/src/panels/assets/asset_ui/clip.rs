@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use alisa::Ptr;
-use project::{Action, Clip, ClipTreeData, CreateClip, Folder};
+use project::{Action, Client, Clip, ClipTreeData, CreateClip, Folder};
 
 use crate::{presence_color, presence_icon, AssetList, ClipProperties, ClipPropertiesDialog, EditorState, ProjectState};
 
@@ -11,11 +11,14 @@ use super::AssetUI;
 impl AssetUI for Clip {
     const ICON: &'static str = pierro::icons::FILM_STRIP;
 
-    fn create(ptr: Ptr<Self>, parent: Ptr<Folder>, action: &mut Action) {
+    fn create(client: &Client, ptr: Ptr<Self>, parent: Ptr<Folder>, action: &mut Action) {
         action.push(CreateClip {
             ptr,
             parent,
-            data: ClipTreeData::default(),
+            data: ClipTreeData {
+                inner_ptr: client.next_ptr(),
+                ..Default::default()
+            },
         });
     }
 

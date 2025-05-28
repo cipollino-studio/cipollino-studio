@@ -10,7 +10,7 @@ impl AssetsPanel {
     fn asset_menu_bar_icon<A: AssetUI>(&self, ui: &mut pierro::UI, project: &ProjectState, editor: &EditorState) {
         if pierro::icon_button(ui, A::ICON).mouse_clicked() {
             let mut action = Action::new(editor.action_context(format!("Create {}", A::NAME)));
-            A::create(project.client.next_ptr(), Ptr::null(), &mut action); 
+            A::create(&project.client, project.client.next_ptr(), Ptr::null(), &mut action); 
             project.client.queue_action(action);
         }
     }

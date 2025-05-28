@@ -1,7 +1,8 @@
+
 use std::collections::HashSet;
 
 use alisa::Ptr;
-use project::{Action, AddPaletteToClip, CreatePalette, CreatePaletteInner, Folder, Palette, PaletteTreeData};
+use project::{Action, AddPaletteToClip, Client, CreatePalette, CreatePaletteInner, Folder, Palette, PaletteTreeData};
 
 use crate::{AssetList, EditorState, ProjectState};
 
@@ -11,11 +12,14 @@ use super::AssetUI;
 impl AssetUI for Palette {
     const ICON: &'static str = pierro::icons::PALETTE;
 
-    fn create(ptr: Ptr<Self>, parent: Ptr<Folder>, action: &mut Action) {
+    fn create(client: &Client, ptr: Ptr<Self>, parent: Ptr<Folder>, action: &mut Action) {
         action.push(CreatePalette {
             ptr,
             parent,
-            data: PaletteTreeData::default(),
+            data: PaletteTreeData {
+                inner_ptr: client.next_ptr(),
+                ..Default::default()
+            },
         });
     }
 
