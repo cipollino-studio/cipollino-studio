@@ -59,20 +59,17 @@ pub fn menu_bar_item<S: Into<String>, F: FnOnce(&mut UI)>(ui: &mut UI, label: S,
      
 }
 
-fn menu_button_common<S: Into<String>, F: FnOnce(&mut UI)>(ui: &mut UI, label_text: S, contents: F) -> Response {
+pub fn menu_button_with_content<F: FnOnce(&mut UI)>(ui: &mut UI, contents: F) -> Response {
     let bg_hover = theme::hovered_color(ui.style::<theme::BgLight>()); 
     let margin = ui.style::<theme::WidgetMargin>() / 2.0;
     let rounding = ui.style::<theme::WidgetRounding>();
 
     let (response, _) = ui.with_node(
         UINodeParams::new(Size::fr(1.0), Size::fit())
-            .with_layout(Layout::horizontal())
             .with_margin(margin)
             .with_rounding(rounding)
             .sense_mouse(),
         |ui| {
-            label(ui, label_text);
-            ui.node(UINodeParams::new(Size::fr(1.0), Size::fr(1.0)));
             contents(ui);
         }
     );
@@ -80,6 +77,18 @@ fn menu_button_common<S: Into<String>, F: FnOnce(&mut UI)>(ui: &mut UI, label_te
     if response.hovered {
         ui.set_fill(response.node_ref, bg_hover);
     }
+
+    response
+}
+
+fn menu_button_common<S: Into<String>, F: FnOnce(&mut UI)>(ui: &mut UI, label_text: S, contents: F) -> Response {
+    let response = menu_button_with_content(ui, |ui| {
+        label(ui, label_text);
+        ui.node(UINodeParams::new(Size::fr(1.0), Size::fr(1.0)));
+        contents(ui);
+    });
+
+    ui.set_layout(response.node_ref, Layout::horizontal()); 
 
     response
 }
