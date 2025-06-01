@@ -1,6 +1,8 @@
 
 # Cipollino Studio
 
+![Discord](https://img.shields.io/discord/1225618729853779989?style=flat&label=Cipollino%20Discord&link=https%3A%2F%2Fdiscord.gg%2F4CefMk4jMB)
+
 ![A screenshot of a 2D animation app](media/cipollino_screenshot.png)
 
 Cipollino Studio is a free, open-source 2D animation program for traditional animation. 
