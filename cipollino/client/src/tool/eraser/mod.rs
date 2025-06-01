@@ -95,6 +95,7 @@ impl Tool for EraserTool {
 
     fn mouse_drag_started(&mut self, editor: &mut EditorState, ctx: &mut ToolContext, pos: elic::Vec2) {
         self.to_delete.clear(); 
+        self.prev_pt = pos;
         if let Some((x, y)) = ctx.picking_mouse_pos {
             let Some(scene_obj) = ctx.pick(x, y) else { return; };
             if !ctx.modifiable_objs.contains(&scene_obj) {
@@ -103,7 +104,6 @@ impl Tool for EraserTool {
             self.to_delete.push(scene_obj);
             editor.preview.hide.insert(scene_obj);
         }
-        self.prev_pt = pos;
     }
 
     fn mouse_dragged(&mut self, editor: &mut EditorState, ctx: &mut ToolContext, pos: elic::Vec2) {
