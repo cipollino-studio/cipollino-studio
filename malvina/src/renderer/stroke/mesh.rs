@@ -1,4 +1,4 @@
-use crate::Stroke;
+use crate::{BrushSettings, Stroke};
 
 
 #[repr(C)]
@@ -33,10 +33,10 @@ pub struct StrokeMesh {
 
 impl StrokeMesh {
 
-    pub fn new(device: &wgpu::Device, stroke: &Stroke, width: f32) -> Self {
+    pub fn new(device: &wgpu::Device, stroke: &Stroke, width: f32, brush: &BrushSettings) -> Self {
         use wgpu::util::DeviceExt;
 
-        let stamps = stroke.meshgen(width); 
+        let stamps = stroke.meshgen(width, brush); 
 
         let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("malvina_stroke_buffer"),

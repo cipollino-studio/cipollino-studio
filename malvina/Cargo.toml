@@ -9,3 +9,4 @@ license = "MIT"
 wgpu = { workspace = true }
 bytemuck = "1.22.0"
 elic = { path = "../elic" }
+rand = "0.9.1"
