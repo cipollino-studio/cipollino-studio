@@ -20,13 +20,13 @@ pub use bucket::*;
 
 use project::{Action, Client, ClipInner, ColorParent, ColorTreeData, CreateColor, CreateFrame, Frame, FrameTreeData, Layer, Ptr, SceneObjPtr, SceneObjectColor};
 use std::collections::HashSet;
-use crate::{AppSystems, EditorState, ProjectState, SceneRenderList, Shortcut};
+use crate::{AppSystems, EditorState, ProjectState, RendererState, SceneRenderList, Shortcut};
 
 pub struct ToolContext<'ctx> {
     pub device: &'ctx pierro::wgpu::Device,
     pub queue: &'ctx pierro::wgpu::Queue,
     // None when rendering the scene overlay, since the renderer will be borrowed then
-    pub renderer: Option<&'ctx mut malvina::Renderer>,
+    pub renderer: Option<&'ctx mut RendererState>,
 
     pub project: &'ctx ProjectState,
     pub systems: &'ctx mut AppSystems,
@@ -149,7 +149,7 @@ pub trait Tool: Default {
 
     fn render_overlay(&self, _ctx: &mut ToolContext, _rndr: &mut malvina::LayerRenderer, _accent_color: elic::Color) {}
 
-    fn settings(&mut self, _ui: &mut pierro::UI, _systems: &mut AppSystems) {}
+    fn settings(&mut self, _ui: &mut pierro::UI, _project: &ProjectState, _editor: &mut EditorState, _systems: &mut AppSystems, _renderer: &mut Option<RendererState>) {}
 
     fn cursor_icon(&self, _editor: &mut EditorState, _ctx: &mut ToolContext, _pos: elic::Vec2) -> pierro::CursorIcon {
         pierro::CursorIcon::Default
@@ -173,7 +173,7 @@ pub trait ToolDyn {
 
     fn render_overlay(&self, ctx: &mut ToolContext, rndr: &mut malvina::LayerRenderer, accent_color: elic::Color);
 
-    fn settings(&mut self, ui: &mut pierro::UI, systems: &mut AppSystems);
+    fn settings(&mut self, ui: &mut pierro::UI, project: &ProjectState, editor: &mut EditorState, systems: &mut AppSystems, renderer: &mut Option<RendererState>);
 
     fn cursor_icon(&self, editor: &mut EditorState, ctx: &mut ToolContext, pos: malvina::Vec2) -> pierro::CursorIcon;
 
@@ -217,8 +217,8 @@ impl<T: Tool> ToolDyn for T {
         self.render_overlay(ctx, rndr, accent_color);
     }
 
-    fn settings(&mut self, ui: &mut pierro::UI, systems: &mut AppSystems) {
-        self.settings(ui, systems);
+    fn settings(&mut self, ui: &mut pierro::UI, project: &ProjectState, editor: &mut EditorState, systems: &mut AppSystems, renderer: &mut Option<RendererState>) {
+        self.settings(ui, project, editor, systems, renderer);
     }
 
     fn cursor_icon(&self, editor: &mut EditorState, ctx: &mut ToolContext, pos: malvina::Vec2) -> pierro::CursorIcon {

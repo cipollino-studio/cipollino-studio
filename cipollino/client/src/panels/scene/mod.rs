@@ -2,7 +2,7 @@
 mod toolbar;
 mod canvas;
 
-use crate::{keyboard_shortcut, Shortcut};
+use crate::{keyboard_shortcut, RendererState, Shortcut};
 use super::{Panel, PanelContext};
 
 use std::cell::RefCell;
@@ -49,7 +49,7 @@ impl Panel for ScenePanel {
         let editor = &mut context.editor;
         
         if context.renderer.is_none() {
-            *context.renderer = Some(malvina::Renderer::new(ui.wgpu_device(), ui.wgpu_queue()));
+            *context.renderer = Some(RendererState::new(ui.wgpu_device(), ui.wgpu_queue()));
         }
         let Some(renderer) = context.renderer.as_mut() else {
             return;

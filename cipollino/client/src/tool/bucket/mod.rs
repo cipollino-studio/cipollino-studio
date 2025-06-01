@@ -1,7 +1,7 @@
 
 use project::{Action, Client, CreateFill, FillPaths, FillTreeData, SceneObjPtr, SetFillColor, SetStrokeColor};
 
-use crate::{curve_fit, keyboard_shortcut, EditorState}; 
+use crate::{curve_fit, keyboard_shortcut, AppSystems, EditorState, ProjectState, RendererState}; 
 
 use super::{get_active_color, LassoState, Tool, ToolContext};
 
@@ -152,7 +152,7 @@ impl Tool for BucketTool {
         pierro::CursorIcon::Crosshair
     }
 
-    fn settings(&mut self, ui: &mut pierro::UI, _systems: &mut crate::AppSystems) {
+    fn settings(&mut self, ui: &mut pierro::UI, _project: &ProjectState, _editor: &mut EditorState, _systems: &mut AppSystems, _renderer: &mut Option<RendererState>) {
         pierro::key_value_layout(ui, |builder| {
             #[cfg(debug_assertions)]
             builder.labeled("DEBUG: Show collision beziers", |ui| {

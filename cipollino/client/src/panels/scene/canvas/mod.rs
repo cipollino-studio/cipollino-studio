@@ -3,7 +3,7 @@ use std::collections::HashSet;
 
 use project::{ClipInner, Fill, SceneObjPtr, Stroke};
 
-use crate::{presence_color, render_scene, AppSystems, EditorState, ProjectState, SceneRenderList, ToolContext};
+use crate::{presence_color, render_scene, AppSystems, EditorState, ProjectState, RendererState, SceneRenderList, ToolContext};
 
 use super::ScenePanel;
 
@@ -37,7 +37,7 @@ impl ScenePanel {
         project: &ProjectState,
         editor: &mut EditorState,
         systems: &mut AppSystems,
-        renderer: &mut malvina::Renderer,
+        renderer: &mut RendererState,
         clip: &ClipInner,
         render_list: &SceneRenderList,
         modifiable_objs: &HashSet<SceneObjPtr>,
@@ -181,12 +181,12 @@ impl ScenePanel {
             cam_zoom: 1.0 / self.cam_size,
             key_modifiers: ui.input().key_modifiers
         };
-        renderer.render(ui.wgpu_device(), ui.wgpu_queue(), texture.texture(), camera, clip.background_color.into(), ui.scale_factor(), |rndr| {
+        renderer.renderer.render(ui.wgpu_device(), ui.wgpu_queue(), texture.texture(), camera, clip.background_color.into(), ui.scale_factor(), |rndr| {
             if editor.show_onion_skin {
                 Self::render_onion_skin(rndr, &project.client, &editor, tool_context.systems, clip);
             }
-            render_scene(rndr, &project.client, editor, clip, clip.frame_idx(editor.time), true);
-            Self::render_selection(rndr, &project.client, &editor, render_list);
+            render_scene(rndr, &renderer.builtin_brushes, &project.client, editor, clip, clip.frame_idx(editor.time), true);
+            Self::render_selection(rndr, &renderer.builtin_brushes, &project.client, &editor, render_list);
 
             tool.render_overlay(&mut tool_context, rndr, accent_color);
 
@@ -228,7 +228,7 @@ impl ScenePanel {
 
     }
 
-    pub(super) fn canvas(&mut self, ui: &mut pierro::UI, project: &ProjectState, editor: &mut EditorState, systems: &mut AppSystems, renderer: &mut malvina::Renderer, clip: &ClipInner, render_list: &SceneRenderList) {
+    pub(super) fn canvas(&mut self, ui: &mut pierro::UI, project: &ProjectState, editor: &mut EditorState, systems: &mut AppSystems, renderer: &mut RendererState, clip: &ClipInner, render_list: &SceneRenderList) {
 
         // Get the list of things to render in the scene
         let modifiable_objs: HashSet<SceneObjPtr> = render_list.objs.iter().filter(|obj| {
@@ -257,7 +257,7 @@ impl ScenePanel {
         let canvas_width = canvas_size.x.ceil() as u32 + resize_margin;
         let canvas_height = canvas_size.y.ceil() as u32 + resize_margin;
         self.picking_buffer.borrow_mut().update_texture(ui.wgpu_device(), canvas_width, canvas_height);
-        renderer.render_picking(ui.wgpu_device(), ui.wgpu_queue(), &self.picking_buffer.clone().borrow(), self.calc_camera(1.0), |rndr| {
+        renderer.renderer.render_picking(ui.wgpu_device(), ui.wgpu_queue(), &self.picking_buffer.clone().borrow(), self.calc_camera(1.0), |rndr| {
             self.render_picking(rndr, editor, &render_list);
         });
 

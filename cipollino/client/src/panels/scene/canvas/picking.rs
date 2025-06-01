@@ -13,7 +13,7 @@ impl ScenePanel {
             match scene_obj {
                 SceneObjPtr::Stroke(stroke_ptr) => {
                     if let Some(stroke) = editor.mesh_cache.get_stroke(*stroke_ptr) {
-                        rndr.render_stroke(&stroke.mesh, idx as u32 + 1, editor.scene_obj_transform(*stroke_ptr));
+                        rndr.render_stroke(&stroke.mesh, idx as u32 + 1, editor.scene_obj_transform(*stroke_ptr), None);
                     }
                 },
                 SceneObjPtr::Fill(fill_ptr) => {

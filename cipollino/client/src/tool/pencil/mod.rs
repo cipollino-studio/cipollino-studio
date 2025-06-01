@@ -1,7 +1,7 @@
 
 use project::{Action, CreateFill, CreateStroke, FillPaths, FillTreeData, StrokeData, StrokeTreeData};
 
-use crate::{keyboard_shortcut, AppSystems, EditorState, UserPrefs};
+use crate::{get_brush_settings, keyboard_shortcut, AppSystems, EditorState, ProjectState, RendererState, UserPrefs};
 
 use super::{curve_fit, get_active_color, Tool, ToolContext};
 
@@ -91,7 +91,8 @@ impl PencilTool {
             data: StrokeTreeData {
                 stroke: StrokeData(stroke),
                 color,
-                width: stroke_width 
+                width: stroke_width,
+                brush: editor.brush 
             },
         });
         ctx.project.client.queue_action(action);
@@ -182,7 +183,7 @@ impl Tool for PencilTool {
             if !self.draw_fill {
                 let stroke = self.calc_stroke();
                 let stroke_width = ctx.systems.prefs.get::<PencilStrokeWidthPref>();
-                editor.preview.stroke_preview = Some(malvina::StrokeMesh::new(ctx.device, &stroke, stroke_width));
+                editor.preview.stroke_preview = Some(malvina::StrokeMesh::new(ctx.device, &stroke, stroke_width, get_brush_settings(editor.brush)));
             }
         }
     }
@@ -204,7 +205,7 @@ impl Tool for PencilTool {
         if !self.draw_fill {
             let stroke = self.calc_stroke();
             let stroke_width = ctx.systems.prefs.get::<PencilStrokeWidthPref>();
-            editor.preview.stroke_preview = Some(malvina::StrokeMesh::new(ctx.device, &stroke, stroke_width));
+            editor.preview.stroke_preview = Some(malvina::StrokeMesh::new(ctx.device, &stroke, stroke_width, get_brush_settings(editor.brush)));
         } else {
             let fill = self.calc_fill();
             editor.preview.fill_preview = Some(malvina::FillMesh::new(ctx.device, &fill));
@@ -234,14 +235,8 @@ impl Tool for PencilTool {
         self.pts.clear();
     }
 
-    fn settings(&mut self, ui: &mut pierro::UI, systems: &mut AppSystems) {
-        pierro::scroll_area(ui, |ui| {
-            pierro::margin(ui, pierro::Margin::same(3.0), |ui| {
-                pierro::key_value_layout(ui, |builder| {
-                    self.settings_contents(builder, systems);
-                });
-            });
-        });
+    fn settings(&mut self, ui: &mut pierro::UI, _project: &ProjectState, editor: &mut EditorState, systems: &mut AppSystems, renderer: &mut Option<RendererState>) {
+        self.settings(ui, editor, systems, renderer);
     }
 
     fn cursor_icon(&self, _editor: &mut EditorState, _ctx: &mut ToolContext, _pos: elic::Vec2) -> pierro::CursorIcon {

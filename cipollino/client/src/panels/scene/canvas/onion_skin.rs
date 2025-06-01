@@ -11,7 +11,7 @@ impl ScenePanel {
             match scene_obj {
                 SceneObjPtr::Stroke(stroke_ptr) => {
                     if let Some(stroke) = editor.mesh_cache.get_stroke(stroke_ptr) {
-                        rndr.render_stroke(&stroke.mesh, color, editor.scene_obj_transform(stroke_ptr));
+                        rndr.render_stroke(&stroke.mesh, color, editor.scene_obj_transform(stroke_ptr), None);
                     }
                 },
                 SceneObjPtr::Fill(_fill_ptr) => {} // Fills shouldn't be rendered in the onion skin

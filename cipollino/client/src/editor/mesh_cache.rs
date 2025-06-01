@@ -1,15 +1,16 @@
 
 use std::collections::HashMap;
-use project::{Client, Fill, Ptr, SceneObjPtr, SceneObjectColor, Stroke};
+use project::{Client, Fill, Ptr, SceneObjPtr, SceneObjectColor, Stroke, StrokeBrush};
 
-use crate::bounding_boxes;
+use crate::{bounding_boxes, get_brush_settings};
 
 use super::SceneRenderList;
 
 pub struct StrokeMesh {
     pub mesh: malvina::StrokeMesh,
     pub bounds: Option<elic::Rect>,
-    pub color: SceneObjectColor 
+    pub color: SceneObjectColor,
+    pub brush: StrokeBrush
 }
 
 pub struct FillMesh {
@@ -38,12 +39,13 @@ impl MeshCache {
         }
 
         let Some(stroke) = client.get(stroke_ptr) else { return; };
-        let mesh = malvina::StrokeMesh::new(device, &stroke.stroke.0, stroke.width); 
+        let mesh = malvina::StrokeMesh::new(device, &stroke.stroke.0, stroke.width, get_brush_settings(stroke.brush)); 
 
         self.strokes.insert(stroke_ptr, StrokeMesh {
             mesh,
             bounds: bounding_boxes::stroke(stroke),
-            color: stroke.color.into()
+            color: stroke.color.into(),
+            brush: stroke.brush
         });
     }
 

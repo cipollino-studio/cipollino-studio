@@ -1,4 +1,7 @@
 
+mod brush;
+pub use brush::*;
+
 use crate::{Frame, Objects, Project, SceneObjectColor};
 
 use super::SceneObjPtr;
@@ -62,12 +65,14 @@ impl alisa::Serializable for StrokeData {
 
 }
 
+
 #[derive(Clone, alisa::Serializable)]
 pub struct Stroke {
     pub frame: alisa::Ptr<Frame>,
     pub stroke: StrokeData,
     pub color: SceneObjectColor,
-    pub width: f32
+    pub width: f32,
+    pub brush: StrokeBrush
 } 
 
 impl Default for Stroke {
@@ -78,6 +83,7 @@ impl Default for Stroke {
             stroke: StrokeData(malvina::Stroke::empty()),
             color: Default::default(),
             width: 5.0,
+            brush: Default::default()
         }
     }
 
@@ -100,7 +106,8 @@ impl alisa::Object for Stroke {
 pub struct StrokeTreeData {
     pub stroke: StrokeData,
     pub color: SceneObjectColor,
-    pub width: f32
+    pub width: f32,
+    pub brush: StrokeBrush
 }
 
 impl Default for StrokeTreeData {
@@ -109,7 +116,8 @@ impl Default for StrokeTreeData {
         Self {
             stroke: StrokeData(malvina::Stroke::empty()),
             color: Default::default(), 
-            width: 5.0
+            width: 5.0,
+            brush: Default::default()
         }
     }
 
@@ -141,7 +149,8 @@ impl alisa::TreeObj for Stroke {
             frame,
             stroke: data.stroke.clone(),
             color: data.color,
-            width: data.width
+            width: data.width,
+            brush: data.brush
         };
         recorder.add_obj(ptr, stroke);
     }
@@ -154,7 +163,8 @@ impl alisa::TreeObj for Stroke {
         StrokeTreeData {
             stroke: self.stroke.clone(),
             color: self.color,
-            width: self.width
+            width: self.width,
+            brush: self.brush
         }
     }
 

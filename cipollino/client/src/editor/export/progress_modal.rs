@@ -3,7 +3,7 @@ use std::path::PathBuf;
 
 use project::{ClipInner, Ptr};
 
-use crate::{render_scene, EditorState, PanelContext, ProjectState, Window};
+use crate::{render_scene, EditorState, PanelContext, ProjectState, RendererState, Window};
 
 use super::VideoWriter;
 
@@ -74,13 +74,13 @@ impl ExportProgressModal {
         }
     }
 
-    fn render_frame(&mut self, ui: &mut pierro::UI, close: &mut bool, project: &ProjectState, editor: &mut EditorState, renderer: &mut Option<malvina::Renderer>, clip: &ClipInner) {
+    fn render_frame(&mut self, ui: &mut pierro::UI, close: &mut bool, project: &ProjectState, editor: &mut EditorState, renderer: &mut Option<RendererState>, clip: &ClipInner) {
         if self.time >= clip.length as i32 {
             return;
         }
 
         if renderer.is_none() {
-            *renderer = Some(malvina::Renderer::new(ui.wgpu_device(), ui.wgpu_queue()));
+            *renderer = Some(RendererState::new(ui.wgpu_device(), ui.wgpu_queue()));
         }
         let Some(renderer) = renderer else {
             *close = true;
@@ -90,8 +90,8 @@ impl ExportProgressModal {
 
         // Render the scene into the render texture
         let camera = malvina::Camera::new(elic::Vec2::ZERO, (self.msaa as f32) * (self.width as f32) / (clip.width as f32));
-        renderer.render(ui.wgpu_device(), ui.wgpu_queue(), self.render_texture.texture(), camera, clip.background_color.into(), 1.0, |rndr| {
-            render_scene(rndr, &project.client, editor, clip, self.time, false);
+        renderer.renderer.render(ui.wgpu_device(), ui.wgpu_queue(), self.render_texture.texture(), camera, clip.background_color.into(), 1.0, |rndr| {
+            render_scene(rndr, &renderer.builtin_brushes, &project.client, editor, clip, self.time, false);
         });
 
         // Copy the render texture to the pixel copy buffer

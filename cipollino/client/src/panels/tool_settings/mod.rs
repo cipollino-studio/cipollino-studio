@@ -14,6 +14,7 @@ impl Panel for ToolSettings {
     }
 
     fn render(&mut self, ui: &mut pierro::UI, context: &mut PanelContext) {
-        context.editor.curr_tool.borrow_mut().settings(ui, context.systems);
+        let curr_tool = context.editor.curr_tool.clone();
+        curr_tool.borrow_mut().settings(ui, context.project, context.editor, context.systems, context.renderer);
     }
 }
