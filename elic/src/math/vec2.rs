@@ -127,6 +127,20 @@ impl Vec2 {
         b - a
     }
 
+    pub fn from_angle(angle: f32) -> Vec2 {
+        vec2(
+            angle.cos(),
+            angle.sin()
+        )
+    }
+
+    pub fn rotate(&self, angle: f32) -> Vec2 {
+        let right = Vec2::from_angle(angle);
+        let up = right.turn_ccw();
+        self.x * right +
+        self.y * up
+    }
+
 }
 
 impl Add<Vec2> for Vec2 {
