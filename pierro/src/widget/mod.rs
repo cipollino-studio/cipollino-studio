@@ -84,3 +84,6 @@ pub use error::*;
 
 mod editable_label;
 pub use editable_label::*;
+
+mod progress_bar;
+pub use progress_bar::*;
