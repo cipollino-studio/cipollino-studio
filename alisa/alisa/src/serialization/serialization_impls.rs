@@ -88,6 +88,23 @@ impl<T: Serializable, const N: usize> Serializable for [T; N] {
 
 }
 
+impl<T: Serializable> Serializable for Box<[T]> {
+
+    fn serialize(&self, context: &SerializationContext) -> ABFValue {
+        ABFValue::Array(self.iter().map(|val| val.serialize(context)).collect())
+    }
+
+    fn deserialize(data: &ABFValue, context: &mut DeserializationContext) -> Option<Self> {
+        let Some(arr) = data.as_array() else { return None; };
+        let mut deserialized = Vec::new(); 
+        for i in 0..arr.len() {
+            deserialized.push(T::deserialize(&arr[i], context)?);
+        }
+        Some(deserialized.into())
+    }
+
+}
+
 impl<T: Serializable> Serializable for Vec<T> {
 
     fn deserialize(data: &ABFValue, context: &mut DeserializationContext) -> Option<Self> {
