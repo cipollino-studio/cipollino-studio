@@ -1,3 +1,5 @@
+use std::ops::Mul;
+
 
 #[derive(Clone, Copy)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
@@ -52,6 +54,34 @@ impl Range {
 
     pub fn center(&self) -> f32 {
         (self.min + self.max) / 2.0
+    }
+
+    pub fn shift(&self, offset: f32) -> Self {
+        Self {
+            min: self.min + offset,
+            max: self.max + offset,
+        }
+    }
+
+}
+
+impl Mul<f32> for Range {
+    type Output = Range;
+
+    fn mul(self, rhs: f32) -> Self::Output {
+        Range {
+            min: self.min * rhs,
+            max: self.max * rhs,
+        }
+    }
+
+}
+
+impl Mul<Range> for f32 {
+    type Output = Range;
+
+    fn mul(self, rhs: Range) -> Self::Output {
+        rhs * self
     }
 
 }
