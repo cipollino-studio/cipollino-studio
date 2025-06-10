@@ -1,13 +1,14 @@
 
 use std::collections::HashSet;
 
-use project::{Action, Client, Layer, LayerGroup, LayerParent, Ptr, TransferLayer, TransferLayerGroup};
+use project::{Action, AudioLayer, Client, Layer, LayerGroup, LayerParent, Ptr, TransferAudioLayer, TransferLayer, TransferLayerGroup};
 
 use super::LayerUI;
 
 #[derive(Default, Clone, Debug)]
 pub struct LayerList {
     pub layers: HashSet<Ptr<Layer>>,
+    pub audio_layers: HashSet<Ptr<AudioLayer>>,
     pub layer_groups: HashSet<Ptr<LayerGroup>>
 }
 
@@ -35,6 +36,7 @@ impl LayerList {
 
     pub fn render_contents(&self, ui: &mut pierro::UI, client: &Client) {
         self.render_contents_of_layer::<Layer>(ui, client);
+        self.render_contents_of_layer::<AudioLayer>(ui, client);
         self.render_contents_of_layer::<LayerGroup>(ui, client);
     }
 
@@ -42,6 +44,13 @@ impl LayerList {
         for layer in &self.layers {
             action.push(TransferLayer {
                 ptr: *layer,
+                new_parent,
+                new_idx,
+            });
+        }
+        for audio_layer in &self.audio_layers {
+            action.push(TransferAudioLayer {
+                ptr: *audio_layer,
                 new_parent,
                 new_idx,
             });

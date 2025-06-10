@@ -1,14 +1,16 @@
 
 use std::collections::HashSet;
 
-use project::{alisa::Object, Action, ClipInner, Layer, LayerGroup, LayerParent, Project, Ptr, SetLayerGroupName, SetLayerName};
+use project::{alisa::Object, Action, AudioLayer, ClipInner, Layer, LayerGroup, LayerParent, Project, Ptr, SetAudioLayerName, SetLayerGroupName, SetLayerName};
 
 use crate::{EditorState, LayerRenderList, ProjectState, RenderLayerKind};
 
 use super::TimelinePanel;
 
 mod layer;
+mod audio;
 mod layer_group;
+
 mod list;
 pub use list::*;
 
@@ -49,6 +51,30 @@ impl LayerUI for Layer {
         &mut selection.layers
     }
 
+}
+
+impl LayerUI for AudioLayer {
+    const ICON: &'static str = pierro::icons::MUSIC_NOTES;
+    const NAME: &'static str = "Audio Layer";
+
+    fn name(&self) -> &String {
+        &self.name
+    }
+
+    fn rename(action: &mut Action, ptr: Ptr<Self>, name: String) {
+        action.push(SetAudioLayerName {
+            ptr,
+            name_value: name
+        });
+    }
+
+    fn selection_list(selection: &LayerList) -> &HashSet<Ptr<Self>> {
+        &selection.audio_layers 
+    }
+
+    fn selection_list_mut(selection: &mut LayerList) -> &mut HashSet<Ptr<Self>> {
+        &mut selection.audio_layers
+    }
 }
 
 impl LayerUI for LayerGroup {
@@ -163,6 +189,9 @@ impl TimelinePanel {
                         match &render_layer.kind {
                             &RenderLayerKind::Layer(ptr, layer) => {
                                 self.render_layer(ui, project, editor, idx, render_layer.depth, layer, ptr);
+                            },
+                            &RenderLayerKind::AudioLayer(ptr, audio) => {
+                                self.render_audio_layer(ui, project, editor, idx, render_layer.depth, audio, ptr);
                             },
                             &RenderLayerKind::LayerGroup(ptr, layer_group) => {
                                 self.render_layer_group(ui, project, editor, idx, render_layer.depth, layer_group, ptr);

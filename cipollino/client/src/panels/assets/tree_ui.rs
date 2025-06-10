@@ -1,5 +1,5 @@
 
-use project::{alisa::UnorderedChildList, Action, ActionContext, Asset, Clip, Folder, Palette, Ptr};
+use project::{alisa::UnorderedChildList, Action, ActionContext, Asset, AudioClip, Clip, Folder, Palette, Ptr};
 
 use crate::{EditorState, ProjectState};
 
@@ -107,7 +107,7 @@ impl AssetsPanel {
                     pierro::button_text_color_animation(ui, folder_name_response.node_ref, response, text_color);
                 }
             }, |ui| {
-                self.render_folder_contents(ui, &folder.folders, &folder.clips, &folder.palettes, project, editor); 
+                self.render_folder_contents(ui, &folder.folders, &folder.clips, &folder.palettes, &folder.audio_clips, project, editor); 
             });
             self.asset_label_context_menu(ui, project, editor, folder_ptr, &folder.name, &folder_response); 
 
@@ -124,6 +124,7 @@ impl AssetsPanel {
         folders: &UnorderedChildList<project::alisa::LoadingPtr<Folder>>,
         clips: &UnorderedChildList<project::alisa::LoadingPtr<Clip>>,
         palettes: &UnorderedChildList<project::alisa::LoadingPtr<Palette>>,
+        audio_clips: &UnorderedChildList<project::alisa::LoadingPtr<AudioClip>>,
         project: &ProjectState,
         editor: &mut EditorState
     ) {
@@ -140,6 +141,7 @@ impl AssetsPanel {
 
         self.render_assets(ui, project, editor, clips);
         self.render_assets(ui, project, editor, palettes);
+        self.render_assets(ui, project, editor, audio_clips);
     }
 
 }

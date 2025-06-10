@@ -2,7 +2,6 @@
 use crate::{Client, Frame, Objects, Project};
 use super::{LayerPtr, LayerParent};
 
-
 #[derive(alisa::Serializable, Clone)]
 pub struct Layer {
     pub parent: LayerParent,

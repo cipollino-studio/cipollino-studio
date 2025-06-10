@@ -1,9 +1,9 @@
 
-use project::{alisa::Action, Clip, Folder, Palette, Ptr};
+use project::{alisa::Action, AudioClip, Client, Clip, Folder, Palette, Ptr};
 
-use crate::{EditorState, ProjectState};
+use crate::{AudioImportWindow, EditorState, ProjectState};
 
-use super::{CreateClipDialog, AssetUI, AssetsPanel};
+use super::{AssetUI, AssetsPanel, CreateClipDialog};
 
 impl AssetsPanel {
 
@@ -21,6 +21,14 @@ impl AssetsPanel {
         }
     } 
 
+    fn audio_clip_menu_bar_icon(&self, ui: &mut pierro::UI, client: &Client, editor: &mut EditorState) {
+        if pierro::icon_button(ui, AudioClip::ICON).mouse_clicked() {
+            if let Some(path) = rfd::FileDialog::new().add_filter("Audio File", &["mp3"]).pick_file() {
+                AudioImportWindow::open(client, editor, path);
+            }
+        }
+    }
+
     pub(crate) fn menu_bar(&self, ui: &mut pierro::UI, editor: &mut EditorState, project: &ProjectState) {
         let button_color = ui.style::<pierro::theme::BgDark>();
         ui.with_style::<pierro::theme::BgButton, _, _>(button_color, |ui| {
@@ -30,6 +38,7 @@ impl AssetsPanel {
                         self.asset_menu_bar_icon::<Folder>(ui, project, editor); 
                         self.clip_menu_bar_icon(ui, editor);
                         self.asset_menu_bar_icon::<Palette>(ui, project, editor); 
+                        self.audio_clip_menu_bar_icon(ui, &project.client, editor);
                     });
                 });
             });

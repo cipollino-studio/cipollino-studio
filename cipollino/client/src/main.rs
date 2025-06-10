@@ -20,6 +20,9 @@ pub use render::*;
 mod util;
 pub use util::*;
 
+mod audio;
+pub use audio::*;
+
 use std::path::PathBuf;
 use clap::Parser;
 use splash::SplashScreen;

@@ -4,6 +4,9 @@ use crate::{Clip, Project};
 mod layer;
 pub use layer::*;
 
+mod audio;
+pub use audio::*;
+
 mod group;
 pub use group::*;
 
@@ -42,4 +45,4 @@ impl LayerParent {
 
 }
 
-alisa::ptr_enum!(LayerPtr loading [Layer, LayerGroup] childof LayerParent, in Project);
+alisa::ptr_enum!(LayerPtr loading [Layer, AudioLayer, LayerGroup] childof LayerParent, in Project);

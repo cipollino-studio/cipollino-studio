@@ -71,7 +71,8 @@ fn render_layer_list(rndr: &mut malvina::LayerRenderer, brushes: &BuiltinBrushTe
                     render_layer_list(rndr, brushes, client, editor, &layer_group.layers, time, editor_view);
                 }
             }
-        } 
+            LayerPtr::AudioLayer(_) => {},
+        }
     }
 }
 

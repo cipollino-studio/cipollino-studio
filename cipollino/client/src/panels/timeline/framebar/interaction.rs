@@ -59,11 +59,11 @@ impl Framebar {
         if let Some(mouse_pos) = framebar_response.mouse_pos(ui) {
             let frame = ((mouse_pos.x / TimelinePanel::FRAME_WIDTH).floor() as i32).max(0);
             if framebar_response.mouse_clicked() {
-                editor.jump_to((frame.min(clip.length as i32 - 1) as f32) * clip.frame_len());
+                editor.jump_to((frame.min(clip.length as i32 - 1) as f32) * clip.frame_len() + 0.01);
             }
             if framebar_response.is_focused(ui) {
                 match self.drag_target {
-                    DragTarget::PlayHead => editor.jump_to((frame.min(clip.length as i32 - 1) as f32) * clip.frame_len()),
+                    DragTarget::PlayHead => editor.jump_to((frame.min(clip.length as i32 - 1) as f32) * clip.frame_len() + 0.01),
                     DragTarget::OnionSkinPrev => editor.onion_skin_prev_frames = (curr_frame - frame).max(0) as u32,
                     DragTarget::OnionSkinNext => editor.onion_skin_next_frames = (frame - curr_frame).max(0) as u32,
                 }

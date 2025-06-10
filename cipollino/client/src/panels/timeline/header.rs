@@ -1,5 +1,5 @@
 
-use project::{Action, Clip, ClipInner, CreateFrame, CreateLayer, CreateLayerGroup, FrameTreeData, LayerGroupTreeData, LayerParent, LayerTreeData, Ptr, SetClipInnerLength};
+use project::{Action, AudioLayerTreeData, Clip, ClipInner, CreateAudioLayer, CreateFrame, CreateLayer, CreateLayerGroup, FrameTreeData, LayerGroupTreeData, LayerParent, LayerTreeData, Ptr, SetClipInnerLength};
 
 use crate::{EditorState, ProjectState};
 
@@ -35,8 +35,8 @@ impl TimelinePanel {
             });
             pierro::v_line(ui);
 
-            // Add layer
             ui.with_style::<pierro::theme::WidgetRounding, _, _>(pierro::Rounding::ZERO, |ui| {
+                // Add layer
                 if pierro::icon_button(ui, pierro::icons::FILE_PLUS).mouse_clicked() {
                     let ptr = project.client.next_ptr();
                     project.client.queue_action(Action::single(editor.action_context("New Layer"), CreateLayer {
@@ -49,6 +49,21 @@ impl TimelinePanel {
                         },
                     }));
                     editor.active_layer = ptr;
+                }
+                pierro::v_line(ui);
+
+                // Add audio layer 
+                if pierro::icon_button(ui, pierro::icons::MUSIC_NOTES_PLUS).mouse_clicked() {
+                    let ptr = project.client.next_ptr();
+                    project.client.queue_action(Action::single(editor.action_context("New Audio Layer"), CreateAudioLayer {
+                        ptr,
+                        parent: LayerParent::Clip(clip_ptr),
+                        idx: clip.layers.as_slice().len(),
+                        data: AudioLayerTreeData {
+                            name: "Audio".to_owned(),
+                            ..Default::default()
+                        },
+                    }));
                 }
             });
             pierro::v_line(ui);

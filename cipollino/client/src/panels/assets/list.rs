@@ -1,7 +1,7 @@
 
 use std::collections::HashSet;
 
-use project::{alisa::{self, TreeObj}, deep_load_clip, deep_load_folder, deep_load_palette, Action, Client, Clip, DeleteClip, DeleteFolder, DeletePalette, Folder, Palette, Ptr, TransferClip, TransferFolder, TransferPalette};
+use project::{alisa::{self, TreeObj}, deep_load_audio_clip, deep_load_clip, deep_load_folder, deep_load_palette, Action, AudioClip, Client, Clip, DeleteAudioClip, DeleteClip, DeleteFolder, DeletePalette, Folder, Palette, Ptr, TransferAudioClip, TransferClip, TransferFolder, TransferPalette};
 
 use crate::{EditorState, ProjectState};
 
@@ -11,7 +11,8 @@ use super::AssetUI;
 pub struct AssetList {
     pub folders: HashSet<Ptr<Folder>>,
     pub clips: HashSet<Ptr<Clip>>,
-    pub palettes: HashSet<Ptr<Palette>>
+    pub palettes: HashSet<Ptr<Palette>>,
+    pub audio_clips: HashSet<Ptr<AudioClip>>
 }
 
 impl AssetList {
@@ -25,6 +26,9 @@ impl AssetList {
         }
         for palette in self.palettes.iter() {
             deep_load_palette(*palette, client);
+        }
+        for audio_clip in self.audio_clips.iter() {
+            deep_load_audio_clip(*audio_clip, client);
         }
     }
 
@@ -45,6 +49,11 @@ impl AssetList {
                 return false;
             }
         }
+        for audio_clip in self.audio_clips.iter() {
+            if !AudioClip::can_delete(*audio_clip, &client.context(), alisa::OperationSource::Local) {
+                return false;
+            }
+        }
 
         let mut action = Action::new(editor.action_context("Delete Assets"));
         for folder in self.folders.iter() {
@@ -60,6 +69,11 @@ impl AssetList {
         for palette in self.palettes.iter() {
             action.push(DeletePalette {
                 ptr: *palette,
+            });
+        }
+        for audio_clip in self.audio_clips.iter() {
+            action.push(DeleteAudioClip {
+                ptr: *audio_clip,
             });
         }
 
@@ -85,6 +99,12 @@ impl AssetList {
         for moved_palette in self.palettes {
             action.push(TransferPalette {
                 ptr: moved_palette,
+                new_folder: new_parent,
+            });
+        }
+        for moved_audio_clip in self.audio_clips {
+            action.push(TransferAudioClip {
+                ptr: moved_audio_clip,
                 new_folder: new_parent,
             });
         }
@@ -115,6 +135,7 @@ impl AssetList {
         self.render_contents_of_asset::<Folder>(ui, client);
         self.render_contents_of_asset::<Clip>(ui, client);
         self.render_contents_of_asset::<Palette>(ui, client);
+        self.render_contents_of_asset::<AudioClip>(ui, client);
     }
 
 }

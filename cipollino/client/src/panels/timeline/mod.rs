@@ -154,6 +154,9 @@ impl LayerRenderList<'_> {
             RenderLayerKind::Layer(_, layer) => {
                 (layer.parent, render_layer.idx + if drop_location.above { 0 } else { 1 }) 
             },
+            RenderLayerKind::AudioLayer(_, audio) => {
+                (audio.parent, render_layer.idx + if drop_location.above { 0 } else { 1 }) 
+            }
             RenderLayerKind::LayerGroup(layer_group_ptr, layer_group) => {
                 if drop_location.above {
                     (layer_group.parent, render_layer.idx + 1)

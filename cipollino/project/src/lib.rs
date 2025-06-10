@@ -17,6 +17,9 @@ pub use scene::*;
 mod color;
 pub use color::*;
 
+mod audio_instance;
+pub use audio_instance::*;
+
 mod protocol;
 pub use protocol::*;
 

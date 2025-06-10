@@ -5,7 +5,7 @@ use std::rc::Rc;
 use alisa::Object;
 use project::{Client, ClientId, Clip, ClipInner, Layer, LayerGroup, PresenceData, Project, Ptr, SceneObjPtr, SceneObjectColor, StrokeBrush};
 
-use crate::{Clipboard, MeshCache, Presence, SelectTool, Selectable, ToolDyn, Window, WindowInstance};
+use crate::{AppSystems, AudioBlockCache, Clipboard, MeshCache, Presence, SelectTool, Selectable, ToolDyn, Window, WindowInstance};
 
 use crate::{Selection, SelectionKind};
 
@@ -14,6 +14,7 @@ use super::{ProjectState, ScenePreview};
 pub struct EditorState {
     pub time: f32,
     pub playing: bool,
+    pub jumped: bool,
 
     pub open_clip: Ptr<Clip>,
     pub active_layer: Ptr<Layer>,
@@ -36,6 +37,7 @@ pub struct EditorState {
     pub onion_skin_next_frames: u32,
 
     pub mesh_cache: MeshCache,
+    pub audio_cache: AudioBlockCache,
 
     pub preview: ScenePreview,
 
@@ -57,10 +59,11 @@ pub struct EditorState {
 
 impl EditorState {
 
-    pub fn new() -> Self {
+    pub fn new(systems: &mut AppSystems) -> Self {
         Self {
             time: 0.0,
             playing: false,
+            jumped: false,
 
             open_clip: Ptr::null(),
             active_layer: Ptr::null(),
@@ -83,6 +86,7 @@ impl EditorState {
             onion_skin_next_frames: 2,
 
             mesh_cache: MeshCache::new(),
+            audio_cache: AudioBlockCache::new(systems.audio.sample_rate()),
 
             preview: ScenePreview::new(),
 
@@ -107,21 +111,32 @@ impl EditorState {
         self.time = time;
         self.playing = false;
         self.selection.clear();
+        self.jumped = true;
     }
 
-    pub fn tick_playback(&mut self, ui: &mut pierro::UI, clip: &ClipInner) {
+    pub fn tick_playback(&mut self, ui: &mut pierro::UI, systems: &mut AppSystems, clip: &ClipInner) {
+
+        if self.jumped {
+            self.jumped = false;
+            systems.audio.set_time((self.time * (systems.audio.sample_rate() as f32)).round() as i64);
+        }
+
+        self.time = (systems.audio.time() as f32) / (systems.audio.sample_rate() as f32);
+
         if self.playing {
-            self.time += ui.input().delta_time;
             ui.request_redraw();
             if self.selection.kind() == SelectionKind::Scene {
                 self.selection.clear();
             }
+            systems.audio.play();
+        } else {
+            systems.audio.pause();
         }
 
-        if self.time > clip.duration() {
+        if self.time > clip.duration() || self.time < 0.0 {
             self.time = 0.0;
+            self.jumped = true;
         }
-        self.time = self.time.max(0.0);
     }
 
     pub fn jump_to_prev_frame(&mut self, client: &Client, clip: &ClipInner) {

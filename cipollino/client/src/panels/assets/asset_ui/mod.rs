@@ -10,6 +10,7 @@ use super::AssetList;
 mod folder;
 mod clip;
 mod palette;
+mod audio_clip;
 
 pub trait AssetUI: Asset {
 

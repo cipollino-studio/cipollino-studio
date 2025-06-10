@@ -34,6 +34,7 @@ impl FrameArea {
                         self.box_select_layer(project, editor, layer, x_range);
                     }
                 },
+                RenderLayerKind::AudioLayer(_, _) => {},
                 RenderLayerKind::LayerGroup(_, _) => {}
             }
         }

@@ -1,11 +1,12 @@
 
-use crate::{AddPaletteToClip, Clip, ClipInner, ClipTreeData, Color, CreateClip, CreateClipInner, CreateColor, CreateFill, CreateFolder, CreateFrame, CreateLayer, CreateLayerGroup, CreatePalette, CreatePaletteInner, CreateStroke, DeleteClip, DeleteColor, DeleteFill, DeleteFolder, DeleteFrame, DeleteLayer, DeleteLayerGroup, DeletePalette, DeleteStroke, Fill, Folder, Frame, Layer, LayerGroup, LayerParent, LayerTreeData, Palette, PaletteInner, RemovePaletteFromClip, RenameClip, RenameFolder, RenamePalette, SetClipInnerBackgroundColor, SetClipInnerFramerate, SetClipInnerHeight, SetClipInnerLength, SetClipInnerWidth, SetColorColor, SetColorName, SetFillColor, SetFillPaths, SetFrameTime, SetLayerGroupName, SetLayerName, SetStrokeColor, SetStrokeStroke, Stroke, TransferClip, TransferFolder, TransferLayer, TransferLayerGroup, TransferPalette};
+use crate::{AddBlockToAudioClip, AddPaletteToClip, AudioBlock, AudioClip, AudioInstance, AudioLayer, Clip, ClipInner, ClipTreeData, Color, CreateAudioClip, CreateAudioInstance, CreateAudioLayer, CreateClip, CreateClipInner, CreateColor, CreateFill, CreateFolder, CreateFrame, CreateLayer, CreateLayerGroup, CreatePalette, CreatePaletteInner, CreateStroke, DeleteAudioClip, DeleteAudioInstance, DeleteAudioLayer, DeleteClip, DeleteColor, DeleteFill, DeleteFolder, DeleteFrame, DeleteLayer, DeleteLayerGroup, DeletePalette, DeleteStroke, Fill, Folder, Frame, Layer, LayerGroup, LayerParent, LayerTreeData, Palette, PaletteInner, RemovePaletteFromClip, RenameAudioClip, RenameClip, RenameFolder, RenamePalette, SetAudioLayerName, SetClipInnerBackgroundColor, SetClipInnerFramerate, SetClipInnerHeight, SetClipInnerLength, SetClipInnerWidth, SetColorColor, SetColorName, SetFillColor, SetFillPaths, SetFrameTime, SetLayerGroupName, SetLayerName, SetStrokeColor, SetStrokeStroke, Stroke, TransferAudioClip, TransferAudioLayer, TransferClip, TransferFolder, TransferLayer, TransferLayerGroup, TransferPalette};
 
 #[derive(alisa::Serializable, Clone)]
 pub struct Project {
     pub folders: alisa::UnorderedChildList<alisa::LoadingPtr<Folder>>,
     pub clips: alisa::UnorderedChildList<alisa::LoadingPtr<Clip>>,
     pub palettes: alisa::UnorderedChildList<alisa::LoadingPtr<Palette>>,
+    pub audio_clips: alisa::UnorderedChildList<alisa::LoadingPtr<AudioClip>>,
 }
 
 impl Default for Project {
@@ -14,7 +15,8 @@ impl Default for Project {
         Self {
             folders: Default::default(),
             clips: Default::default(),
-            palettes: Default::default()
+            palettes: Default::default(),
+            audio_clips: Default::default()
         }
     }
 
@@ -32,7 +34,11 @@ pub struct Objects {
     pub fills: alisa::ObjList<Fill>,
     pub palettes: alisa::ObjList<Palette>,
     pub palette_inners: alisa::ObjList<PaletteInner>,
-    pub colors: alisa::ObjList<Color>
+    pub colors: alisa::ObjList<Color>,
+    pub audio_layers: alisa::ObjList<AudioLayer>,
+    pub audio_clips: alisa::ObjList<AudioClip>,
+    pub audio_blocks: alisa::ObjList<AudioBlock>,
+    pub audio_instances: alisa::ObjList<AudioInstance>
 }
 
 #[derive(Clone)]
@@ -101,7 +107,11 @@ impl alisa::Project for Project {
         alisa::ObjectKind::from::<Fill>(),
         alisa::ObjectKind::from::<Palette>(),
         alisa::ObjectKind::from::<PaletteInner>(),
-        alisa::ObjectKind::from::<Color>()
+        alisa::ObjectKind::from::<Color>(),
+        alisa::ObjectKind::from::<AudioLayer>(),
+        alisa::ObjectKind::from::<AudioClip>(),
+        alisa::ObjectKind::from::<AudioBlock>(),
+        alisa::ObjectKind::from::<AudioInstance>(),
     ];
 
     const OPERATIONS: &'static [alisa::OperationKind<Self>] = &[
@@ -159,6 +169,20 @@ impl alisa::Project for Project {
         alisa::OperationKind::from::<DeleteColor>(),
         alisa::OperationKind::from::<SetColorColor>(),
         alisa::OperationKind::from::<SetColorName>(),
+
+        alisa::OperationKind::from::<CreateAudioLayer>(),
+        alisa::OperationKind::from::<DeleteAudioLayer>(),
+        alisa::OperationKind::from::<TransferAudioLayer>(),
+        alisa::OperationKind::from::<SetAudioLayerName>(),
+
+        alisa::OperationKind::from::<CreateAudioClip>(),
+        alisa::OperationKind::from::<DeleteAudioClip>(),
+        alisa::OperationKind::from::<TransferAudioClip>(),
+        alisa::OperationKind::from::<RenameAudioClip>(),
+        alisa::OperationKind::from::<AddBlockToAudioClip>(),
+
+        alisa::OperationKind::from::<CreateAudioInstance>(),
+        alisa::OperationKind::from::<DeleteAudioInstance>(),
     ];
 
 }

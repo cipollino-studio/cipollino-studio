@@ -61,7 +61,7 @@ impl Editor {
         let mut editor = Self {
             state: State {
                 project: ProjectState::new(client),
-                editor: EditorState::new(),
+                editor: EditorState::new(systems),
                 renderer: None
             },
             docking: systems.prefs.get::<DockingLayoutPref>(),
@@ -124,7 +124,7 @@ impl Editor {
         // Load the currently open clip if it's not open
         if let Some(clip) = self.state.project.client.get(self.state.editor.open_clip) {
             if let Some(clip_inner) = self.state.project.client.get(clip.inner) {
-                self.state.editor.tick_playback(ui, clip_inner);
+                self.state.editor.tick_playback(ui, systems, clip_inner);
             } else {
                 deep_load_clip(self.state.editor.open_clip, &self.state.project.client);
             }
@@ -192,10 +192,14 @@ impl Editor {
 
         self.state.editor.selection.end_frame(ui.input().l_mouse.clicked() || ui.input().l_mouse.drag_started());
 
+        if let Some(layers) = layer_render_list {
+            self.state.editor.tick_audio_playback(systems, &self.state.project, &layers);
+        } 
+
         self.tick_undo_redo(); 
 
         self.state.editor.preview.end_frame();
-
+        
         // Collab
         if let Some(socket) = &mut self.socket {
             #[cfg(debug_assertions)]

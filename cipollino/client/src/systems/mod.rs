@@ -7,10 +7,13 @@ pub use shortcut::*;
 
 use std::path::PathBuf;
 
+use crate::AudioEngine;
+
 pub struct AppSystems {
     pub home_path: PathBuf,
     pub app_data_path: PathBuf,
-    pub prefs: UserPrefs
+    pub prefs: UserPrefs,
+    pub audio: AudioEngine
 }
 
 impl AppSystems {
@@ -30,10 +33,13 @@ impl AppSystems {
 
         let prefs = UserPrefs::new(app_data_path.join("prefs.json"));
 
+        let audio = AudioEngine::new().expect("could not initialize audio engine");
+
         Self {
             home_path,
             app_data_path,
-            prefs
+            prefs,
+            audio
         }
     }
 

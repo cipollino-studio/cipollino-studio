@@ -3,7 +3,7 @@ use alisa::TreeObj;
 
 use crate::{asset_creation_operations, asset_rename_operation, rectify_name_duplication, Action, Asset, Client, Clip, Objects, Project};
 
-use super::{deep_load_clip, deep_load_palette, Palette};
+use super::{deep_load_audio_clip, deep_load_clip, deep_load_palette, AudioClip, Palette};
 
 #[derive(alisa::Serializable, Clone)]
 pub struct Folder {
@@ -11,7 +11,8 @@ pub struct Folder {
     pub name: String,
     pub folders: alisa::UnorderedChildList<alisa::LoadingPtr<Folder>>,
     pub clips: alisa::UnorderedChildList<alisa::LoadingPtr<Clip>>,
-    pub palettes: alisa::UnorderedChildList<alisa::LoadingPtr<Palette>>
+    pub palettes: alisa::UnorderedChildList<alisa::LoadingPtr<Palette>>,
+    pub audio_clips: alisa::UnorderedChildList<alisa::LoadingPtr<AudioClip>>
 }
 
 impl Default for Folder {
@@ -22,7 +23,8 @@ impl Default for Folder {
             name: "Folder".to_owned(),
             folders: Default::default(),
             clips: Default::default(),
-            palettes: Default::default()
+            palettes: Default::default(),
+            audio_clips: Default::default()
         }
     }
 
@@ -48,7 +50,8 @@ pub struct FolderTreeData {
     pub name: String,
     pub folders: alisa::UnorderedChildListTreeData<alisa::LoadingPtr<Folder>>,
     pub clips: alisa::UnorderedChildListTreeData<alisa::LoadingPtr<Clip>>,
-    pub palettes: alisa::UnorderedChildListTreeData<alisa::LoadingPtr<Palette>>
+    pub palettes: alisa::UnorderedChildListTreeData<alisa::LoadingPtr<Palette>>,
+    pub audio_clips: alisa::UnorderedChildListTreeData<alisa::LoadingPtr<AudioClip>>
 }
 
 impl Default for FolderTreeData {
@@ -58,7 +61,8 @@ impl Default for FolderTreeData {
             name: "Folder".to_owned(),
             folders: Default::default(),
             clips: Default::default(),
-            palettes: Default::default()
+            palettes: Default::default(),
+            audio_clips: Default::default()
         }
     }
 
@@ -97,7 +101,8 @@ impl alisa::TreeObj for Folder {
             name: data.name.clone(),
             folders: data.folders.instance(ptr, recorder),
             clips: data.clips.instance(ptr, recorder),
-            palettes: data.palettes.instance(ptr, recorder)
+            palettes: data.palettes.instance(ptr, recorder),
+            audio_clips: data.audio_clips.instance(parent, recorder)
         };
         recorder.add_obj(ptr, folder);
     }
@@ -106,6 +111,7 @@ impl alisa::TreeObj for Folder {
         self.folders.destroy(recorder);
         self.clips.destroy(recorder);
         self.palettes.destroy(recorder);
+        self.audio_clips.destroy(recorder);
     }
 
     fn collect_data(&self, objects: &Objects) -> Self::TreeData {
@@ -113,7 +119,8 @@ impl alisa::TreeObj for Folder {
             name: self.name.clone(),
             folders: self.folders.collect_data(objects),
             clips: self.clips.collect_data(objects),
-            palettes: self.palettes.collect_data(objects)
+            palettes: self.palettes.collect_data(objects),
+            audio_clips: self.audio_clips.collect_data(objects)
         }
     }
 
@@ -133,6 +140,11 @@ impl alisa::TreeObj for Folder {
         }
         for palette_ptr in folder.palettes.iter() {
             if !Palette::can_delete(palette_ptr.ptr(), project, source) {
+                return false;
+            }
+        }
+        for audio_ptr in folder.audio_clips.iter() {
+            if !AudioClip::can_delete(audio_ptr.ptr(), project, source) {
                 return false;
             }
         }
@@ -258,5 +270,8 @@ pub fn deep_load_folder(folder_ptr: alisa::Ptr<Folder>, client: &Client) {
     }
     for palette in folder.palettes.iter() {
         deep_load_palette(palette.ptr(), client);
+    }
+    for audio in folder.audio_clips.iter() {
+        deep_load_audio_clip(audio.ptr(), client);
     }
 }

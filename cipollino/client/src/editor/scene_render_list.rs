@@ -38,7 +38,8 @@ impl SceneRenderList {
                     if let Some(layer_group) = client.get(layer_group_ptr) {
                         self.get_layer_list_render_list(client, editor, &layer_group.layers, time);
                     }
-                }
+                },
+                LayerPtr::AudioLayer(_) => {}
             } 
         }
     }

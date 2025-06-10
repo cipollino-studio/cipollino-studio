@@ -1,5 +1,5 @@
 
-use crate::TimelinePanel;
+use crate::{panels::timeline::frame_area::audio::AudioInstanceBar, TimelinePanel};
 
 use super::{layer::FrameDot, FrameArea};
 
@@ -8,20 +8,25 @@ use super::{layer::FrameDot, FrameArea};
 /// so we can't use any borrowed data in the paint callback. Using a command
 /// queue gets around this problem.
 pub(super) struct PaintCommands {
-    pub frame_dots: Vec<FrameDot>
+    pub frame_dots: Vec<FrameDot>,
+    pub audio_bars: Vec<AudioInstanceBar>
 }
 
 impl PaintCommands {
 
     pub fn new() -> Self {
         Self {
-            frame_dots: Vec::new()
+            frame_dots: Vec::new(),
+            audio_bars: Vec::new()
         }
     }
 
-    pub fn paint(self, painter: &mut pierro::Painter, rect: pierro::Rect, text_color: pierro::Color, accent_color: pierro::Color) {
+    pub fn paint(self, painter: &mut pierro::Painter, rect: pierro::Rect, framerate: f32, text_color: pierro::Color, accent_color: pierro::Color) {
         for frame_dot in self.frame_dots {
             frame_dot.paint(painter, rect, text_color, accent_color);
+        }
+        for audio_bar in self.audio_bars {
+            audio_bar.paint(painter, rect, framerate, accent_color);
         }
     }
 
@@ -35,6 +40,7 @@ impl FrameArea {
         n_layers: usize,
         n_frames: u32,
         clip_length: u32,
+        framerate: f32,
 
         curr_frame: i32,
         active_layer_idx: Option<usize>,
@@ -66,7 +72,7 @@ impl FrameArea {
             painter.rect(pierro::PaintRect::new(layer_rect, highlight_color));
         }
         
-        paint_commands.paint(painter, rect, text_color, accent_color);
+        paint_commands.paint(painter, rect, framerate, text_color, accent_color);
 
         // Box selection
         if let Some(selection_rect) = selection_rect {

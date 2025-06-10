@@ -8,6 +8,7 @@ use super::TimelinePanel;
 
 mod paint;
 mod layer;
+mod audio;
 mod dragging;
 
 enum DragState {
@@ -58,6 +59,7 @@ impl FrameArea {
         for (idx, render_layer) in render_list.iter().enumerate() {
             match render_layer.kind {
                 RenderLayerKind::Layer(ptr, layer) => self.render_layer_contents(ui, project, editor, frame_area, paint_commands, clip, idx, layer, ptr),
+                RenderLayerKind::AudioLayer(ptr, layer) => self.render_audio_layer_contents(ui, project, editor, frame_area, paint_commands, clip, idx, layer, ptr),
                 RenderLayerKind::LayerGroup(_, _) => {} // Nothing to render for a layer group
             }
         }
@@ -75,6 +77,7 @@ impl FrameArea {
             pierro::UINodeParams::new(pierro::Size::px(width), pierro::Size::px(height).with_grow(1.0))
                 .with_fill(bg)
                 .sense_mouse()
+                .sense_dnd_hover()
         );
 
         // Dragging
@@ -112,6 +115,7 @@ impl FrameArea {
         // Painting the frame area contents 
         let n_layers = render_list.len();
         let clip_length = clip.length;
+        let framerate = clip.framerate;
         let curr_frame = clip.frame_idx(editor.time); 
         let text_color = ui.style::<pierro::theme::TextColor>();
         let active_layer_idx = render_list.iter().position(|layer| match layer.kind {
@@ -126,6 +130,7 @@ impl FrameArea {
                 n_layers,
                 n_frames,
                 clip_length,
+                framerate,
                 curr_frame,
                 active_layer_idx,
                 selection_rect,

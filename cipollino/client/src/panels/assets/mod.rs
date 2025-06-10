@@ -43,6 +43,7 @@ impl Panel for AssetsPanel {
                         &context.project.client.folders,
                         &context.project.client.clips,
                         &context.project.client.palettes,
+                        &context.project.client.audio_clips,
                         &context.project,
                         &mut context.editor
                     ); 

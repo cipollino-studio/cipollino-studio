@@ -1,10 +1,11 @@
 
-use project::{Client, ClipInner, Layer, LayerGroup, LayerPtr, Ptr};
+use project::{AudioLayer, Client, ClipInner, Layer, LayerGroup, LayerPtr, Ptr};
 
 use super::EditorState;
 
 pub enum RenderLayerKind<'proj> {
     Layer(Ptr<Layer>, &'proj Layer),
+    AudioLayer(Ptr<AudioLayer>, &'proj AudioLayer),
     LayerGroup(Ptr<LayerGroup>, &'proj LayerGroup)
 }
 
@@ -20,6 +21,7 @@ impl RenderLayer<'_> {
     pub fn any_ptr(&self) -> alisa::AnyPtr {
         match self.kind {
             RenderLayerKind::Layer(ptr, _) => ptr.any(),
+            RenderLayerKind::AudioLayer(ptr, _) => ptr.any(),
             RenderLayerKind::LayerGroup(ptr, _) => ptr.any()
         }
     }
@@ -40,6 +42,15 @@ fn add_layers<'proj>(render_layers: &mut Vec<RenderLayer<'proj>>, layers: &'proj
                         idx,
                         depth,
                         kind: RenderLayerKind::Layer(layer_ptr, layer)
+                    });
+                }
+            },
+            LayerPtr::AudioLayer(audio_layer_ptr) => {
+                if let Some(audio_layer) = client.get(audio_layer_ptr) {
+                    render_layers.push(RenderLayer {
+                        idx,
+                        depth,
+                        kind: RenderLayerKind::AudioLayer(audio_layer_ptr, audio_layer) 
                     });
                 }
             },
