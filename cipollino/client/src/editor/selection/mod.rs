@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use project::{alisa::Object, Clip, Fill, Folder, Frame, Layer, Ptr, Stroke};
+use project::{alisa::Object, AudioInstance, Clip, Fill, Folder, Frame, Layer, Ptr, Stroke};
 
 mod selectable;
 
@@ -28,6 +28,7 @@ pub struct Selection {
     clips: HashSet<Ptr<Clip>>,
     layers: HashSet<Ptr<Layer>>,
     frames: HashSet<Ptr<Frame>>,
+    audio_instances: HashSet<Ptr<AudioInstance>>,
     strokes: HashSet<Ptr<Stroke>>,
     fills: HashSet<Ptr<Fill>>,
 
@@ -48,6 +49,7 @@ impl Selection {
             clips: HashSet::new(),
             layers: HashSet::new(),
             frames: HashSet::new(),
+            audio_instances: HashSet::new(),
             strokes: HashSet::new(),
             fills: HashSet::new(),
             shift_down: false,
@@ -73,6 +75,7 @@ impl Selection {
         self.clips.clear();
         self.layers.clear();
         self.frames.clear();
+        self.audio_instances.clear();
         self.strokes.clear();
         self.fills.clear();
         self.version += 1;
@@ -142,6 +145,10 @@ impl Selection {
     pub fn replace(&mut self, mut new_selection: Self) {
         new_selection.version = self.version + 1; 
         *self = new_selection;
+    }
+
+    pub fn contains<S: Selectable>(&self) -> bool {
+        !S::selection_list(self).is_empty()
     }
 
 }

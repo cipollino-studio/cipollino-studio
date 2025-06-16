@@ -1,16 +1,24 @@
 
-use project::{Action, Client, CreateFrame, DeleteFrame, Frame, FrameTreeData, Layer, Ptr};
+use project::{Action, AudioClip, AudioInstance, AudioLayer, Client, ClipInner, CreateAudioInstance, CreateFrame, DeleteFrame, Frame, FrameTreeData, Layer, Ptr};
 
 use crate::{EditorState, LayerRenderList, RenderLayerKind, Selection};
 
 use super::SceneClipboard;
 
-pub enum LayerClipboard {
-    Layer(Vec<(i32, SceneClipboard)>)
+struct AudioInstanceClipboard {
+    start_offset: f32,
+    end_offset: f32,
+    offset: f32,
+    clip: Ptr<AudioClip>
+}
+
+enum LayerClipboard {
+    Layer(Vec<(i32, SceneClipboard)>),
+    AudioLayer(Vec<AudioInstanceClipboard>)
 }
 
 pub struct TimelineClipboard {
-    pub layers: Vec<(i32, LayerClipboard)>
+    layers: Vec<(i32, LayerClipboard)>
 }
 
 fn collect_frame_scene_clipboard(frame: &Frame, client: &Client) -> SceneClipboard {
@@ -23,7 +31,7 @@ fn collect_frame_scene_clipboard(frame: &Frame, client: &Client) -> SceneClipboa
 
 impl Selection {
 
-    pub(super) fn collect_timeline_clipboard(&self, client: &Client, editor: &EditorState, layer_render_list: &LayerRenderList) -> TimelineClipboard {
+    pub(super) fn collect_timeline_clipboard(&self, client: &Client, editor: &EditorState, clip: &ClipInner, layer_render_list: &LayerRenderList) -> TimelineClipboard {
         let mut layers = Vec::new();
 
         for frame_ptr in self.iter::<Frame>() {
@@ -33,10 +41,31 @@ impl Selection {
             let clipboard = collect_frame_scene_clipboard(frame, client);
             
             if let Some((_, layer)) = layers.iter_mut().find(|(idx, _)| *idx == layer_idx) {
-                let LayerClipboard::Layer(frames) = layer;
-                frames.push((frame.time, clipboard));
+                if let LayerClipboard::Layer(frames) = layer {
+                    frames.push((frame.time, clipboard));
+                }
             } else {
                 layers.push((layer_idx, LayerClipboard::Layer(vec![(frame.time, clipboard)])));
+            }
+        }
+
+        for audio_ptr in self.iter::<AudioInstance>() {
+            let Some(audio) = client.get(audio_ptr) else { continue; };
+            let Some(layer_idx) = layer_render_list.iter().position(|layer| layer.any_ptr() == audio.layer.any()) else { continue; };
+            let layer_idx = layer_idx as i32;
+            let clipboard = AudioInstanceClipboard {
+                start_offset: audio.start,
+                end_offset: audio.end,
+                offset: audio.offset,
+                clip: audio.clip,
+            };
+
+            if let Some((_, layer)) = layers.iter_mut().find(|(idx, _)| *idx == layer_idx) {
+                if let LayerClipboard::AudioLayer(audios) = layer {
+                    audios.push(clipboard);
+                }
+            } else {
+                layers.push((layer_idx, LayerClipboard::AudioLayer(vec![clipboard])));
             }
         }
 
@@ -46,10 +75,24 @@ impl Selection {
             *layer_idx -= active_layer_idx;
         }
 
-        // Shift the frames horizontally so the left one has time 0
-        let min_frame_time = layers.iter().filter_map(|(_, layer)| match layer {
-            LayerClipboard::Layer(frames) => Some(frames),
-        }).map(|frames| frames.iter().map(|(time, _)| *time)).flatten().min().unwrap_or(0);
+        // Shift horizontally so the leftmost frame has offset 0
+        let mut min_frame_time = i32::MAX;
+        for (_, layer) in &layers {
+            match layer {
+                LayerClipboard::Layer(frames) => {
+                    for (time, _) in frames {
+                        min_frame_time = min_frame_time.min(*time);
+                    }
+                },
+                LayerClipboard::AudioLayer(audios) => {
+                    for audio in audios {
+                        let time = (audio.start_offset / clip.frame_len()).round() as i32;
+                        min_frame_time = min_frame_time.min(time);
+                    }
+                },
+            }
+        }
+
         for (_, layer) in &mut layers {
             match layer {
                 LayerClipboard::Layer(frames) => {
@@ -57,6 +100,12 @@ impl Selection {
                         *time -= min_frame_time;
                     }
                 },
+                LayerClipboard::AudioLayer(audios) => {
+                    for audio in audios {
+                        audio.start_offset -= (min_frame_time as f32) * clip.frame_len();
+                        audio.end_offset -= (min_frame_time as f32) * clip.frame_len();
+                    }
+                }
             }
         }
 
@@ -87,13 +136,24 @@ fn paste_frame(client: &Client, action: &mut Action, layer_ptr: Ptr<Layer>, laye
     ptr
 }
 
+fn paste_audio_instance(client: &Client, action: &mut Action, layer_ptr: Ptr<AudioLayer>, cursor_time: f32, audio_data: &AudioInstanceClipboard) -> Ptr<AudioInstance> {
+    let ptr = client.next_ptr();
+    action.push(CreateAudioInstance {
+        ptr,
+        layer: layer_ptr,
+        clip: audio_data.clip,
+        start: audio_data.start_offset + cursor_time,
+        end: audio_data.end_offset + cursor_time,
+        offset: audio_data.offset
+    });
+    ptr
+}
+
 impl TimelineClipboard {
     
-    pub(super) fn paste(&self, client: &Client, editor: &EditorState, layer_render_list: &LayerRenderList) -> Option<Selection> {
+    pub(super) fn paste(&self, client: &Client, editor: &EditorState, clip: &ClipInner, layer_render_list: &LayerRenderList) -> Option<Selection> {
         let mut action = Action::new(editor.action_context("Paste Frames"));
         let cursor_layer = layer_render_list.iter().position(|layer| layer.any_ptr() == editor.active_layer.any())? as i32;
-        let clip = client.get(editor.open_clip)?;
-        let clip = client.get(clip.inner)?;
         let cursor_frame = clip.frame_idx(editor.time);
         let mut selection = Selection::new();
 
@@ -111,6 +171,11 @@ impl TimelineClipboard {
                     for (time_offset, frame_data) in frames {
                         let time = cursor_frame + *time_offset;
                         selection.select(paste_frame(client, &mut action, *layer_ptr, layer, time, frame_data));
+                    }
+                },
+                (RenderLayerKind::AudioLayer(layer_ptr, _), LayerClipboard::AudioLayer(audios)) => {
+                    for audio in audios {
+                        selection.select(paste_audio_instance(client, &mut action, *layer_ptr, (cursor_frame as f32) * clip.frame_len(), audio));
                     }
                 },
                 _ => {}

@@ -1,5 +1,5 @@
 
-use project::{Action, CreateFrame, DeleteFill, DeleteFrame, DeleteStroke, Fill, Frame, FrameTreeData, Stroke};
+use project::{Action, AudioInstance, CreateFrame, DeleteAudioInstance, DeleteFill, DeleteFrame, DeleteStroke, Fill, Frame, FrameTreeData, Stroke};
 
 use crate::{keyboard_shortcut, AppSystems, Shortcut};
 use super::{EditorState, LayerRenderList, ProjectState, SceneRenderList};
@@ -74,6 +74,11 @@ impl EditorState {
                 ptr: frame,
             });
         }
+        for audio_instance in self.selection.iter::<AudioInstance>() {
+            action.push(DeleteAudioInstance {
+                ptr: audio_instance,
+            });
+        }
         for stroke in self.selection.iter::<Stroke>() {
             action.push(DeleteStroke {
                 ptr: stroke,
@@ -89,18 +94,20 @@ impl EditorState {
 
     pub fn use_shortcuts(&mut self, project: &ProjectState, layer_render_list: Option<&LayerRenderList>, scene_render_list: Option<&SceneRenderList>, ui: &mut pierro::UI, systems: &mut AppSystems) {
 
+        let clip = project.client.get(self.open_clip).and_then(|clip| project.client.get(clip.inner));
+
         if CopyShortcut::used_globally(ui, systems) {
-            if let Some(clipboard) = self.selection.collect_clipboard(&project.client, self, layer_render_list, scene_render_list) {
+            if let Some(clipboard) = self.selection.collect_clipboard(&project.client, self, layer_render_list, clip, scene_render_list) {
                 self.clipboard = Some(clipboard);
             }
         }
         if PasteShortcut::used_globally(ui, systems) {
             if let Some(clipboard) = &self.clipboard {
-                self.next_selection = clipboard.paste(&project.client, &self, layer_render_list);
+                self.next_selection = clipboard.paste(&project.client, &self, clip, layer_render_list);
             }
         }
         if CutShortcut::used_globally(ui, systems) {
-            if let Some(clipboard) = self.selection.collect_clipboard(&project.client, self, layer_render_list, scene_render_list) {
+            if let Some(clipboard) = self.selection.collect_clipboard(&project.client, self, layer_render_list, clip, scene_render_list) {
                 self.clipboard = Some(clipboard);
             }
             self.delete(project);

@@ -8,8 +8,12 @@ pub use operations::*;
 pub struct AudioInstance {
     pub layer: alisa::Ptr<AudioLayer>,
     pub clip: alisa::Ptr<AudioClip>,
+    // The start of the audio instance on the timeline, in seconds
     pub start: f32,
-    pub end: f32
+    // The end of the audio instance on the timeline, in seconds
+    pub end: f32,
+    // The time at which we start playing the audio clip, in seconds 
+    pub offset: f32
 }
 
 impl alisa::Object for AudioInstance {
@@ -29,7 +33,8 @@ impl alisa::Object for AudioInstance {
 pub struct AudioInstanceTreeData {
     pub clip: alisa::Ptr<AudioClip>,
     pub start: f32,
-    pub end: f32
+    pub end: f32,
+    pub offset: f32
 }
 
 impl alisa::TreeObj for AudioInstance {
@@ -58,7 +63,8 @@ impl alisa::TreeObj for AudioInstance {
             layer: parent,
             clip: data.clip,
             start: data.start,
-            end: data.end 
+            end: data.end,
+            offset: data.offset 
         });
     }
 
@@ -71,7 +77,18 @@ impl alisa::TreeObj for AudioInstance {
             clip: self.clip,
             start: self.start,
             end: self.end,
+            offset: self.offset
         }
     }
 
 }
+
+impl AudioInstance {
+
+    pub fn length(&self) -> f32 {
+        self.end - self.start
+    }
+
+}
+
+alisa::object_set_property_operation!(AudioInstance, offset, f32);

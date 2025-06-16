@@ -1,5 +1,5 @@
 
-use crate::{AddBlockToAudioClip, AddPaletteToClip, AudioBlock, AudioClip, AudioInstance, AudioLayer, Clip, ClipInner, ClipTreeData, Color, CreateAudioClip, CreateAudioInstance, CreateAudioLayer, CreateClip, CreateClipInner, CreateColor, CreateFill, CreateFolder, CreateFrame, CreateLayer, CreateLayerGroup, CreatePalette, CreatePaletteInner, CreateStroke, DeleteAudioClip, DeleteAudioInstance, DeleteAudioLayer, DeleteClip, DeleteColor, DeleteFill, DeleteFolder, DeleteFrame, DeleteLayer, DeleteLayerGroup, DeletePalette, DeleteStroke, Fill, Folder, Frame, Layer, LayerGroup, LayerParent, LayerTreeData, Palette, PaletteInner, RemovePaletteFromClip, RenameAudioClip, RenameClip, RenameFolder, RenamePalette, SetAudioLayerName, SetClipInnerBackgroundColor, SetClipInnerFramerate, SetClipInnerHeight, SetClipInnerLength, SetClipInnerWidth, SetColorColor, SetColorName, SetFillColor, SetFillPaths, SetFrameTime, SetLayerGroupName, SetLayerName, SetStrokeColor, SetStrokeStroke, Stroke, TransferAudioClip, TransferAudioLayer, TransferClip, TransferFolder, TransferLayer, TransferLayerGroup, TransferPalette};
+use crate::{AddBlockToAudioClip, AddPaletteToClip, AudioBlock, AudioClip, AudioInstance, AudioLayer, Clip, ClipInner, ClipTreeData, Color, CreateAudioClip, CreateAudioInstance, CreateAudioLayer, CreateClip, CreateClipInner, CreateColor, CreateFill, CreateFolder, CreateFrame, CreateLayer, CreateLayerGroup, CreatePalette, CreatePaletteInner, CreateStroke, DeleteAudioClip, DeleteAudioInstance, DeleteAudioLayer, DeleteClip, DeleteColor, DeleteFill, DeleteFolder, DeleteFrame, DeleteLayer, DeleteLayerGroup, DeletePalette, DeleteStroke, Fill, Folder, Frame, Layer, LayerGroup, LayerParent, LayerTreeData, Palette, PaletteInner, RemovePaletteFromClip, RenameAudioClip, RenameClip, RenameFolder, RenamePalette, SetAudioInstanceBounds, SetAudioInstanceOffset, SetAudioLayerName, SetClipInnerBackgroundColor, SetClipInnerFramerate, SetClipInnerHeight, SetClipInnerLength, SetClipInnerWidth, SetColorColor, SetColorName, SetFillColor, SetFillPaths, SetFrameTime, SetLayerGroupName, SetLayerName, SetStrokeColor, SetStrokeStroke, Stroke, TransferAudioClip, TransferAudioLayer, TransferClip, TransferFolder, TransferLayer, TransferLayerGroup, TransferPalette};
 
 #[derive(alisa::Serializable, Clone)]
 pub struct Project {
@@ -183,6 +183,8 @@ impl alisa::Project for Project {
 
         alisa::OperationKind::from::<CreateAudioInstance>(),
         alisa::OperationKind::from::<DeleteAudioInstance>(),
+        alisa::OperationKind::from::<SetAudioInstanceBounds>(),
+        alisa::OperationKind::from::<SetAudioInstanceOffset>()
     ];
 
 }

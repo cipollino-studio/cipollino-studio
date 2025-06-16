@@ -6,6 +6,7 @@ use crate::SampleBlock;
 pub struct AudioPlaybackClip {
     pub begin: i64,
     pub end: i64,
+    pub offset: i64,
     pub data: Arc<SampleBlock>
 }
 
@@ -19,14 +20,14 @@ impl AudioPlaybackState {
         Self {
             clips: Vec::new()
         }
-    }    
+    }
 
     pub fn sample(&self, t: i64) -> [f32; 2] {
         let mut sample = [0.0; 2];
 
         for clip in &self.clips {
             let clip_t = t - clip.begin;
-            if clip_t < 0 || clip_t >= clip.data.samples.len() as i64 {
+            if clip_t < clip.offset || clip_t >= clip.data.samples.len() as i64 || t > clip.end {
                 continue;
             }
             for c in 0..2 {

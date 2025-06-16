@@ -1,6 +1,6 @@
 
 mod scene;
-use project::Client;
+use project::{Client, ClipInner};
 pub use scene::*;
 
 mod timeline;
@@ -15,12 +15,12 @@ pub enum Clipboard {
 
 impl Selection {
 
-    pub fn collect_clipboard(&self, client: &Client, editor: &EditorState, layer_render_list: Option<&LayerRenderList>, scene_render_list: Option<&SceneRenderList>) -> Option<Clipboard> {
+    pub fn collect_clipboard(&self, client: &Client, editor: &EditorState, layer_render_list: Option<&LayerRenderList>, clip: Option<&ClipInner>, scene_render_list: Option<&SceneRenderList>) -> Option<Clipboard> {
         match self.kind() {
             SelectionKind::None => None,
             SelectionKind::Asset => None,
             SelectionKind::Layers => None,
-            SelectionKind::Frames => Some(Clipboard::Timeline(self.collect_timeline_clipboard(client, editor, layer_render_list?))),
+            SelectionKind::Frames => Some(Clipboard::Timeline(self.collect_timeline_clipboard(client, editor, clip?, layer_render_list?))),
             SelectionKind::Scene => Some(Clipboard::Scene(self.collect_scene_clipboard(client, scene_render_list?))),
         }
     } 
@@ -29,10 +29,10 @@ impl Selection {
 
 impl Clipboard {
 
-    pub fn paste(&self, client: &Client, editor: &EditorState, layer_render_list: Option<&LayerRenderList>) -> Option<Selection> {
+    pub fn paste(&self, client: &Client, editor: &EditorState, clip: Option<&ClipInner>, layer_render_list: Option<&LayerRenderList>) -> Option<Selection> {
         match self {
             Clipboard::Timeline(timeline) => {
-                timeline.paste(client, editor, layer_render_list?)
+                timeline.paste(client, editor, clip?, layer_render_list?)
             },
             Clipboard::Scene(scene) => {
                 scene.paste(client, editor)

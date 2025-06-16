@@ -18,7 +18,7 @@ impl EditorState {
             }
 
             let intersection = buffer_range.intersect(audio_range);
-            let samples = intersection.shift(-audio.start) * (clip.format.sample_rate as f32);
+            let samples = intersection.shift(-audio.start + audio.offset) * (clip.format.sample_rate as f32);
 
             let mut offset = 0;
             for (block_size, block_ptr) in &clip.blocks {

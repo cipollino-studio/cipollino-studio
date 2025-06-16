@@ -191,3 +191,11 @@ pub fn deep_load_audio_clip(audio_ptr: alisa::Ptr<AudioClip>, client: &Client) {
         client.request_load(*block);
     }
 }
+
+impl AudioClip {
+
+    pub fn length_seconds(&self) -> f32 {
+        (self.length as f32) / (self.format.sample_rate as f32)
+    }
+
+}

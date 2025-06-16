@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use project::{Clip, Fill, Folder, Frame, Layer, Ptr, SceneObjPtr, Stroke};
+use project::{AudioInstance, Clip, Fill, Folder, Frame, Layer, Ptr, SceneObjPtr, Stroke};
 
 use super::{Selectable, Selection, SelectionKind};
 
@@ -50,6 +50,18 @@ impl Selectable for Frame {
 
     fn selection_list_mut(selection: &mut Selection) -> &mut HashSet<Ptr<Self>> {
         &mut selection.frames
+    }
+}
+
+impl Selectable for AudioInstance {
+    const KIND: SelectionKind = SelectionKind::Frames;
+
+    fn selection_list(selection: &Selection) -> &HashSet<Ptr<Self>> {
+        &selection.audio_instances
+    }
+
+    fn selection_list_mut(selection: &mut Selection) -> &mut HashSet<Ptr<Self>> {
+        &mut selection.audio_instances
     }
 }
 

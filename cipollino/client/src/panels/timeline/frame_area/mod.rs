@@ -19,6 +19,12 @@ enum DragState {
     BoxSelect {
         from: pierro::Vec2,
         to: pierro::Vec2
+    },
+    AudioTrimStart {
+        offset: f32
+    },
+    AudioTrimEnd {
+        offset: f32
     }
 }
 
@@ -26,9 +32,8 @@ impl DragState {
 
     fn move_offset(&self) -> f32 {
         match self {
-            DragState::None => 0.0,
             DragState::Move { offset } => *offset,
-            DragState::BoxSelect { .. } => 0.0,
+            _ => 0.0
         }
     }
 
@@ -83,7 +88,9 @@ impl FrameArea {
         // Dragging
         match &mut self.drag_state {
             DragState::None => {},
-            DragState::Move { offset } => {
+            DragState::Move { offset } |
+            DragState::AudioTrimStart { offset } |
+            DragState::AudioTrimEnd { offset } => {
                 *offset += frame_area.drag_delta(ui).x;
             },
             DragState::BoxSelect { from: _, to } => {
@@ -109,7 +116,7 @@ impl FrameArea {
         }
         // stop_drag() called after rendering to avoid a flicker as the frames are moved 
         if frame_area.drag_stopped() {
-            self.drag_stopped(project, editor, render_list);
+            self.drag_stopped(project, editor, clip, render_list);
         }
 
         // Painting the frame area contents 

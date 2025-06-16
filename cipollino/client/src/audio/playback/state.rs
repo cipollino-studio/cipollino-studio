@@ -8,7 +8,8 @@ impl EditorState {
     fn add_audio_instance_clips(&mut self, project: &ProjectState, audio: &AudioInstance, sample_rate: u32, clips: &mut Vec<AudioPlaybackClip>) {
         let Some(clip) = project.client.get(audio.clip) else { return; };
 
-        let mut t = (audio.start * (sample_rate as f32)).round() as i64;
+        let mut t = ((audio.start - audio.offset) * (sample_rate as f32)).round() as i64;
+        let instance_start = (audio.start * (sample_rate as f32)).round() as i64; 
         let instance_end = (audio.end * (sample_rate as f32)).round() as i64; 
         for (block_size, block_ptr) in clip.blocks.iter() {
             let Some(block) = project.client.get(*block_ptr) else {
@@ -17,11 +18,15 @@ impl EditorState {
             };
             let data = self.audio_cache.get_samples(clip.format, *block_ptr, block);
             let len = data.samples.len() as i64;
-            clips.push(AudioPlaybackClip {
-                begin: t,
-                end: (t + len).min(instance_end),
-                data
-            });
+
+            if t + len > instance_start {
+                clips.push(AudioPlaybackClip {
+                    begin: t,
+                    end: (t + len).min(instance_end),
+                    offset: (instance_start - t).max(0),
+                    data
+                });
+            }
 
             if t + len >= instance_end {
                 break;
