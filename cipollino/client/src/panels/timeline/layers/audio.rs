@@ -30,10 +30,31 @@ impl TimelinePanel {
                 self.renameable_layer_label(ui, project, &editor, &audio.name, audio_ptr); 
             });
 
+            pierro::container(ui, pierro::Size::fit(), pierro::Size::fr(1.0), pierro::Layout::horizontal().align_center(), |ui| {
+
+                // Mute/Unmute
+                let mute_icon = if editor.muted_layers.contains(&audio_ptr) {
+                    pierro::icons::SPEAKER_SLASH
+                } else {
+                    pierro::icons::SPEAKER_HIGH
+                };
+                if pierro::clickable_icon(ui, mute_icon).mouse_clicked() {
+                    if !editor.muted_layers.remove(&audio_ptr) {
+                        editor.muted_layers.insert(audio_ptr);
+                    }
+                }
+                
+                pierro::h_spacing(ui, 5.0);
+            });
+
         });
         
         self.layer_dnd_source.source_without_cursor_icon(ui, &layer_response, || LayerList::single(audio_ptr));
         self.handle_layer_dropping(ui, &layer_response, render_list_idx);
+
+        if layer_response.mouse_double_clicked() {
+            self.start_rename(&audio.name, audio_ptr);
+        }
 
         pierro::context_menu(ui, &layer_response, |ui| {
             self.audio_layer_context_menu(ui, project, &editor, audio_ptr); 

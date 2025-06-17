@@ -1,4 +1,5 @@
 
+use alisa::Ptr;
 use project::{AudioInstance, AudioLayer};
 
 use crate::{AudioPlaybackClip, AudioPlaybackState, EditorState, LayerRenderList, ProjectState, RenderLayerKind};
@@ -37,7 +38,10 @@ impl EditorState {
 
     }
 
-    fn add_layer_clips(&mut self, project: &ProjectState, layer: &AudioLayer, sample_rate: u32, clips: &mut Vec<AudioPlaybackClip>) {
+    fn add_layer_clips(&mut self, project: &ProjectState, layer_ptr: Ptr<AudioLayer>, layer: &AudioLayer, sample_rate: u32, clips: &mut Vec<AudioPlaybackClip>) {
+        if self.muted_layers.contains(&layer_ptr) {
+            return;
+        }
         for audio in layer.audio_instances.iter() {
             let Some(audio) = project.client.get(audio.ptr()) else { continue; };
             self.add_audio_instance_clips(project, audio, sample_rate, clips);
@@ -48,8 +52,8 @@ impl EditorState {
         let mut clips = Vec::new();
         for layer in layers.iter() {
             match layer.kind {
-                RenderLayerKind::AudioLayer(_, audio_layer) => {
-                    self.add_layer_clips(project, audio_layer, sample_rate, &mut clips);
+                RenderLayerKind::AudioLayer(audio_layer_ptr, audio_layer) => {
+                    self.add_layer_clips(project, audio_layer_ptr, audio_layer, sample_rate, &mut clips);
                 },
                 _ => {}
             }

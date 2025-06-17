@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use std::{cell::RefCell, collections::HashMap};
 use std::rc::Rc;
 use alisa::Object;
-use project::{Client, ClientId, Clip, ClipInner, Layer, LayerGroup, PresenceData, Project, Ptr, SceneObjPtr, SceneObjectColor, StrokeBrush};
+use project::{AudioLayer, Client, ClientId, Clip, ClipInner, Layer, LayerGroup, PresenceData, Project, Ptr, SceneObjPtr, SceneObjectColor, StrokeBrush};
 
 use crate::{AppSystems, AudioBlockCache, Clipboard, MeshCache, Presence, SelectTool, Selectable, ToolDyn, Window, WindowInstance};
 
@@ -30,6 +30,7 @@ pub struct EditorState {
 
     pub hidden_layers: HashSet<Ptr<Layer>>,
     pub locked_layers: HashSet<Ptr<Layer>>,
+    pub muted_layers: HashSet<Ptr<AudioLayer>>,
     pub open_layer_groups: HashSet<Ptr<LayerGroup>>,
 
     pub show_onion_skin: bool,
@@ -79,6 +80,7 @@ impl EditorState {
 
             hidden_layers: HashSet::new(),
             locked_layers: HashSet::new(),
+            muted_layers: HashSet::new(),
             open_layer_groups: HashSet::new(),
 
             show_onion_skin: false,
