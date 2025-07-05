@@ -23,6 +23,9 @@ pub use util::*;
 mod audio;
 pub use audio::*;
 
+mod export;
+use export::*;
+
 use std::path::PathBuf;
 use clap::Parser;
 use splash::SplashScreen;

@@ -1,39 +1,7 @@
 
-use std::{io::Write, path::PathBuf, process::{Command, Stdio}, sync::mpsc, thread};
+use std::{io::Write, path::{Path, PathBuf}, process::{Command, Stdio}, sync::mpsc, thread};
 
-#[cfg(target_os = "macos")]
-#[cfg(target_arch = "aarch64")]
-#[cfg(debug_assertions)]
-pub const FFMPEG_PATH: &'static str = "./cipollino/client/libs/ffmpeg/macos_arm64/ffmpeg"; 
-
-#[cfg(target_os = "macos")]
-#[cfg(target_arch = "aarch64")]
-#[cfg(not(debug_assertions))]
-pub const FFMPEG_PATH: &'static str = "../ffmpeg"; 
-
-#[cfg(target_os = "windows")]
-#[cfg(target_arch = "x86_64")]
-#[cfg(debug_assertions)]
-pub const FFMPEG_PATH: &'static str = "./cipollino/client/libs/ffmpeg/windows_x86/ffmpeg.exe"; 
-
-#[cfg(target_os = "windows")]
-#[cfg(not(debug_assertions))]
-pub const FFMPEG_PATH: &'static str = "./ffmpeg.exe"; 
-
-#[cfg(target_os = "linux")]
-#[cfg(target_arch = "x86_64")]
-#[cfg(debug_assertions)]
-pub const FFMPEG_PATH: &'static str = "./cipollino/client/libs/ffmpeg/linux_x86/ffmpeg"; 
-
-#[cfg(target_os = "linux")]
-#[cfg(target_arch = "aarch64")]
-#[cfg(debug_assertions)]
-pub const FFMPEG_PATH: &'static str = "./cipollino/client/libs/ffmpeg/linux_arm64/ffmpeg"; 
-
-#[cfg(target_os = "linux")]
-#[cfg(not(debug_assertions))]
-pub const FFMPEG_PATH: &'static str = "./ffmpeg";
-
+use crate::export::ffmpeg_path::FFMPEG_PATH;
 
 enum VideoWriterMessage {
     Frame(Vec<u8>),
@@ -48,7 +16,7 @@ pub struct VideoWriter {
 
 impl VideoWriter {
 
-    pub fn new(out: PathBuf, w: u32, h: u32, fps: f32) -> Result<Self, String> {
+    pub fn new(out: PathBuf, w: u32, h: u32, fps: f32, audio_path: &Path) -> Result<Self, String> {
 
         let out = out.with_extension("mp4");
 
@@ -66,6 +34,8 @@ impl VideoWriter {
             .arg(format!("{}", fps))
             .arg("-i")
             .arg("-")
+            .arg("-i")
+            .arg(audio_path)
             .arg("-c:v")
             .arg("libx264")
             .arg("-filter:v")

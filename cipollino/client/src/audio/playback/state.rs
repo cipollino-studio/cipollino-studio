@@ -1,12 +1,14 @@
 
+use std::collections::HashSet;
+
 use alisa::Ptr;
 use project::{AudioInstance, AudioLayer};
 
-use crate::{AudioPlaybackClip, AudioPlaybackState, EditorState, LayerRenderList, ProjectState, RenderLayerKind};
+use crate::{AudioBlockCache, AudioPlaybackClip, AudioPlaybackState, EditorState, LayerRenderList, ProjectState, RenderLayerKind};
 
-impl EditorState {
-
-    fn add_audio_instance_clips(&mut self, project: &ProjectState, audio: &AudioInstance, sample_rate: u32, clips: &mut Vec<AudioPlaybackClip>) {
+impl AudioPlaybackState {
+    
+    fn add_audio_instance_clips(project: &ProjectState, audio: &AudioInstance, sample_rate: u32, clips: &mut Vec<AudioPlaybackClip>, audio_cache: &mut AudioBlockCache) {
         let Some(clip) = project.client.get(audio.clip) else { return; };
 
         let mut t = ((audio.start - audio.offset) * (sample_rate as f32)).round() as i64;
@@ -17,7 +19,7 @@ impl EditorState {
                 t += ((*block_size as f32) * (sample_rate as f32) / (clip.format.sample_rate as f32)).round() as i64;
                 continue;
             };
-            let data = self.audio_cache.get_samples(clip.format, *block_ptr, block);
+            let data = audio_cache.get_samples(clip.format, *block_ptr, block);
             let len = data.samples.len() as i64;
 
             if t + len > instance_start {
@@ -38,22 +40,22 @@ impl EditorState {
 
     }
 
-    fn add_layer_clips(&mut self, project: &ProjectState, layer_ptr: Ptr<AudioLayer>, layer: &AudioLayer, sample_rate: u32, clips: &mut Vec<AudioPlaybackClip>) {
-        if self.muted_layers.contains(&layer_ptr) {
+    fn add_layer_clips(project: &ProjectState, layer_ptr: Ptr<AudioLayer>, layer: &AudioLayer, sample_rate: u32, clips: &mut Vec<AudioPlaybackClip>, audio_cache: &mut AudioBlockCache, muted_layers: &HashSet<Ptr<AudioLayer>>) {
+        if muted_layers.contains(&layer_ptr) {
             return;
         }
         for audio in layer.audio_instances.iter() {
             let Some(audio) = project.client.get(audio.ptr()) else { continue; };
-            self.add_audio_instance_clips(project, audio, sample_rate, clips);
+            Self::add_audio_instance_clips(project, audio, sample_rate, clips, audio_cache);
         }
     }
 
-    pub(super) fn construct_audio_state(&mut self, project: &ProjectState, layers: &LayerRenderList, sample_rate: u32) -> AudioPlaybackState {
+    pub fn construct(project: &ProjectState, layers: &LayerRenderList, sample_rate: u32, audio_cache: &mut AudioBlockCache, muted_layers: &HashSet<Ptr<AudioLayer>>) -> Self {
         let mut clips = Vec::new();
         for layer in layers.iter() {
             match layer.kind {
                 RenderLayerKind::AudioLayer(audio_layer_ptr, audio_layer) => {
-                    self.add_layer_clips(project, audio_layer_ptr, audio_layer, sample_rate, &mut clips);
+                    Self::add_layer_clips(project, audio_layer_ptr, audio_layer, sample_rate, &mut clips, audio_cache, muted_layers);
                 },
                 _ => {}
             }
@@ -62,6 +64,14 @@ impl EditorState {
         AudioPlaybackState {
             clips
         }
+    }
+
+}
+
+impl EditorState {
+
+    pub fn construct_audio_state(&mut self, project: &ProjectState, layers: &LayerRenderList, sample_rate: u32) -> AudioPlaybackState {
+        AudioPlaybackState::construct(project, layers, sample_rate, &mut self.audio_cache, &self.muted_layers)
     }
 
 }

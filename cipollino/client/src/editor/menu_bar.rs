@@ -1,7 +1,8 @@
 
 use crate::{splash::SplashScreen, AppState};
 
-use super::{Editor, ExportDialog, SettingsWindow};
+use super::{Editor, SettingsWindow};
+use crate::ExportDialog;
 
 impl Editor {
 

@@ -7,13 +7,20 @@ use super::Window;
 
 mod progress_modal;
 
+mod ffmpeg_path;
+
 mod video_writer;
 use video_writer::*;
+
+mod audio_writer;
+
+const SAMPLE_RATE_OPTIONS: &[u32] = &[11025, 16000, 22100, 44100, 48000, 88200, 96000, 176400, 192000];
 
 pub(super) struct ExportDialog {
     export_path: String,
     scale: f32,
     msaa: u32,
+    sample_rate: u32
 }
 
 impl ExportDialog {
@@ -22,7 +29,8 @@ impl ExportDialog {
         Self {
             export_path: String::new(),
             scale: 1.0,
-            msaa: 2
+            msaa: 2,
+            sample_rate: 44100
         }
     }
 
@@ -82,22 +90,36 @@ impl Window for ExportDialog {
                     }
                 });
             });
+            builder.labeled("Sample Rate:", |ui| {
+                pierro::dropdown(ui, self.sample_rate.to_string(), |ui| {
+                    for sample_rate in SAMPLE_RATE_OPTIONS {
+                        if pierro::menu_button(ui, sample_rate.to_string()).mouse_clicked() {
+                            self.sample_rate = *sample_rate;
+                        }
+                    }
+                });
+            });
         });
 
         pierro::v_spacing(ui, 5.0);
         pierro::vertical_centered(ui, |ui| {
             if pierro::button(ui, "Export").mouse_clicked() {
-                ctx.editor.open_window(
-                    ExportProgressModal::new(
+                if let Some(layers) = ctx.layer_render_list {
+                    let window = ExportProgressModal::new(
+                        ctx.project,
+                        &ctx.systems,
                         self.export_path.clone().into(),
                         clip.inner,
+                        clip_inner,
+                        layers,
                         output_w,
                         output_h,
                         self.msaa,
-                        clip_inner.framerate,
+                        self.sample_rate,
                         ui.wgpu_device()
-                    )
-                );
+                    );
+                    ctx.editor.open_window(window);
+                }
                 *close = true;
             }
         });
