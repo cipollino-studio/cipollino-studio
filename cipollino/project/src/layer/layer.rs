@@ -8,7 +8,7 @@ pub struct Layer {
 
     pub name: String,
 
-    pub frames: alisa::UnorderedChildList<alisa::LoadingPtr<Frame>>
+    pub frames: alisa::UnorderedChildList<alisa::OwningPtr<Frame>>
 }
 
 impl Default for Layer {
@@ -40,7 +40,7 @@ impl alisa::Object for Layer {
 #[derive(alisa::Serializable)]
 pub struct LayerTreeData {
     pub name: String,
-    pub frames: alisa::UnorderedChildListTreeData<alisa::LoadingPtr<Frame>>
+    pub frames: alisa::UnorderedChildListTreeData<alisa::OwningPtr<Frame>>
 }
 
 impl Default for LayerTreeData {
@@ -82,8 +82,8 @@ impl alisa::TreeObj for Layer {
         recorder.add_obj(ptr, layer);
     }
 
-    fn destroy(&self, recorder: &mut alisa::Recorder<Self::Project>) {
-        self.frames.destroy(recorder);
+    fn destroy(&self, _recorder: &mut alisa::Recorder<Self::Project>) {
+        
     }
 
     fn collect_data(&self, objects: &Objects) -> Self::TreeData {

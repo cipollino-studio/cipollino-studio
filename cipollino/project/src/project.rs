@@ -3,10 +3,10 @@ use crate::{AddBlockToAudioClip, AddPaletteToClip, AudioBlock, AudioClip, AudioI
 
 #[derive(alisa::Serializable, Clone)]
 pub struct Project {
-    pub folders: alisa::UnorderedChildList<alisa::LoadingPtr<Folder>>,
-    pub clips: alisa::UnorderedChildList<alisa::LoadingPtr<Clip>>,
-    pub palettes: alisa::UnorderedChildList<alisa::LoadingPtr<Palette>>,
-    pub audio_clips: alisa::UnorderedChildList<alisa::LoadingPtr<AudioClip>>,
+    pub folders: alisa::UnorderedChildList<alisa::OwningPtr<Folder>>,
+    pub clips: alisa::UnorderedChildList<alisa::OwningPtr<Clip>>,
+    pub palettes: alisa::UnorderedChildList<alisa::OwningPtr<Palette>>,
+    pub audio_clips: alisa::UnorderedChildList<alisa::OwningPtr<AudioClip>>,
 }
 
 impl Default for Project {

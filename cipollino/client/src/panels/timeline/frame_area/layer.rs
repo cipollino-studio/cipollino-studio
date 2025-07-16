@@ -82,7 +82,7 @@ impl FrameArea {
         let mut frames_to_render = Vec::new();
         let mut mouse_over_frame = false;
         for frame_ptr in layer.frames.iter() {
-            if let Some(frame) = project.client.get(frame_ptr.ptr()) {
+            if let Some(frame) = project.client.get(frame_ptr) {
 
                 let frame_interaction_rect = pierro::Rect::min_size(
                     pierro::vec2((frame.time as f32) * TimelinePanel::FRAME_WIDTH, (layer_idx as f32) * TimelinePanel::LAYER_HEIGHT),

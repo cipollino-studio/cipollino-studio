@@ -7,4 +7,4 @@ pub use fill::*;
 
 use crate::{Frame, Project};
 
-alisa::ptr_enum!(SceneObjPtr loading [Stroke, Fill] childof alisa::Ptr<Frame>, in Project);
+alisa::ptr_enum!(SceneObjPtr owning [Stroke, Fill] childof alisa::Ptr<Frame>, in Project);

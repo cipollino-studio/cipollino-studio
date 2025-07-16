@@ -109,7 +109,7 @@ impl Window for ExportDialog {
                         ctx.project,
                         &ctx.systems,
                         self.export_path.clone().into(),
-                        clip.inner,
+                        clip.inner.ptr(),
                         clip_inner,
                         layers,
                         output_w,

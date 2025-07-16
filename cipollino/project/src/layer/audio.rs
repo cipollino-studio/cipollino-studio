@@ -7,7 +7,7 @@ use super::{LayerParent, LayerPtr};
 pub struct AudioLayer {
     pub parent: LayerParent,
     pub name: String,
-    pub audio_instances: alisa::UnorderedChildList<alisa::LoadingPtr<AudioInstance>>,
+    pub audio_instances: alisa::UnorderedChildList<alisa::OwningPtr<AudioInstance>>,
 }
 
 impl Default for AudioLayer {
@@ -41,7 +41,7 @@ impl alisa::Object for AudioLayer {
 #[derive(alisa::Serializable)]
 pub struct AudioLayerTreeData {
     pub name: String,
-    pub audio_instances: alisa::UnorderedChildListTreeData<alisa::LoadingPtr<AudioInstance>>
+    pub audio_instances: alisa::UnorderedChildListTreeData<alisa::OwningPtr<AudioInstance>>
 }
 
 impl Default for AudioLayerTreeData {
@@ -86,8 +86,8 @@ impl alisa::TreeObj for AudioLayer {
         recorder.add_obj(ptr, audio_layer);
     }
 
-    fn destroy(&self, recorder: &mut alisa::Recorder<Self::Project>) {
-        self.audio_instances.destroy(recorder);
+    fn destroy(&self, _: &mut alisa::Recorder<Self::Project>) {
+
     }
 
     fn collect_data(&self, objects: &Objects) -> Self::TreeData {

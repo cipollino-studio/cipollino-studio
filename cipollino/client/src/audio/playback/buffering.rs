@@ -10,7 +10,7 @@ impl EditorState {
         let buffer_range = elic::Range::min_size(self.time, 5.0);
 
         for audio in layer.audio_instances.iter() {
-            let Some(audio) = project.client.get(audio.ptr()) else { continue; };
+            let Some(audio) = project.client.get(audio) else { continue; };
             let Some(clip) = project.client.get(audio.clip) else { continue; };
             let audio_range = elic::Range::new(audio.start, audio.end);
             if !buffer_range.intersects(audio_range) {

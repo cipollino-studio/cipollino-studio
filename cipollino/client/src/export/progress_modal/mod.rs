@@ -91,13 +91,13 @@ impl ExportProgressModal {
             match layer.kind {
                 RenderLayerKind::AudioLayer(_, audio_layer) => {
                     for audio in audio_layer.audio_instances.iter() {
-                        let Some(audio) = project.client.get(audio.ptr()) else { continue; };
+                        let Some(audio) = project.client.get(audio) else { continue; };
                         let Some(clip) = project.client.get(audio.clip) else { continue; };
                         for (_, block) in clip.blocks.iter() {
                             if project.client.get_ref(*block).is_loaded() {
-                                blocks_to_resample.push_back((clip.format, *block));
+                                blocks_to_resample.push_back((clip.format, block.ptr()));
                             } else {
-                                blocks_to_load.push((clip.format, *block));
+                                blocks_to_load.push((clip.format, block.ptr()));
                             }
                         }
                     }

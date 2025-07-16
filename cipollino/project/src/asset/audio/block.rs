@@ -18,6 +18,10 @@ impl alisa::Serializable for AudioBlock {
         })
     }
 
+    fn delete(&self, _: &mut Vec<alisa::AnyPtr>) {
+        
+    }
+
 }
 
 impl alisa::Object for AudioBlock {
@@ -54,7 +58,7 @@ impl alisa::Operation for AddBlockToAudioClip {
         });
 
         let Some(clip) = recorder.get_obj_mut(self.clip) else { return false; };
-        clip.blocks.push((self.length, self.ptr));
+        clip.blocks.push((self.length, alisa::HoldingPtr::new(self.ptr)));
         clip.length += self.length;
 
         true

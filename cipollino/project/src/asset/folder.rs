@@ -9,10 +9,10 @@ use super::{deep_load_audio_clip, deep_load_clip, deep_load_palette, AudioClip, 
 pub struct Folder {
     pub parent: alisa::Ptr<Folder>,
     pub name: String,
-    pub folders: alisa::UnorderedChildList<alisa::LoadingPtr<Folder>>,
-    pub clips: alisa::UnorderedChildList<alisa::LoadingPtr<Clip>>,
-    pub palettes: alisa::UnorderedChildList<alisa::LoadingPtr<Palette>>,
-    pub audio_clips: alisa::UnorderedChildList<alisa::LoadingPtr<AudioClip>>
+    pub folders: alisa::UnorderedChildList<alisa::OwningPtr<Folder>>,
+    pub clips: alisa::UnorderedChildList<alisa::OwningPtr<Clip>>,
+    pub palettes: alisa::UnorderedChildList<alisa::OwningPtr<Palette>>,
+    pub audio_clips: alisa::UnorderedChildList<alisa::OwningPtr<AudioClip>>
 }
 
 impl Default for Folder {
@@ -48,10 +48,10 @@ impl alisa::Object for Folder {
 #[derive(alisa::Serializable)]
 pub struct FolderTreeData {
     pub name: String,
-    pub folders: alisa::UnorderedChildListTreeData<alisa::LoadingPtr<Folder>>,
-    pub clips: alisa::UnorderedChildListTreeData<alisa::LoadingPtr<Clip>>,
-    pub palettes: alisa::UnorderedChildListTreeData<alisa::LoadingPtr<Palette>>,
-    pub audio_clips: alisa::UnorderedChildListTreeData<alisa::LoadingPtr<AudioClip>>
+    pub folders: alisa::UnorderedChildListTreeData<alisa::OwningPtr<Folder>>,
+    pub clips: alisa::UnorderedChildListTreeData<alisa::OwningPtr<Clip>>,
+    pub palettes: alisa::UnorderedChildListTreeData<alisa::OwningPtr<Palette>>,
+    pub audio_clips: alisa::UnorderedChildListTreeData<alisa::OwningPtr<AudioClip>>
 }
 
 impl Default for FolderTreeData {
@@ -70,7 +70,7 @@ impl Default for FolderTreeData {
 
 impl alisa::TreeObj for Folder {
     type ParentPtr = alisa::Ptr<Folder>;
-    type ChildList = alisa::UnorderedChildList<alisa::LoadingPtr<Folder>>;
+    type ChildList = alisa::UnorderedChildList<alisa::OwningPtr<Folder>>;
     type TreeData = FolderTreeData;
 
     fn child_list<'a>(parent: alisa::Ptr<Folder>, context: &'a alisa::ProjectContext<Project>) -> Option<&'a Self::ChildList> {
@@ -107,11 +107,8 @@ impl alisa::TreeObj for Folder {
         recorder.add_obj(ptr, folder);
     }
 
-    fn destroy(&self, recorder: &mut alisa::Recorder<Project>) {
-        self.folders.destroy(recorder);
-        self.clips.destroy(recorder);
-        self.palettes.destroy(recorder);
-        self.audio_clips.destroy(recorder);
+    fn destroy(&self, _recorder: &mut alisa::Recorder<Project>) {
+
     }
 
     fn collect_data(&self, objects: &Objects) -> Self::TreeData {

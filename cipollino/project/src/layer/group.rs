@@ -82,8 +82,8 @@ impl alisa::TreeObj for LayerGroup {
         recorder.add_obj(ptr, layer_group);
     }
 
-    fn destroy(&self, recorder: &mut alisa::Recorder<Project>) {
-        self.layers.destroy(recorder);
+    fn destroy(&self, _recorder: &mut alisa::Recorder<Project>) {
+
     }
 
     fn collect_data(&self, objects: &Objects) -> Self::TreeData {

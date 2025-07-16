@@ -53,7 +53,7 @@ impl ScenePanel {
         let original_color = color;
         editor.color.backup = color.into();
 
-        let icon = if client.get(editor.color.color.ptr()).is_some() {
+        let icon = if client.get(editor.color.color).is_some() {
             Some(pierro::icons::PALETTE)
         } else {
             None

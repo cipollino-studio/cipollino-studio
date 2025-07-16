@@ -104,7 +104,7 @@ impl Panel for TimelinePanel {
 
         pierro::margin_with_size(ui, pierro::Margin::same(3.0), pierro::Size::fr(1.0), pierro::Size::fit(), |ui| {
             pierro::horizontal_centered(ui, |ui| {
-                self.header(ui, project, editor, editor.open_clip, clip.inner, clip_inner);
+                self.header(ui, project, editor, editor.open_clip, clip.inner.ptr(), clip_inner);
             });
         });
         pierro::h_line(ui);

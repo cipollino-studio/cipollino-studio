@@ -17,7 +17,7 @@ impl AssetUI for Palette {
             ptr,
             parent,
             data: PaletteTreeData {
-                inner_ptr: client.next_ptr(),
+                inner_ptr: client.next_ptr().into(),
                 ..Default::default()
             },
         });
@@ -38,7 +38,7 @@ impl AssetUI for Palette {
         }
 
         let Some(palette) = project.client.get(ptr) else { return; };
-        let palette_inner = if palette.inner.is_null() {
+        let palette_inner = if palette.inner.ptr().is_null() {
             let new_inner_ptr = project.client.next_ptr();
             project.client.queue_operation(CreatePaletteInner {
                 palette: ptr,
@@ -47,11 +47,11 @@ impl AssetUI for Palette {
             new_inner_ptr
         } else {
             project.client.request_load(palette.inner);
-            palette.inner
+            palette.inner.ptr()
         };
         
         project.client.queue_action(Action::single(editor.action_context("Add Palette to Clip"), AddPaletteToClip {
-            clip: clip.inner,
+            clip: clip.inner.ptr(),
             palette: palette_inner,
         }));
     }

@@ -16,7 +16,7 @@ pub struct AudioClip {
     pub format: AudioFormat,
     /// Length in samples
     pub length: usize,
-    pub blocks: Vec<(usize, alisa::Ptr<AudioBlock>)>
+    pub blocks: Vec<(usize, alisa::HoldingPtr<AudioBlock>)>
 }
 
 impl Default for AudioClip {
@@ -53,7 +53,7 @@ pub struct AudioClipTreeData {
     pub name: String,
     pub format: AudioFormat,
     pub length: usize,
-    pub blocks: Vec<(alisa::Ptr<AudioBlock>, usize, Box<[u8]>)>
+    pub blocks: Vec<(alisa::HoldingPtr<AudioBlock>, usize, Box<[u8]>)>
 }
 
 impl Default for AudioClipTreeData {
@@ -71,7 +71,7 @@ impl Default for AudioClipTreeData {
 
 impl alisa::TreeObj for AudioClip {
     type ParentPtr = alisa::Ptr<Folder>;
-    type ChildList = alisa::UnorderedChildList<alisa::LoadingPtr<AudioClip>>;
+    type ChildList = alisa::UnorderedChildList<alisa::OwningPtr<AudioClip>>;
     type TreeData = AudioClipTreeData;
 
     fn child_list<'a>(parent: Self::ParentPtr, context: &'a alisa::ProjectContext<Self::Project>) -> Option<&'a Self::ChildList> {
@@ -113,17 +113,15 @@ impl alisa::TreeObj for AudioClip {
         });
     }
 
-    fn destroy(&self, recorder: &mut alisa::Recorder<Self::Project>) {
-        for (_, block) in &self.blocks {
-            recorder.delete_obj(*block);
-        }
+    fn destroy(&self, _recorder: &mut alisa::Recorder<Self::Project>) {
+
     }
 
     fn collect_data(&self, objects: &Objects) -> Self::TreeData {
         let mut blocks = Vec::new();
 
         for (size, block_ptr) in &self.blocks {
-            let Some(block) = objects.audio_blocks.get(*block_ptr) else { continue; }; 
+            let Some(block) = objects.audio_blocks.get(block_ptr.ptr()) else { continue; }; 
             blocks.push((*block_ptr, *size, block.data.clone()));
         }
 
@@ -143,7 +141,7 @@ impl alisa::TreeObj for AudioClip {
         let Some(audio) = project.obj_list().get(ptr) else { return false; };
 
         for (_, block) in &audio.blocks {
-            if !project.obj_list().get(*block).is_some() {
+            if !project.obj_list().get(block.ptr()).is_some() {
                 return false;
             }
         }

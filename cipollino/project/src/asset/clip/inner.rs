@@ -9,7 +9,7 @@ use super::Clip;
 #[derive(alisa::Serializable, Clone)]
 pub struct ClipInner {
     pub layers: alisa::ChildList<LayerPtr>,
-    pub colors: alisa::UnorderedChildList<alisa::LoadingPtr<Color>>,
+    pub colors: alisa::UnorderedChildList<alisa::OwningPtr<Color>>,
 
     pub width: u32,
     pub height: u32, 
@@ -86,7 +86,7 @@ impl alisa::Operation for CreateClipInner {
         let Some(clip) = recorder.get_obj(self.clip) else {
             return false;
         };
-        let old_inner = clip.inner;
+        let old_inner = clip.inner.ptr();
         if recorder.get_obj(old_inner).is_some() {
             return false;
         }
@@ -95,7 +95,7 @@ impl alisa::Operation for CreateClipInner {
         let Some(clip) = recorder.get_obj_mut(self.clip) else {
             return false;
         };
-        clip.inner = self.inner;
+        clip.inner = self.inner.into();
 
         true
     }

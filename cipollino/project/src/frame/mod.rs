@@ -58,7 +58,7 @@ impl Default for FrameTreeData {
 
 impl alisa::TreeObj for Frame {
     type ParentPtr = alisa::Ptr<Layer>;
-    type ChildList = alisa::UnorderedChildList<alisa::LoadingPtr<Self>>;
+    type ChildList = alisa::UnorderedChildList<alisa::OwningPtr<Self>>;
     type TreeData = FrameTreeData;
 
     fn child_list<'a>(parent: alisa::Ptr<Layer>, context: &'a alisa::ProjectContext<Project>) -> Option<&'a Self::ChildList> {
@@ -86,8 +86,8 @@ impl alisa::TreeObj for Frame {
         recorder.add_obj(ptr, frame);
     }
 
-    fn destroy(&self, recorder: &mut alisa::Recorder<Self::Project>) {
-        self.scene.destroy(recorder);
+    fn destroy(&self, _: &mut alisa::Recorder<Self::Project>) {
+        
     }
 
     fn collect_data(&self, objects: &Objects) -> FrameTreeData {
@@ -99,7 +99,7 @@ impl alisa::TreeObj for Frame {
 
 }
 
-fn find_frame_at_time(context: &alisa::ProjectContext<'_, Project>, frames: &alisa::UnorderedChildList<alisa::LoadingPtr<Frame>>, time: i32) -> Option<alisa::Ptr<Frame>> {
+fn find_frame_at_time(context: &alisa::ProjectContext<'_, Project>, frames: &alisa::UnorderedChildList<alisa::OwningPtr<Frame>>, time: i32) -> Option<alisa::Ptr<Frame>> {
     for frame_ptr in frames.iter() {
         if let Some(frame) = context.obj_list().get(frame_ptr.ptr()) {
             if frame.time == time {

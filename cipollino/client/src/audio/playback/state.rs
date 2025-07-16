@@ -19,7 +19,7 @@ impl AudioPlaybackState {
                 t += ((*block_size as f32) * (sample_rate as f32) / (clip.format.sample_rate as f32)).round() as i64;
                 continue;
             };
-            let data = audio_cache.get_samples(clip.format, *block_ptr, block);
+            let data = audio_cache.get_samples(clip.format, block_ptr.ptr(), block);
             let len = data.samples.len() as i64;
 
             if t + len > instance_start {
@@ -45,7 +45,7 @@ impl AudioPlaybackState {
             return;
         }
         for audio in layer.audio_instances.iter() {
-            let Some(audio) = project.client.get(audio.ptr()) else { continue; };
+            let Some(audio) = project.client.get(audio) else { continue; };
             Self::add_audio_instance_clips(project, audio, sample_rate, clips, audio_cache);
         }
     }

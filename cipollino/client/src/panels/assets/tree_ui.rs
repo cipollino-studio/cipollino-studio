@@ -84,14 +84,14 @@ impl AssetsPanel {
         }
     }
 
-    fn render_assets<A: AssetUI>(&self, ui: &mut pierro::UI, project: &ProjectState, editor: &mut EditorState, assets: &UnorderedChildList<project::alisa::LoadingPtr<A>>) {
+    fn render_assets<A: AssetUI>(&self, ui: &mut pierro::UI, project: &ProjectState, editor: &mut EditorState, assets: &UnorderedChildList<project::alisa::OwningPtr<A>>) {
         let mut assets = assets.iter().filter_map(|ptr| {
-            let asset = project.client.get(ptr.ptr())?;
-            Some((asset.name(), asset, ptr.ptr()))
+            let asset = project.client.get(ptr)?;
+            Some((asset.name(), asset, ptr))
         }).collect::<Vec<_>>();
         assets.sort_by_key(|(name, _, _)| *name);
         for (_, asset, asset_ptr) in assets {
-            self.render_asset(ui, asset, asset_ptr, project, editor);
+            self.render_asset(ui, asset, asset_ptr.ptr(), project, editor);
         }
     }
 
@@ -121,22 +121,22 @@ impl AssetsPanel {
 
     pub(crate) fn render_folder_contents(&self,
         ui: &mut pierro::UI,
-        folders: &UnorderedChildList<project::alisa::LoadingPtr<Folder>>,
-        clips: &UnorderedChildList<project::alisa::LoadingPtr<Clip>>,
-        palettes: &UnorderedChildList<project::alisa::LoadingPtr<Palette>>,
-        audio_clips: &UnorderedChildList<project::alisa::LoadingPtr<AudioClip>>,
+        folders: &UnorderedChildList<project::alisa::OwningPtr<Folder>>,
+        clips: &UnorderedChildList<project::alisa::OwningPtr<Clip>>,
+        palettes: &UnorderedChildList<project::alisa::OwningPtr<Palette>>,
+        audio_clips: &UnorderedChildList<project::alisa::OwningPtr<AudioClip>>,
         project: &ProjectState,
         editor: &mut EditorState
     ) {
 
         let mut folders = folders.iter().filter_map(|ptr| {
-            let folder = project.client.get(ptr.ptr())?;
-            Some((folder.name(), folder, ptr.ptr()))
+            let folder = project.client.get(ptr)?;
+            Some((folder.name(), folder, ptr))
         }).collect::<Vec<_>>();
         folders.sort_by_key(|(name, _, _)| *name);
 
         for (_, folder, ptr) in folders {
-            self.render_folder(ui, folder, ptr, project, editor);
+            self.render_folder(ui, folder, ptr.ptr(), project, editor);
         }
 
         self.render_assets(ui, project, editor, clips);

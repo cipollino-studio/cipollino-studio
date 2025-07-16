@@ -39,7 +39,7 @@ pub struct AudioInstanceTreeData {
 
 impl alisa::TreeObj for AudioInstance {
     type ParentPtr = alisa::Ptr<AudioLayer>;
-    type ChildList = alisa::UnorderedChildList<alisa::LoadingPtr<AudioInstance>>;
+    type ChildList = alisa::UnorderedChildList<alisa::OwningPtr<AudioInstance>>;
     type TreeData = AudioInstanceTreeData;
 
     fn child_list<'a>(parent: Self::ParentPtr, context: &'a alisa::ProjectContext<Self::Project>) -> Option<&'a Self::ChildList> {

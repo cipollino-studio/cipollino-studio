@@ -12,7 +12,7 @@ pub struct Clip {
 
     pub name: String,
 
-    pub inner: alisa::Ptr<ClipInner>
+    pub inner: alisa::HoldingPtr<ClipInner>
 }
 
 impl Default for Clip {
@@ -21,7 +21,7 @@ impl Default for Clip {
         Self {
             folder: alisa::Ptr::null(),
             name: "Clip".to_owned(),
-            inner: alisa::Ptr::null()
+            inner: alisa::Ptr::null().into()
         }
     }
 
@@ -54,7 +54,7 @@ pub struct ClipTreeData {
     
     pub inner_ptr: alisa::Ptr<ClipInner>,
     pub layers: alisa::ChildListTreeData<LayerPtr>,
-    pub colors: alisa::UnorderedChildListTreeData<alisa::LoadingPtr<Color>>
+    pub colors: alisa::UnorderedChildListTreeData<alisa::OwningPtr<Color>>
 }
 
 impl Default for ClipTreeData {
@@ -78,7 +78,7 @@ impl Default for ClipTreeData {
 
 impl alisa::TreeObj for Clip {
     type ParentPtr = alisa::Ptr<Folder>;
-    type ChildList = alisa::UnorderedChildList<alisa::LoadingPtr<Clip>>;
+    type ChildList = alisa::UnorderedChildList<alisa::OwningPtr<Clip>>;
     type TreeData = ClipTreeData;
 
     fn child_list<'a>(parent: alisa::Ptr<Folder>, context: &'a alisa::ProjectContext<Project>) -> Option<&'a Self::ChildList> {
@@ -119,19 +119,17 @@ impl alisa::TreeObj for Clip {
         let clip = Self {
             folder: parent,
             name: data.name.clone(),
-            inner: data.inner_ptr 
+            inner: data.inner_ptr.into()
         };
         recorder.add_obj(ptr, clip);
     }
 
-    fn destroy(&self, recorder: &mut alisa::Recorder<Project>) {
-        if let Some(clip_inner) = recorder.delete_obj(self.inner) {
-            clip_inner.layers.destroy(recorder);
-        }
+    fn destroy(&self, _recorder: &mut alisa::Recorder<Project>) {
+
     }
 
     fn collect_data(&self, objects: &Objects) -> Self::TreeData {
-        let clip_inner = objects.clip_inners.get(self.inner);
+        let clip_inner = objects.clip_inners.get(self.inner.ptr());
         let length = clip_inner.map(|inner| inner.length).unwrap_or(100);
         let framerate = clip_inner.map(|inner| inner.framerate).unwrap_or(24.0);
         let width = clip_inner.map(|inner| inner.width).unwrap_or(1920);
@@ -149,7 +147,7 @@ impl alisa::TreeObj for Clip {
             name: self.name.clone(),
             length,
             framerate,
-            inner_ptr: self.inner,
+            inner_ptr: self.inner.ptr(),
             layers,
             colors,
             width,
@@ -165,7 +163,7 @@ impl alisa::TreeObj for Clip {
             return true;
         }
         let Some(clip) = project.obj_list().get(ptr) else { return false; };
-        let inner_loaded = project.obj_list().get(clip.inner).is_some();
+        let inner_loaded = project.obj_list().get(clip.inner.ptr()).is_some();
         inner_loaded
     }
 
@@ -205,12 +203,12 @@ pub fn deep_load_clip(clip_ptr: alisa::Ptr<Clip>, client: &Client) {
         return;
     };
     
-    if client.get_ref(clip.inner).is_deleted() {
+    if client.get_ref(clip.inner.ptr()).is_deleted() {
         client.queue_operation(CreateClipInner {
             clip: clip_ptr, 
             inner: client.next_ptr(),
         });
     } else {
-        client.request_load(clip.inner);
+        client.request_load(clip.inner.ptr());
     }
 }

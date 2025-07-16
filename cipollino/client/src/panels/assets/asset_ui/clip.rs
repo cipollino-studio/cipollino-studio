@@ -38,7 +38,7 @@ impl AssetUI for Clip {
         if pierro::menu_button(ui, "Properties...").mouse_clicked() {
             if let Some(clip) = project.client.get(clip_ptr) {
                 let name = clip.name.clone();
-                let clip_inner_ptr = clip.inner;
+                let clip_inner_ptr = clip.inner.ptr();
                 editor.on_load(project, clip_inner_ptr, move |_, editor, clip_inner| {
                     let properties = ClipProperties {
                         name: name.clone(),

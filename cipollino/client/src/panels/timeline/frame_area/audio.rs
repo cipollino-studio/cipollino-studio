@@ -151,7 +151,7 @@ impl FrameArea {
             t += *block_size;
 
             let Some(block) = project.client.get(*block_ptr) else { continue; };
-            let sample_block = editor.audio_cache.get_samples(clip.format, *block_ptr, block);
+            let sample_block = editor.audio_cache.get_samples(clip.format, block_ptr.ptr(), block);
             previews.push((range, sample_block));
         }
 
@@ -174,7 +174,7 @@ impl FrameArea {
         let (move_offset_min, move_offset_max) = Self::calc_audio_move_bounds(project, editor);
 
         for audio_ptr in layer.audio_instances.iter() {
-            let Some(audio) = project.client.get(audio_ptr.ptr()) else { continue; };
+            let Some(audio) = project.client.get(audio_ptr) else { continue; };
 
             let audio_interaction_rect = pierro::Rect::min_size(
                 pierro::vec2(Self::seconds_to_pixels(clip, audio.start), (layer_idx as f32) * TimelinePanel::LAYER_HEIGHT),

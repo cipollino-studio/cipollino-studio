@@ -31,4 +31,8 @@ impl alisa::Serializable for StrokeBrush {
         }
     }
 
+    fn delete(&self, _: &mut Vec<alisa::AnyPtr>) {
+        
+    }
+
 }

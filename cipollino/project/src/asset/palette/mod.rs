@@ -10,7 +10,7 @@ pub use inner::*;
 pub struct Palette {
     pub folder: alisa::Ptr<Folder>,
     pub name: String,
-    pub inner: alisa::Ptr<PaletteInner>
+    pub inner: alisa::HoldingPtr<PaletteInner>
 }
 
 impl Default for Palette {
@@ -19,7 +19,7 @@ impl Default for Palette {
         Self {
             folder: alisa::Ptr::null(),
             name: "Palette".into(),
-            inner: alisa::Ptr::null()
+            inner: alisa::Ptr::null().into()
         }
     }
 
@@ -45,8 +45,8 @@ impl alisa::Object for Palette {
 pub struct PaletteTreeData {
     pub name: String,
 
-    pub inner_ptr: alisa::Ptr<PaletteInner>,
-    pub colors: alisa::UnorderedChildListTreeData<alisa::LoadingPtr<Color>>
+    pub inner_ptr: alisa::HoldingPtr<PaletteInner>,
+    pub colors: alisa::UnorderedChildListTreeData<alisa::OwningPtr<Color>>
 }
 
 impl Default for PaletteTreeData {
@@ -54,7 +54,7 @@ impl Default for PaletteTreeData {
     fn default() -> Self {
         Self {
             name: "Palette".to_owned(),
-            inner_ptr: alisa::Ptr::null(),
+            inner_ptr: alisa::Ptr::null().into(),
             colors: Default::default()
         }
     }
@@ -63,7 +63,7 @@ impl Default for PaletteTreeData {
 
 impl alisa::TreeObj for Palette {
     type ParentPtr = alisa::Ptr<Folder>;
-    type ChildList = alisa::UnorderedChildList<alisa::LoadingPtr<Palette>>;
+    type ChildList = alisa::UnorderedChildList<alisa::OwningPtr<Palette>>;
     type TreeData = PaletteTreeData;
 
     fn child_list<'a>(parent: Self::ParentPtr, context: &'a alisa::ProjectContext<Self::Project>) -> Option<&'a Self::ChildList> {
@@ -103,14 +103,12 @@ impl alisa::TreeObj for Palette {
         recorder.add_obj(ptr, palette);
     }
 
-    fn destroy(&self, recorder: &mut alisa::Recorder<Self::Project>) {
-        if let Some(palette_inner) = recorder.delete_obj(self.inner) {
-            palette_inner.colors.destroy(recorder); 
-        }
+    fn destroy(&self, _recorder: &mut alisa::Recorder<Self::Project>) {
+
     }
 
     fn collect_data(&self, objects: &<Self::Project as alisa::Project>::Objects) -> Self::TreeData {
-        let palette_inner = objects.palette_inners.get(self.inner);
+        let palette_inner = objects.palette_inners.get(self.inner.ptr());
         let colors = palette_inner
             .map(|palette_inner| palette_inner.colors.collect_data(objects))
             .unwrap_or_default();
@@ -128,7 +126,7 @@ impl alisa::TreeObj for Palette {
             return true;
         }
         let Some(palette) = project.obj_list().get(ptr) else { return false; };
-        let inner_loaded = project.obj_list().get(palette.inner).is_some();
+        let inner_loaded = project.obj_list().get(palette.inner.ptr()).is_some();
         inner_loaded
     }
 }

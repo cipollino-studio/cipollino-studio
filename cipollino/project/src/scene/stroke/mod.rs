@@ -63,6 +63,10 @@ impl alisa::Serializable for StrokeData {
         }))
     }
 
+    fn delete(&self, _: &mut Vec<alisa::AnyPtr>) {
+        
+    }
+
 }
 
 

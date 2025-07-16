@@ -12,7 +12,7 @@ impl FrameArea {
     // be highlighted during box-selection. A rework would be nice :)
     fn box_select_layer(&mut self, project: &ProjectState, editor: &mut EditorState, layer: &Layer, x_range: pierro::Range) {
         for frame_ptr in layer.frames.iter() {
-            if let Some(frame) = project.client.get(frame_ptr.ptr()) {
+            if let Some(frame) = project.client.get(frame_ptr) {
                 let frame_x_range = pierro::Range::min_size((frame.time as f32) * TimelinePanel::FRAME_WIDTH, TimelinePanel::FRAME_WIDTH);
                 if frame_x_range.intersects(x_range) {
                     editor.selection.select(frame_ptr.ptr());
@@ -23,7 +23,7 @@ impl FrameArea {
 
     fn box_select_audio_layer(&mut self, project: &ProjectState, editor: &mut EditorState, clip: &ClipInner, layer: &AudioLayer, x_range: pierro::Range) {
         for audio_ptr in layer.audio_instances.iter() {
-            if let Some(audio) = project.client.get(audio_ptr.ptr()) {
+            if let Some(audio) = project.client.get(audio_ptr) {
                 let audio_x_range = pierro::Range::min_size(
                     audio.start * clip.framerate * TimelinePanel::FRAME_WIDTH,
                     audio.length() * clip.framerate * TimelinePanel::FRAME_WIDTH
@@ -64,8 +64,8 @@ impl FrameArea {
     fn move_selected_frames(project: &ProjectState, editor: &EditorState, drag: f32, action: &mut Action) {
         let frame_offset = FrameArea::drag_to_frame_offset(drag);
         let mut selected_frames = Vec::new();
-        for frame_ptr in editor.selection.iter() {
-            if let Some(frame) = project.client.get::<Frame>(frame_ptr) {
+        for frame_ptr in editor.selection.iter::<Frame>() {
+            if let Some(frame) = project.client.get(frame_ptr) {
                 selected_frames.push((frame.time, frame_ptr));
             }
         }
@@ -94,7 +94,7 @@ impl FrameArea {
                 if editor.selection.selected(other_audio.ptr()) {
                     continue;
                 } 
-                let Some(other_audio) = project.client.get(other_audio.ptr()) else { continue; };
+                let Some(other_audio) = project.client.get(other_audio) else { continue; };
                 if other_audio.end <= audio.start {
                     min = min.max(other_audio.end - audio.start);
                 }
@@ -162,7 +162,7 @@ impl FrameArea {
             if other_audio.ptr() == audio_ptr {
                 continue;
             }
-            let Some(other_audio) = project.client.get(other_audio.ptr()) else { continue; };
+            let Some(other_audio) = project.client.get(other_audio) else { continue; };
             if other_audio.start < audio.start {
                 start = start.max(other_audio.end);
             }
@@ -202,7 +202,7 @@ impl FrameArea {
             if other_audio.ptr() == audio_ptr {
                 continue;
             }
-            let Some(other_audio) = project.client.get(other_audio.ptr()) else { continue; };
+            let Some(other_audio) = project.client.get(other_audio) else { continue; };
             if other_audio.start > audio.start {
                 end = end.min(other_audio.start);
             }

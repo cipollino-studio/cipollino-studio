@@ -73,7 +73,7 @@ pub fn get_active_frame(client: &Client, editor: &EditorState, action: &mut Acti
 }
 
 pub fn get_active_color(client: &Client, editor: &mut EditorState, action: &mut Action) -> SceneObjectColor {
-    if let Some(color) = client.get(editor.color.color.ptr()) {
+    if let Some(color) = client.get(editor.color.color) {
         editor.color.backup = color.color;
         return editor.color;
     }
@@ -87,14 +87,14 @@ pub fn get_active_color(client: &Client, editor: &mut EditorState, action: &mut 
     };
 
     for color_ptr in clip_inner.colors.iter() {
-        let Some(color) = client.get(color_ptr.ptr()) else { continue; }; 
+        let Some(color) = client.get(color_ptr) else { continue; }; 
         let similar =
             (color.color[0] - editor.color.backup[0]).abs() <= 1.0 / 255.0 &&
             (color.color[1] - editor.color.backup[1]).abs() <= 1.0 / 255.0 &&
             (color.color[2] - editor.color.backup[2]).abs() <= 1.0 / 255.0;
         if similar {
             editor.color = SceneObjectColor {
-                color: color_ptr,
+                color: color_ptr.ptr().into(),
                 backup: color.color,
             };
             return editor.color;

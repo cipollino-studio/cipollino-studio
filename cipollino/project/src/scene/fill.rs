@@ -58,6 +58,10 @@ impl alisa::Serializable for FillPaths {
         ))
     }
 
+    fn delete(&self, _: &mut Vec<alisa::AnyPtr>) {
+        
+    }
+
 }
 
 #[derive(Clone, alisa::Serializable)]

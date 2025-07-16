@@ -63,18 +63,18 @@ impl Default for ColorTreeData {
 
 impl alisa::TreeObj for Color {
     type ParentPtr = ColorParent;
-    type ChildList = alisa::UnorderedChildList<alisa::LoadingPtr<Color>>;
+    type ChildList = alisa::UnorderedChildList<alisa::OwningPtr<Color>>;
     type TreeData = ColorTreeData;
 
     fn child_list<'a>(parent: Self::ParentPtr, context: &'a alisa::ProjectContext<Self::Project>) -> Option<&'a Self::ChildList> {
         match parent {
             ColorParent::Clip(ptr) => {
                 let clip_inner = context.obj_list().get(ptr)?.inner;
-                Some(&context.obj_list().get(clip_inner)?.colors)
+                Some(&context.obj_list().get(clip_inner.ptr())?.colors)
             },
             ColorParent::Palette(ptr) => {
                 let palette_inner = context.obj_list().get(ptr)?.inner;
-                Some(&context.obj_list().get(palette_inner)?.colors)
+                Some(&context.obj_list().get(palette_inner.ptr())?.colors)
             }
         }
     }
@@ -83,7 +83,7 @@ impl alisa::TreeObj for Color {
         match parent {
             ColorParent::Clip(ptr) => {
                 let clip_inner = recorder.get_obj_mut(ptr)?.inner;
-                Some(&mut recorder.get_obj_mut(clip_inner)?.colors)
+                Some(&mut recorder.get_obj_mut(clip_inner.ptr())?.colors)
             },
             ColorParent::Palette(ptr) => {
                 let palette_inner = recorder.get_obj_mut(ptr)?.inner;
@@ -184,6 +184,10 @@ impl alisa::Serializable for SceneObjectColor {
                 b as f32 / 255.0
             ]
         })
+    }
+
+    fn delete(&self, _: &mut Vec<alisa::AnyPtr>) {
+
     }
 
 }

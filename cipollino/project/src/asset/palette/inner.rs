@@ -7,7 +7,7 @@ use super::Palette;
 #[derive(alisa::Serializable, Clone)]
 pub struct PaletteInner {
     pub palette: alisa::Ptr<Palette>,
-    pub colors: alisa::UnorderedChildList<alisa::LoadingPtr<Color>>
+    pub colors: alisa::UnorderedChildList<alisa::OwningPtr<Color>>
 }
 
 impl Default for PaletteInner {
@@ -49,7 +49,7 @@ impl alisa::Operation for CreatePaletteInner {
         let Some(palette) = recorder.get_obj(self.palette) else {
             return false;
         };
-        let old_inner = palette.inner;
+        let old_inner = palette.inner.ptr();
         if !old_inner.is_null() && recorder.get_obj(old_inner).is_some() {
             return false;
         }
@@ -61,7 +61,7 @@ impl alisa::Operation for CreatePaletteInner {
         let Some(palette) = recorder.get_obj_mut(self.palette) else {
             return false;
         };
-        palette.inner = self.inner;
+        palette.inner = self.inner.into();
         
         true
     }
