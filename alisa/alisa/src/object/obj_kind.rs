@@ -1,7 +1,7 @@
 
 use std::{any::TypeId, collections::HashSet};
 
-use crate::{ABFValue, Collab, DeserializationContext, File, Message, Project, SerializationContext};
+use crate::{ABFValue, AnyPtr, Collab, Delta, DeserializationContext, File, Message, Project, SerializationContext};
 
 use super::{ObjRef, Object, Ptr};
 
@@ -16,6 +16,7 @@ pub struct ObjectKind<P: Project> {
     pub(crate) load_object_from_message: fn(&mut P::Objects, u64, &ABFValue),
     pub(crate) load_failed: fn(&mut P::Objects, u64),
     pub(crate) serialize_object: fn(&mut P::Objects, u64, &SerializationContext) -> Option<ABFValue>,
+    pub(crate) delete: fn(&mut P::Objects, u64, &mut Vec<AnyPtr>, delta: &mut Option<&mut Delta<P>>),
 
     #[cfg(debug_assertions)]
     pub(crate) type_id: fn() -> TypeId,
@@ -105,6 +106,16 @@ impl<P: Project> ObjectKind<P> {
             },
             serialize_object: |objects, key, context| {
                 O::list(objects).get(Ptr::from_key(key)).map(|data| data.serialize(context))
+            },
+            delete: |objects, key, deletion_queue, delta| {
+                if let Some(object) = O::list_mut(objects).delete(Ptr::from_key(key)) {
+                    object.delete(deletion_queue);
+                    if let Some(delta) = delta {
+                        delta.push(move |context| {
+                            context.obj_list_mut().insert(Ptr::from_key(key), object.clone());
+                        });
+                    }
+                }
             },
             #[cfg(debug_assertions)]
             type_id: || TypeId::of::<O>(),

@@ -17,6 +17,10 @@ macro_rules! number_serializable_impl {
                     (*self as $N).into()
                 }
 
+                fn delete(&self, _: &mut Vec<AnyPtr>) {
+
+                }
+
             } 
         }
     };
@@ -46,6 +50,10 @@ impl Serializable for String {
         ABFValue::Str(self.into())
     }
 
+    fn delete(&self, _: &mut Vec<AnyPtr>) {
+
+    }
+
 }
 
 impl<T: Serializable> Serializable for Option<T> {
@@ -63,6 +71,12 @@ impl<T: Serializable> Serializable for Option<T> {
             ABFValue::IndexedEnum(_, data) => Some(Some(T::deserialize(data, context)?)),
             _ => None
         } 
+    }
+
+    fn delete(&self, queue: &mut Vec<AnyPtr>) {
+        if let Some(value) = self {
+            value.delete(queue);
+        }
     }
 
 }
@@ -86,6 +100,12 @@ impl<T: Serializable, const N: usize> Serializable for [T; N] {
         Some(std::array::from_fn(|_| deserialized.next().unwrap()))
     }
 
+    fn delete(&self, queue: &mut Vec<AnyPtr>) {
+        for value in self {
+            value.delete(queue);
+        }
+    }
+
 }
 
 impl<T: Serializable> Serializable for Box<[T]> {
@@ -103,6 +123,12 @@ impl<T: Serializable> Serializable for Box<[T]> {
         Some(deserialized.into())
     }
 
+    fn delete(&self, queue: &mut Vec<AnyPtr>) {
+        for value in self {
+            value.delete(queue);
+        }
+    }
+
 }
 
 impl<T: Serializable> Serializable for Vec<T> {
@@ -114,6 +140,12 @@ impl<T: Serializable> Serializable for Vec<T> {
 
     fn serialize(&self, context: &SerializationContext) -> ABFValue {
         ABFValue::Array(self.iter().map(|val| val.serialize(context)).collect())
+    }
+
+    fn delete(&self, queue: &mut Vec<AnyPtr>) {
+        for value in self {
+            value.delete(queue);
+        }
     }
 
 }
@@ -129,6 +161,12 @@ impl<T: Serializable + Eq + Hash> Serializable for HashSet<T> {
         ABFValue::Array(self.iter().map(|val| val.serialize(context)).collect())
     }
 
+    fn delete(&self, queue: &mut Vec<AnyPtr>) {
+        for value in self {
+            value.delete(queue);
+        }
+    }
+
 }
 
 impl Serializable for () {
@@ -139,6 +177,10 @@ impl Serializable for () {
 
     fn deserialize(_data: &ABFValue, _context: &mut DeserializationContext) -> Option<Self> {
         Some(())
+    }
+
+    fn delete(&self, _: &mut Vec<AnyPtr>) {
+        
     }
 
 }
@@ -157,6 +199,10 @@ impl<O: Object> Serializable for Ptr<O> {
         ABFValue::ObjPtr(O::TYPE_ID, self.key)
     }
 
+    fn delete(&self, _: &mut Vec<AnyPtr>) {
+        
+    }
+
 }
 
 impl Serializable for AnyPtr {
@@ -170,6 +216,10 @@ impl Serializable for AnyPtr {
         Some(Self::new(obj_type, key))
     }
 
+    fn delete(&self, _: &mut Vec<AnyPtr>) {
+        
+    }
+
 }
 
 impl Serializable for ABFValue {
@@ -180,6 +230,10 @@ impl Serializable for ABFValue {
 
     fn deserialize(data: &ABFValue, _context: &mut DeserializationContext) -> Option<Self> {
         Some(data.clone())
+    }
+
+    fn delete(&self, _: &mut Vec<AnyPtr>) {
+        
     }
 
 }
@@ -209,6 +263,12 @@ macro_rules! tuple_serializable {
                     return None;
                 }
                 Some(($($t),*))
+            }
+
+            fn delete(&self, queue: &mut Vec<AnyPtr>) {
+                #![allow(non_snake_case)]
+                let ($($t),*) = self;
+                $($t.delete(queue));*
             }
 
         }

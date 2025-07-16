@@ -101,6 +101,45 @@ pub fn serializable_enum(enm: DataEnum, name: Ident, generics: Generics) -> proc
         }
     });
 
+    let delete_variants = enm.variants.iter().map(|variant| {
+        let variant_name = &variant.ident;
+
+        let (field_names, deletion) = match &variant.fields {
+            Fields::Unit => {
+                (quote! {}, quote!{{}})
+            },
+            Fields::Named(named) => {
+                let names = named.named.iter().map(|field| field.ident.as_ref().unwrap());
+                let names2 = named.named.iter().map(|field| field.ident.as_ref().unwrap());
+                let field_names = quote! { {#(#names, )*} };
+
+                let deletion = quote! {
+                    #(#names2.delete(queue);)*
+                };
+
+                (field_names, deletion)
+            },
+            Fields::Unnamed(unnamed) => {
+                let n_fields = unnamed.unnamed.iter().count();
+                let names = (0..n_fields).map(|idx| Ident::new(&format!("field{}", idx), Span::call_site()));
+                let names2 = names.clone();
+                let field_names = quote! { (#(#names, )*) };
+
+                let serialization = quote! {
+                    #(#names2.delete(queue);)*
+                };
+
+                (field_names, serialization)
+            }
+        };
+
+        quote! {
+            Self:: #variant_name #field_names => {
+                #deletion
+            }
+        }
+    });
+
     quote! {
         impl alisa::Serializable for #name <#(#generics_names, )*> {
 
@@ -119,6 +158,12 @@ pub fn serializable_enum(enm: DataEnum, name: Ident, generics: Generics) -> proc
                 match name {
                     #(#deserialize_variants,)*
                     _ => None
+                }
+            }
+            
+            fn delete(&self, queue: &mut Vec<alisa::AnyPtr>) {
+                match self {
+                    #(#delete_variants,)*
                 }
             }
 

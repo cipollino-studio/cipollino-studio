@@ -37,6 +37,10 @@ impl Serializable for ClientId {
         self.0.into()
     }
 
+    fn delete(&self, _: &mut Vec<AnyPtr>) {
+        
+    }
+
 }
 
 impl<P: Project> Server<P> {

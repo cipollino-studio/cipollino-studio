@@ -46,6 +46,10 @@ impl<C: ChildPtr + Hash> Serializable for UnorderedChildList<C> {
         })
     }
 
+    fn delete(&self, queue: &mut Vec<crate::AnyPtr>) {
+        self.children.delete(queue);
+    }
+
 }
 
 impl<C: ChildPtr + Hash, O: Object> Children<O> for UnorderedChildList<C> where C: From<Ptr<O>> {
@@ -115,6 +119,10 @@ impl<C: ChildPtr + Hash> Serializable for UnorderedChildListTreeData<C> {
         Some(Self {
             children,
         })
+    }
+
+    fn delete(&self, queue: &mut Vec<crate::AnyPtr>) {
+        self.children.delete(queue);
     }
 
 }

@@ -1,7 +1,7 @@
 
 #[macro_export]
 macro_rules! ptr_enum_serialization_impl {
-    ($typename: ident [$($obj: ident),*] $loading: literal) => {
+    ($typename: ident [$($obj: ident),*] $loading: literal $owning: literal) => {
 
         impl ::alisa::Serializable for $typename {
 
@@ -29,6 +29,18 @@ macro_rules! ptr_enum_serialization_impl {
                         }
                     ),*
                     _ => None
+                }
+            }
+
+            fn delete(&self, queue: &mut Vec<::alisa::AnyPtr>) {
+                if $owning {
+                    match self {
+                        $(
+                            Self::$obj(ptr) => {
+                                queue.push(ptr.any());
+                            }
+                        ),*
+                    }
                 }
             }
 
@@ -115,7 +127,7 @@ macro_rules! ptr_enum {
             $($obj(::alisa::Ptr<($obj)>)),*
         } 
 
-        ::alisa::ptr_enum_serialization_impl!($typename [$($obj),*] false);
+        ::alisa::ptr_enum_serialization_impl!($typename [$($obj),*] false false);
         ::alisa::ptr_enum_from_impls!($typename [$($obj),*]);
     };
     ($typename: ident loading [$($obj: ident),*]) => {
@@ -124,7 +136,25 @@ macro_rules! ptr_enum {
             $($obj(::alisa::Ptr<($obj)>)),*
         } 
 
-        ::alisa::ptr_enum_serialization_impl!($typename [$($obj),*] true);
+        ::alisa::ptr_enum_serialization_impl!($typename [$($obj),*] true false);
+        ::alisa::ptr_enum_from_impls!($typename [$($obj),*]);
+    };
+    ($typename: ident owning [$($obj: ident),*]) => {
+        #[derive(Clone, Copy, PartialEq, Eq, Hash)]
+        pub enum $typename {
+            $($obj(::alisa::Ptr<($obj)>)),*
+        } 
+
+        ::alisa::ptr_enum_serialization_impl!($typename [$($obj),*] true true);
+        ::alisa::ptr_enum_from_impls!($typename [$($obj),*]);
+    };
+    ($typename: ident holding [$($obj: ident),*]) => {
+        #[derive(Clone, Copy, PartialEq, Eq, Hash)]
+        pub enum $typename {
+            $($obj(::alisa::Ptr<($obj)>)),*
+        } 
+
+        ::alisa::ptr_enum_serialization_impl!($typename [$($obj),*] false true);
         ::alisa::ptr_enum_from_impls!($typename [$($obj),*]);
     };
     ($typename: ident [$($obj: ident),*] childof $parent_ptr: ty, in $project: ty) => {
@@ -133,6 +163,14 @@ macro_rules! ptr_enum {
     };
     ($typename: ident loading [$($obj: ident),*] childof $parent_ptr: ty, in $project: ty) => {
         ::alisa::ptr_enum!($typename loading [$($obj),*]);
+        ::alisa::ptr_enum_child_ptr_impl!($typename [$($obj),*] childof $parent_ptr, in $project);        
+    };
+    ($typename: ident owning [$($obj: ident),*] childof $parent_ptr: ty, in $project: ty) => {
+        ::alisa::ptr_enum!($typename owning [$($obj),*]);
+        ::alisa::ptr_enum_child_ptr_impl!($typename [$($obj),*] childof $parent_ptr, in $project);        
+    };
+    ($typename: ident holding [$($obj: ident),*] childof $parent_ptr: ty, in $project: ty) => {
+        ::alisa::ptr_enum!($typename holding [$($obj),*]);
         ::alisa::ptr_enum_child_ptr_impl!($typename [$($obj),*] childof $parent_ptr, in $project);        
     };
 }

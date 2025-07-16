@@ -46,6 +46,10 @@ impl<C: ChildPtr> Serializable for ChildList<C> {
         })
     }
 
+    fn delete(&self, queue: &mut Vec<crate::AnyPtr>) {
+        self.children.delete(queue);
+    }
+
 }
 
 impl<C: ChildPtr, O: Object> Children<O> for ChildList<C> where C: From<Ptr<O>> + PartialEq + Eq {
@@ -134,6 +138,10 @@ impl<C: ChildPtr> Serializable for ChildListTreeData<C> {
         Some(Self {
             children,
         })
+    }
+
+    fn delete(&self, queue: &mut Vec<crate::AnyPtr>) {
+        self.children.delete(queue);
     }
 
 }

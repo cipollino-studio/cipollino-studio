@@ -4,6 +4,8 @@ use std::cell::RefCell;
 mod abf;
 pub use abf::*;
 
+use crate::AnyPtr;
+
 mod serialization_impls;
 
 pub struct DeserializationContext {
@@ -52,6 +54,7 @@ pub trait Serializable: Sized {
 
     fn serialize(&self, context: &SerializationContext) -> ABFValue; 
     fn deserialize(data: &ABFValue, context: &mut DeserializationContext) -> Option<Self>;
+    fn delete(&self, queue: &mut Vec<AnyPtr>);
 
 }
 

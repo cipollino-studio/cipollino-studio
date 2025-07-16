@@ -5,6 +5,12 @@ pub use any_ptr::*;
 mod loading_ptr;
 pub use loading_ptr::*;
 
+mod owning_ptr;
+pub use owning_ptr::*;
+
+mod holding_ptr;
+pub use holding_ptr::*;
+
 mod ptr_enum;
 
 use std::any::type_name;

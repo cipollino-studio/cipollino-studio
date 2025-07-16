@@ -16,6 +16,7 @@ fn serializable_struct(strct: DataStruct, name: Ident, generics: Generics) -> pr
     let serializable_field_names = serializable_fields.clone().map(|field| field.ident.as_ref().unwrap());
     let serializable_field_types = serializable_fields.clone().map(|field| field.ty.to_token_stream()); 
     let serializable_field_names_2 = serializable_field_names.clone(); 
+    let serializable_field_names_3 = serializable_field_names.clone(); 
     let generics_names = generics.type_params().map(|param| &param.ident);
 
     quote! {
@@ -37,6 +38,10 @@ fn serializable_struct(strct: DataStruct, name: Ident, generics: Generics) -> pr
                 alisa::ABFValue::Map(Box::new([
                     #((stringify!(#serializable_field_names).into(), self.#serializable_field_names.serialize(context)), )*
                 ]))
+            }
+
+            fn delete(&self, queue: &mut Vec<alisa::AnyPtr>) {
+                #(self.#serializable_field_names_3.delete(queue);)*
             }
 
         }

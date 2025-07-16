@@ -3,13 +3,13 @@ use std::{fmt::Debug, hash::Hash};
 
 use crate::{ABFValue, DeserializationContext, Object, Ptr, Serializable, SerializationContext};
 
-/// A reference to an object that indicates that the object refered to should be loaded from disk/the server when the referer is loaded. 
+/// A reference to an object that indicates the pointee should be deleted when the pointer is deleted.
 #[derive(Default)]
-pub struct LoadingPtr<O: Object> {
+pub struct HoldingPtr<O: Object> {
     ptr: Ptr<O>
 }
 
-impl<O: Object> LoadingPtr<O> {
+impl<O: Object> HoldingPtr<O> {
 
     pub fn new(ptr: Ptr<O>) -> Self {
         Self {
@@ -23,31 +23,29 @@ impl<O: Object> LoadingPtr<O> {
 
 }
 
-impl<O: Object> Serializable for LoadingPtr<O> {
+impl<O: Object> Serializable for HoldingPtr<O> {
 
-    fn deserialize(data: &ABFValue, context: &mut DeserializationContext) -> Option<Self> {
+    fn deserialize(data: &ABFValue, _context: &mut DeserializationContext) -> Option<Self> {
         let (obj_type, key) = data.as_obj_ptr()?; 
         if obj_type != O::TYPE_ID {
             return None;
         }
-        context.request_load(O::TYPE_ID, key);
         Some(Self {
             ptr: Ptr::from_key(key)
         })
     }
 
-    fn serialize(&self, context: &SerializationContext) -> ABFValue {
-        context.request_serialize(O::TYPE_ID, self.ptr.key); 
+    fn serialize(&self, _context: &SerializationContext) -> ABFValue {
         ABFValue::ObjPtr(O::TYPE_ID, self.ptr.key)
     }
 
-    fn delete(&self, _: &mut Vec<super::AnyPtr>) {
-        
+    fn delete(&self, queue: &mut Vec<super::AnyPtr>) {
+        queue.push(self.ptr.any());
     }
 
 }
 
-impl<O: Object> Clone for LoadingPtr<O> {
+impl<O: Object> Clone for HoldingPtr<O> {
 
     fn clone(&self) -> Self {
         Self {
@@ -57,9 +55,9 @@ impl<O: Object> Clone for LoadingPtr<O> {
 
 }
 
-impl<O: Object> Copy for LoadingPtr<O> {}
+impl<O: Object> Copy for HoldingPtr<O> {}
 
-impl<O: Object> PartialEq for LoadingPtr<O> {
+impl<O: Object> PartialEq for HoldingPtr<O> {
 
     fn eq(&self, other: &Self) -> bool {
         self.ptr == other.ptr
@@ -67,9 +65,9 @@ impl<O: Object> PartialEq for LoadingPtr<O> {
 
 }
 
-impl<O: Object> Eq for LoadingPtr<O> {}
+impl<O: Object> Eq for HoldingPtr<O> {}
 
-impl<O: Object> Hash for LoadingPtr<O> {
+impl<O: Object> Hash for HoldingPtr<O> {
 
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.ptr.hash(state);
@@ -77,7 +75,7 @@ impl<O: Object> Hash for LoadingPtr<O> {
 
 }
 
-impl<O: Object> Debug for LoadingPtr<O> {
+impl<O: Object> Debug for HoldingPtr<O> {
 
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.ptr().fmt(f)
@@ -85,7 +83,7 @@ impl<O: Object> Debug for LoadingPtr<O> {
 
 }
 
-impl<O: Object> From<Ptr<O>> for LoadingPtr<O> {
+impl<O: Object> From<Ptr<O>> for HoldingPtr<O> {
 
     fn from(ptr: Ptr<O>) -> Self {
         Self::new(ptr)
@@ -93,9 +91,9 @@ impl<O: Object> From<Ptr<O>> for LoadingPtr<O> {
 
 }
 
-impl<O: Object> From<LoadingPtr<O>> for Ptr<O> {
+impl<O: Object> From<HoldingPtr<O>> for Ptr<O> {
 
-    fn from(ptr: LoadingPtr<O>) -> Self {
+    fn from(ptr: HoldingPtr<O>) -> Self {
         ptr.ptr() 
     }
 

@@ -1,5 +1,5 @@
 
-use crate::{LoadingPtr, Project, Ptr, Recorder, Serializable};
+use crate::{LoadingPtr, OwningPtr, Project, Ptr, Recorder, Serializable};
 
 use super::TreeObj;
 
@@ -36,6 +36,24 @@ impl<O: TreeObj> ChildPtr for Ptr<O> {
 } 
 
 impl<O: TreeObj> ChildPtr for LoadingPtr<O> {
+    type ParentPtr = O::ParentPtr;
+    type TreeData = O::TreeData;
+    type Project = O::Project;
+    
+    fn collect_data(&self, objects: &<Self::Project as Project>::Objects) -> Option<Self::TreeData> {
+        self.ptr().collect_data(objects)
+    }
+    
+    fn destroy(&self, recorder: &mut Recorder<Self::Project>) {
+        self.ptr().destroy(recorder);
+    }
+    
+    fn instance(&self, data: &Self::TreeData, parent: Self::ParentPtr, recorder: &mut Recorder<Self::Project>) {
+        self.ptr().instance(data, parent, recorder);
+    }
+}
+
+impl<O: TreeObj> ChildPtr for OwningPtr<O> {
     type ParentPtr = O::ParentPtr;
     type TreeData = O::TreeData;
     type Project = O::Project;

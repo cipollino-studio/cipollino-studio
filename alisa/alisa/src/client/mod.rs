@@ -247,16 +247,16 @@ impl<P: Project> Client<P> {
         }
     }
 
-    pub fn get<O: Object<Project = P>>(&self, ptr: Ptr<O>) -> Option<&O> {
-        O::list(&self.objects).get(ptr)
+    pub fn get<O: Object<Project = P>, T: Into<Ptr<O>>>(&self, ptr: T) -> Option<&O> {
+        O::list(&self.objects).get(ptr.into())
     }
 
-    pub fn get_ref<O: Object<Project = P>>(&self, ptr: Ptr<O>) -> ObjRef<O> {
-        O::list(&self.objects).get_ref(ptr)
+    pub fn get_ref<O: Object<Project = P>, T: Into<Ptr<O>>>(&self, ptr: T) -> ObjRef<O> {
+        O::list(&self.objects).get_ref(ptr.into())
     }
 
-    pub fn request_load<O: Object<Project = P>>(&self, ptr: Ptr<O>) {
-        O::list(&self.objects).to_load.borrow_mut().insert(ptr);
+    pub fn request_load<O: Object<Project = P>, T: Into<Ptr<O>>>(&self, ptr: T) {
+        O::list(&self.objects).to_load.borrow_mut().insert(ptr.into());
     }
 
     pub fn undo_stack(&self) -> &RefCell<Vec<Action<P>>> {

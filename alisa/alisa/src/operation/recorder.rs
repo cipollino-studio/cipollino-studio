@@ -59,7 +59,8 @@ impl<'a, P: Project> Recorder<'a, P> {
         self.context.project_mut()
     }
 
-    pub fn get_obj<O: Object<Project = P>>(&self, ptr: Ptr<O>) -> Option<&O> {
+    pub fn get_obj<O: Object<Project = P>, T: Into<Ptr<O>>>(&self, ptr: T) -> Option<&O> {
+        let ptr = ptr.into();
         match self.context.obj_list().get_ref(ptr) {
             ObjRef::None | ObjRef::Loading => {
                 *self.success.borrow_mut() = false;
@@ -70,7 +71,8 @@ impl<'a, P: Project> Recorder<'a, P> {
         }
     }
 
-    pub fn get_obj_mut<O: Object<Project = P>>(&mut self, ptr: Ptr<O>) -> Option<&mut O> {
+    pub fn get_obj_mut<O: Object<Project = P>, T: Into<Ptr<O>>>(&mut self, ptr: T) -> Option<&mut O> {
+        let ptr = ptr.into();
 
         match self.context.obj_list().get_ref(ptr) {
             ObjRef::None | ObjRef::Loading => {
@@ -96,7 +98,8 @@ impl<'a, P: Project> Recorder<'a, P> {
     }
     
     /// Add an object to the project. Returns true if successful.
-    pub fn add_obj<O: Object<Project = P>>(&mut self, ptr: Ptr<O>, object: O) -> bool {
+    pub fn add_obj<O: Object<Project = P>, T: Into<Ptr<O>>>(&mut self, ptr: T, object: O) -> bool {
+        let ptr = ptr.into();
         if self.context.obj_list().get(ptr).is_some() {
             return false;
         }
@@ -110,7 +113,10 @@ impl<'a, P: Project> Recorder<'a, P> {
         true
     }
 
-    pub fn delete_obj<O: Object<Project = P>>(&mut self, ptr: Ptr<O>) -> Option<O> {
+    pub fn delete_obj<O: Object<Project = P>, T: Into<Ptr<O>>>(&mut self, ptr: T) -> Option<O> {
+        let ptr = ptr.into();
+
+        // Delete the object itself
         let object = self.context.obj_list_mut().delete(ptr)?;
         if let Some(delta) = &mut self.delta {
             let object_copy = object.clone();
@@ -119,6 +125,15 @@ impl<'a, P: Project> Recorder<'a, P> {
             });
             self.modified.insert(ptr.any());
         }
+
+        // Delete any "owned" objects
+        let mut deletion_queue = Vec::new();
+        object.delete(&mut deletion_queue);
+        while let Some(to_delete) = deletion_queue.pop() {
+            (P::OBJECTS[to_delete.obj_type() as usize].delete)(self.context.objects, to_delete.key(), &mut deletion_queue, &mut self.delta);
+            self.modified.insert(to_delete);
+        }
+
         Some(object)
     }
 
