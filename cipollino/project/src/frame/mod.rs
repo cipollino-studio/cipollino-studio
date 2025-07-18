@@ -86,10 +86,6 @@ impl alisa::TreeObj for Frame {
         recorder.add_obj(ptr, frame);
     }
 
-    fn destroy(&self, _: &mut alisa::Recorder<Self::Project>) {
-        
-    }
-
     fn collect_data(&self, objects: &Objects) -> FrameTreeData {
         FrameTreeData {
             time: self.time,

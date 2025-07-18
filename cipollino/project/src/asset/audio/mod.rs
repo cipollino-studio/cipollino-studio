@@ -113,10 +113,6 @@ impl alisa::TreeObj for AudioClip {
         });
     }
 
-    fn destroy(&self, _recorder: &mut alisa::Recorder<Self::Project>) {
-
-    }
-
     fn collect_data(&self, objects: &Objects) -> Self::TreeData {
         let mut blocks = Vec::new();
 

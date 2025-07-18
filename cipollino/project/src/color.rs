@@ -108,10 +108,6 @@ impl alisa::TreeObj for Color {
         });
     }
 
-    fn destroy(&self, _recorder: &mut alisa::Recorder<Self::Project>) {
-
-    }
-
     fn collect_data(&self, _objects: &<Self::Project as alisa::Project>::Objects) -> Self::TreeData {
         ColorTreeData {
             color: self.color,

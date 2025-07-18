@@ -143,10 +143,6 @@ impl alisa::TreeObj for Fill {
         recorder.add_obj(ptr, fill);
     }
 
-    fn destroy(&self, _recorder: &mut alisa::Recorder<Project>) {
-
-    }
-
     fn collect_data(&self, _objects: &Objects) -> Self::TreeData {
         FillTreeData {
             paths: self.paths.clone(),

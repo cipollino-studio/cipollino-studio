@@ -159,10 +159,6 @@ impl alisa::TreeObj for Stroke {
         recorder.add_obj(ptr, stroke);
     }
 
-    fn destroy(&self, _recorder: &mut alisa::Recorder<Project>) {
-
-    }
-
     fn collect_data(&self, _objects: &Objects) -> StrokeTreeData {
         StrokeTreeData {
             stroke: self.stroke.clone(),

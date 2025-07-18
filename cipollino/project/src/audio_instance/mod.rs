@@ -68,10 +68,6 @@ impl alisa::TreeObj for AudioInstance {
         });
     }
 
-    fn destroy(&self, _recorder: &mut alisa::Recorder<Self::Project>) {
-
-    }
-
     fn collect_data(&self, _objects: &Objects) -> Self::TreeData {
         AudioInstanceTreeData {
             clip: self.clip,

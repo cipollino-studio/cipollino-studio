@@ -107,10 +107,6 @@ impl alisa::TreeObj for Folder {
         recorder.add_obj(ptr, folder);
     }
 
-    fn destroy(&self, _recorder: &mut alisa::Recorder<Project>) {
-
-    }
-
     fn collect_data(&self, objects: &Objects) -> Self::TreeData {
         FolderTreeData {
             name: self.name.clone(),

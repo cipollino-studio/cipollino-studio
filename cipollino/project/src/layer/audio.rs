@@ -86,10 +86,6 @@ impl alisa::TreeObj for AudioLayer {
         recorder.add_obj(ptr, audio_layer);
     }
 
-    fn destroy(&self, _: &mut alisa::Recorder<Self::Project>) {
-
-    }
-
     fn collect_data(&self, objects: &Objects) -> Self::TreeData {
         AudioLayerTreeData {
             name: self.name.clone(),

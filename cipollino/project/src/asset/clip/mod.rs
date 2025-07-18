@@ -124,10 +124,6 @@ impl alisa::TreeObj for Clip {
         recorder.add_obj(ptr, clip);
     }
 
-    fn destroy(&self, _recorder: &mut alisa::Recorder<Project>) {
-
-    }
-
     fn collect_data(&self, objects: &Objects) -> Self::TreeData {
         let clip_inner = objects.clip_inners.get(self.inner.ptr());
         let length = clip_inner.map(|inner| inner.length).unwrap_or(100);

@@ -103,10 +103,6 @@ impl alisa::TreeObj for Palette {
         recorder.add_obj(ptr, palette);
     }
 
-    fn destroy(&self, _recorder: &mut alisa::Recorder<Self::Project>) {
-
-    }
-
     fn collect_data(&self, objects: &<Self::Project as alisa::Project>::Objects) -> Self::TreeData {
         let palette_inner = objects.palette_inners.get(self.inner.ptr());
         let colors = palette_inner

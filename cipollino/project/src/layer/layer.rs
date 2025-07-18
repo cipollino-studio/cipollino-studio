@@ -82,10 +82,6 @@ impl alisa::TreeObj for Layer {
         recorder.add_obj(ptr, layer);
     }
 
-    fn destroy(&self, _recorder: &mut alisa::Recorder<Self::Project>) {
-        
-    }
-
     fn collect_data(&self, objects: &Objects) -> Self::TreeData {
         LayerTreeData {
             name: self.name.clone(),
