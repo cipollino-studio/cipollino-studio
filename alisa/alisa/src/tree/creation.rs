@@ -23,7 +23,6 @@ pub fn create_tree_object<O: TreeObj>(recorder: &mut Recorder<O::Project>, ptr: 
 
 pub fn delete_tree_object<O: TreeObj>(recorder: &mut Recorder<O::Project>, ptr: Ptr<O>) -> bool {
     if let Some(obj) = recorder.delete_obj(ptr) {
-        obj.destroy(recorder);
         let parent = obj.parent(); 
         if let Some(child_list) = O::child_list_mut(parent.clone(), recorder) {
             if let Some(_idx) = child_list.remove(ptr) {

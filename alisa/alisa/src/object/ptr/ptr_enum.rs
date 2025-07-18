@@ -95,9 +95,7 @@ macro_rules! ptr_enum_child_ptr_impl {
                     match self {
                         $(
                             Self::$obj(ptr) => {
-                                if let Some(obj) = recorder.delete_obj(*ptr) {
-                                    <$obj as ::alisa::TreeObj>::destroy(&obj, recorder);
-                                }
+                                recorder.delete_obj(*ptr);
                             },
                         )*
                     }

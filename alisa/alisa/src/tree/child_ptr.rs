@@ -23,10 +23,8 @@ impl<O: TreeObj> ChildPtr for Ptr<O> {
         O::list(objects).get(*self).map(|obj| obj.collect_data(objects))
     }
     
-    fn destroy(&self, recorder: &mut Recorder<Self::Project>) {
-        if let Some(obj) = recorder.delete_obj(*self) {
-            obj.destroy(recorder);
-        }
+    fn destroy(&self, _recorder: &mut Recorder<Self::Project>) {
+        
     }
     
     fn instance(&self, data: &Self::TreeData, parent: Self::ParentPtr, recorder: &mut Recorder<Self::Project>) {

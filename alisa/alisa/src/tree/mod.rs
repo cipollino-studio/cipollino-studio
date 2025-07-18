@@ -55,8 +55,6 @@ pub trait TreeObj: Object + Send + Sync {
 
     /// Create this object and all its children from the tree data
     fn instance(data: &Self::TreeData, ptr: Ptr<Self>, parent: Self::ParentPtr, recorder: &mut Recorder<Self::Project>); 
-    /// Delete this object and all its children
-    fn destroy(&self, recorder: &mut Recorder<Self::Project>);
     /// Get the tree data for this object and its children
     fn collect_data(&self, objects: &<Self::Project as Project>::Objects) -> Self::TreeData;
 
