@@ -45,6 +45,10 @@ pub fn key_modifiers_label(ui: &mut UI, modifiers: KeyModifiers) {
 pub fn shortcut_label(ui: &mut UI, shortcut: KeyboardShortcut) {
     horizontal_fit_centered(ui, |ui| {
         key_modifiers_label(ui, shortcut.modifiers);
+        #[cfg(not(target_os = "macos"))]
+        if !shortcut.modifiers.is_empty() {
+            label(ui, " ");
+        }
         label(ui, shortcut.key.name());
     });
 }
