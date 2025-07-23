@@ -33,7 +33,7 @@ impl MeshCache {
         }
     }
 
-    fn calculate_stroke_mesh(&mut self, stroke_ptr: Ptr<Stroke>, client: &Client, device: &pierro::wgpu::Device) {
+    pub fn calculate_stroke_mesh(&mut self, stroke_ptr: Ptr<Stroke>, client: &Client, device: &pierro::wgpu::Device) {
         if self.strokes.contains_key(&stroke_ptr) {
             return;
         }
@@ -49,7 +49,7 @@ impl MeshCache {
         });
     }
 
-    fn calculate_fill_mesh(&mut self, fill_ptr: Ptr<Fill>, client: &Client, device: &pierro::wgpu::Device) {
+    pub fn calculate_fill_mesh(&mut self, fill_ptr: Ptr<Fill>, client: &Client, device: &pierro::wgpu::Device) {
         if self.fills.contains_key(&fill_ptr) {
             return;
         }

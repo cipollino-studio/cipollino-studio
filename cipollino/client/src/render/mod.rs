@@ -5,19 +5,27 @@ pub use builtin_brushes::*;
 use project::{Client, ClipInner, Fill, Frame, Layer, LayerPtr, Ptr, SceneObjPtr, Stroke};
 use crate::{get_brush_texture, get_color_value, EditorState};
 
-fn render_stroke(rndr: &mut malvina::LayerRenderer, brushes: &BuiltinBrushTextures, client: &Client, editor: &EditorState, stroke_ptr: Ptr<Stroke>) {
+fn render_stroke(rndr: &mut malvina::LayerRenderer, brushes: &BuiltinBrushTextures, client: &Client, editor: &mut EditorState, stroke_ptr: Ptr<Stroke>) {
+    if editor.mesh_cache.get_stroke(stroke_ptr).is_none() {
+        editor.mesh_cache.calculate_stroke_mesh(stroke_ptr, client, rndr.device());
+    }
+
     let Some(stroke_mesh) = editor.mesh_cache.get_stroke(stroke_ptr) else { return; };
     let texture = get_brush_texture(stroke_mesh.brush, brushes);
     rndr.render_stroke(&stroke_mesh.mesh, get_color_value(&stroke_mesh.color, client), editor.scene_obj_transform(stroke_ptr), Some(texture));
 }
 
-fn render_fill(rndr: &mut malvina::LayerRenderer, client: &Client, editor: &EditorState, fill_ptr: Ptr<Fill>) {
+fn render_fill(rndr: &mut malvina::LayerRenderer, client: &Client, editor: &mut EditorState, fill_ptr: Ptr<Fill>) {
+    if editor.mesh_cache.get_fill(fill_ptr).is_none() {
+        editor.mesh_cache.calculate_fill_mesh(fill_ptr, client, rndr.device());
+    }
+
     if let Some(fill) = editor.mesh_cache.get_fill(fill_ptr) {
         rndr.render_fill(&fill.mesh, get_color_value(&fill.color, client), editor.scene_obj_transform(fill_ptr)); 
     }
 }
 
-fn render_frame(rndr: &mut malvina::LayerRenderer, brushes: &BuiltinBrushTextures, client: &Client, editor: &EditorState, frame: &Frame, editor_view: bool) {
+fn render_frame(rndr: &mut malvina::LayerRenderer, brushes: &BuiltinBrushTextures, client: &Client, editor: &mut EditorState, frame: &Frame, editor_view: bool) {
     for scene_child in frame.scene.iter().rev() {
         if editor_view && editor.preview.hide.contains(&scene_child) {
             continue;
@@ -33,7 +41,7 @@ fn render_frame(rndr: &mut malvina::LayerRenderer, brushes: &BuiltinBrushTexture
     }
 }
 
-fn render_layer(rndr: &mut malvina::LayerRenderer, brushes: &BuiltinBrushTextures, client: &Client, editor: &EditorState, layer: &Layer, layer_ptr: Ptr<Layer>, time: i32, editor_view: bool) {
+fn render_layer(rndr: &mut malvina::LayerRenderer, brushes: &BuiltinBrushTextures, client: &Client, editor: &mut EditorState, layer: &Layer, layer_ptr: Ptr<Layer>, time: i32, editor_view: bool) {
     if editor_view && editor.hidden_layers.contains(&layer_ptr) {
         return;
     } 
@@ -58,7 +66,7 @@ fn render_layer(rndr: &mut malvina::LayerRenderer, brushes: &BuiltinBrushTexture
     }
 }
 
-fn render_layer_list(rndr: &mut malvina::LayerRenderer, brushes: &BuiltinBrushTextures, client: &Client, editor: &EditorState, layer_list: &alisa::ChildList<LayerPtr>, time: i32, editor_view: bool) {
+fn render_layer_list(rndr: &mut malvina::LayerRenderer, brushes: &BuiltinBrushTextures, client: &Client, editor: &mut EditorState, layer_list: &alisa::ChildList<LayerPtr>, time: i32, editor_view: bool) {
     for layer in layer_list.iter().rev() {
         match layer {
             LayerPtr::Layer(layer_ptr) => {
@@ -76,6 +84,6 @@ fn render_layer_list(rndr: &mut malvina::LayerRenderer, brushes: &BuiltinBrushTe
     }
 }
 
-pub fn render_scene(rndr: &mut malvina::LayerRenderer, brushes: &BuiltinBrushTextures, client: &Client, editor: &EditorState, clip: &ClipInner, time: i32, editor_view: bool) {
+pub fn render_scene(rndr: &mut malvina::LayerRenderer, brushes: &BuiltinBrushTextures, client: &Client, editor: &mut EditorState, clip: &ClipInner, time: i32, editor_view: bool) {
     render_layer_list(rndr, brushes, client, editor, &clip.layers, time, editor_view);
 }
