@@ -82,7 +82,7 @@ impl<'proj> LayerRenderList<'proj> {
         }
     }
 
-    pub fn iter<'list>(&'list self) -> impl Iterator<Item = &RenderLayer> + 'list {
+    pub fn iter<'list>(&'list self) -> impl Iterator<Item = &'list RenderLayer<'list>> + 'list {
         self.layers.iter()
     }
 
