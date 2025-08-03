@@ -66,7 +66,7 @@ impl TextResources {
         } 
     }
 
-    pub(crate) fn get_glyph(&mut self, font_id: FontId, glyph: CacheKey, device: &wgpu::Device, queue: &wgpu::Queue) -> Option<Glyph> {
+    pub(crate) fn get_glyph(&'_ mut self, font_id: FontId, glyph: CacheKey, device: &wgpu::Device, queue: &wgpu::Queue) -> Option<Glyph<'_>> {
         let font = self.fonts.get_mut(&font_id)?;
         self.atlas.get_glyph(glyph, &mut font.font_system, &mut self.swash_cache, device, queue)
     }

@@ -80,7 +80,7 @@ impl FontAtlas {
     }
 
     pub(crate) fn get_glyph(
-        &mut self,
+        &'_ mut self,
         glyph: CacheKey,
 
         font_system: &mut FontSystem,
@@ -88,7 +88,7 @@ impl FontAtlas {
 
         device: &wgpu::Device,
         queue: &wgpu::Queue,
-    ) -> Option<Glyph> {
+    ) -> Option<Glyph<'_>> {
         if let Some(lookup) = self.glyph_lookup.get(&glyph) {
             return Some(Glyph {
                 texture: &self.textures[lookup.texture_id].texture,
