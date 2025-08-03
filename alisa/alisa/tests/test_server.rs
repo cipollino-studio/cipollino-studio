@@ -78,6 +78,7 @@ impl<P: alisa::Project> TestingServer<P> {
         self.client(0)
     }
 
+    #[allow(unused)]
     pub fn bob(&self) -> &alisa::Client<P> {
         self.client(1)
     }
@@ -90,24 +91,29 @@ impl<P: alisa::Project> TestingServer<P> {
         self.tick_client(0);
     }
 
+    #[allow(unused)]
     pub fn tick_bob(&mut self) {
         self.tick_client(1);
     }
 
+    #[allow(unused)]
     pub fn send_alice_messages(&mut self) {
         self.tick_alice();
         Self::send_messages(&mut self.server, &self.clients[0]);
     }
 
+    #[allow(unused)]
     pub fn receive_alice_messages(&mut self) {
         Self::receive_messages(&mut self.server, &mut self.clients[0]);
     }
 
+    #[allow(unused)]
     pub fn send_bob_messages(&mut self) {
         self.tick_bob();
         Self::send_messages(&mut self.server, &self.clients[1]);
     }
 
+    #[allow(unused)]
     pub fn receive_bob_messages(&mut self) {
         Self::receive_messages(&mut self.server, &mut self.clients[1]);
     }
@@ -122,6 +128,7 @@ impl<P: alisa::Project> TestingServer<P> {
         }
     }
 
+    #[allow(unused)]
     pub fn add_client(&mut self) -> usize {
         self.clients.push(TestingClient::new(&mut self.server));
         self.clients.len() - 1

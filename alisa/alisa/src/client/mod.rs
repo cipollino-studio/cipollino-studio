@@ -240,7 +240,7 @@ impl<P: Project> Client<P> {
         &self.project
     }
 
-    pub fn context(&self) -> ProjectContext<P> {
+    pub fn context(&'_ self) -> ProjectContext<'_, P> {
         ProjectContext {
             project: &self.project,
             objects: &self.objects
@@ -251,7 +251,7 @@ impl<P: Project> Client<P> {
         O::list(&self.objects).get(ptr.into())
     }
 
-    pub fn get_ref<O: Object<Project = P>, T: Into<Ptr<O>>>(&self, ptr: T) -> ObjRef<O> {
+    pub fn get_ref<O: Object<Project = P>, T: Into<Ptr<O>>>(&'_ self, ptr: T) -> ObjRef<'_, O> {
         O::list(&self.objects).get_ref(ptr.into())
     }
 

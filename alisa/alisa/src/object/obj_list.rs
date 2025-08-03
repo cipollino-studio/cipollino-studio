@@ -144,7 +144,7 @@ impl<Obj: Object> ObjList<Obj> {
         self.objs.insert(ptr, ObjState::Deleted)?.into()
     }
 
-    pub fn get_ref(&self, ptr: Ptr<Obj>) -> ObjRef<Obj> {
+    pub fn get_ref(&'_ self, ptr: Ptr<Obj>) -> ObjRef<'_, Obj> {
         if ptr.is_null() {
             return ObjRef::None;
         }
